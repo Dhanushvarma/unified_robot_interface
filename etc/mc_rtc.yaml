@@ -1,0 +1,35 @@
+---
+
+robots:
+  panda1:
+    module: panda_default
+    # visual: Sphere
+
+    init_pos:
+      translation: [0.70, 0.5, 0.0]
+      rotation: [0.0, 0.0, 1.57]
+
+    RobotController:
+      control_mode: Position # Velocity or Torque
+      driver: default        # [optional] name of the driver
+      control_freq: 500      # [optional] use controller freq by default (Hz)
+      network:               # [optional]
+        type: tcp  # [optional] network protocol to use (default tcp)
+        ip: 192.168.1.2
+        port: 45000
+
+
+  panda2:
+    module: panda_default
+
+    init_pos:
+      translation: [0.70, 0.5, 0.0]
+      rotation: [0.0, 0.0, 1.57]
+
+    RobotController:
+      control_mode: Position # Velocity or Torque
+      driver: default
+      network: # [optional]
+        type: tcp  # [optional] network protocol to use (default tcp)
+        ip: 192.168.1.2
+        port: 45000
