@@ -6,11 +6,20 @@
 
 #include <mc_robot_interface/RobotDriver.h>
 
-namespace mc_rtc {
-enum ControlMode { Position, Velocity, Torque };
+namespace mc_rtc
+{
 
-template <typename cm> struct RobotControlMode {
-  void control(RobotDriver &driver, const mc_rbdyn::Robot &robot,
-               const rbd::MultiBodyConfig &mbc);
+enum ControlMode
+{
+  POSITION = 0,
+  VELOCITY,
+  TORQUE
 };
+
+template<typename cm>
+struct RobotControlMode
+{
+  void control(RobotDriver & driver, const mc_rbdyn::Robot & robot, const rbd::MultiBodyConfig & mbc);
+};
+
 } // namespace mc_rtc

@@ -3,12 +3,18 @@
 #include <string>
 #include <vector>
 
-namespace mc_rtc {
-struct RobotDriver {
+namespace mc_rtc
+{
 
+struct RobotDriver
+{
 public:
   RobotDriver() = default;
   virtual ~RobotDriver() = default;
+  RobotDriver(const RobotDriver &) = delete;
+  RobotDriver & operator=(const RobotDriver &) = delete;
+  RobotDriver(RobotDriver &&) = delete;
+  RobotDriver & operator=(RobotDriver &&) = delete;
 
   /**
    * @brief Wait for robot to be initialized
@@ -37,16 +43,17 @@ public:
    *
    * @param q
    */
-  virtual void servoJ(const std::vector<double> &q) = 0;
+  virtual void servoJ(const std::vector<double> & q) = 0;
 
   /**
    * @brief Send joint velocities commands to robot
    *
    * @param alpha
    */
-  virtual void speedJ(const std::vector<double> &alpha) = 0;
+  virtual void speedJ(const std::vector<double> & alpha) = 0;
 
 private:
   std::string name_ = "default";
 };
+
 } // namespace mc_rtc

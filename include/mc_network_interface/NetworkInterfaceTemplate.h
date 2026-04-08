@@ -1,9 +1,12 @@
 #pragma once
 
-namespace mc_network_interface {
+namespace mc_network_interface
+{
 
-class NetworkInterface {
+class NetworkInterface
+{
 public:
 private:
 };
+
 } // namespace mc_network_interface

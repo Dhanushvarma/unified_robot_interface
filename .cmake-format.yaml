@@ -1,0 +1,49 @@
+# cmake-format configuration file
+format:
+  line_width: 80
+  tab_size: 2
+
+  autosort: true
+  use_tabchars: false
+  separate_ctrl_name_with_space: false
+  separate_fn_name_with_space: false
+  dangle_parens: true
+  command_case: 'lower'
+  keyword_case: 'upper'
+  max_lines_hwrap: 1
+  line_ending: 'unix'
+
+parse:
+  additional_commands:
+    target_include_directories:
+      pargs:
+        nargs: '1+'
+      kwargs:
+        PUBLIC: '*'
+        PRIVATE: '*'
+        INTERFACE: '*'
+
+    target_link_libraries:
+      pargs:
+        nargs: '1+'
+      kwargs:
+        PUBLIC: '*'
+        PRIVATE: '*'
+        INTERFACE: '*'
+
+    install:
+      kwargs:
+        TARGETS: '+'
+        EXPORT: 1
+        RUNTIME: 1
+        LIBRARY: 1
+        ARCHIVE: 1
+        DESTINATION: 1
+
+markup:
+  enable_markup: false
+
+encode:
+  emit_byteorder_mark: false
+  input_encoding: 'utf-8'
+  output_encoding: 'utf-8'

@@ -1,6 +1,5 @@
 # mc_robot_interface
 
-
 ## Goals
 
 The goal here with this interface is to standardise robot interface creation.
@@ -14,3 +13,11 @@ Ideas :
 * Define / create driver which means that users can create different interface quickly and experiment while keeping exisint one working
 * Repect robot timestep and control command
 * Consider the case where we may had robot in the loop dynamically
+
+## Tasks
+
+- [ ] Pseudo network to communicate between robot manager and robot interface
+
+- [ ] Parse and send information from config `yaml`
+- [ ] Scale to multi-thread system
+- [ ] Integrated with `mc_rtc` and sample robot interface
