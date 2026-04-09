@@ -22,7 +22,17 @@ void printConfig(const std::string & name, const mc_control::Configuration & con
   mc_rtc::log::info(config.dump(true, true));
 }
 
-void run(void * data, std::atomic<bool> & interrupt)
+void * globalInit(mc_control::MCGlobalController::GlobalConfiguration & gconfig, const std::atomic<bool> & interrupt)
+{
+
+  auto global_controller = std::make_unique<mc_control::MCGlobalController>(gconfig);
+  auto threads = std::make_unique<std::vector<std::thread>>();
+
+  static int dummy_success_flag = 42;
+  return &dummy_success_flag;
+}
+
+void run(void * data, const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::info("mc_fleet::run");
 }

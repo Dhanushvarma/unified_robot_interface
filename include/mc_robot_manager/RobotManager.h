@@ -8,9 +8,9 @@
 namespace mc_fleet
 {
 
-void run(void * data, std::atomic<bool> & interrupt);
+void run(void * data, const std::atomic<bool> & interrupt);
 
-void * init(int argc, char ** argv, uint64_t & cycle_ns, std::atomic<bool> & interrupt);
+void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool> & interrupt);
 
 struct RobotManager
 {
