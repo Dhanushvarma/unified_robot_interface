@@ -27,7 +27,7 @@ void run(void * data, std::atomic<bool> & interrupt)
   mc_rtc::log::info("mc_fleet::run");
 }
 
-void * init(int argc, char ** argv, uint64_t & cycle_ns, std::atomic<bool> & interrupt)
+void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::info("mc_fleet::init 1");
 
@@ -81,7 +81,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, std::atomic<bool> & int
   mc_control::Configuration robots_config = gconfig.config("Robots");
   for(auto & robot_name : robots_config.keys())
   {
-    mc_control::Configuration robot_config = robots_config(robot_name);
+    mc_control::Configuration robot_config{gconfig.config("Robots")(robot_name)};
 
     if(robot_config.has("base"))
     {
@@ -134,12 +134,12 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, std::atomic<bool> & int
 
   mc_rtc::log::info("mc_fleet::init 5");
 
-  for(auto & robot_name : robots_config.keys())
-  {
-    printConfig(robot_name, robots_config(robot_name));
-  }
+  printConfig("global_config", gconfig.config("Robots"));
 
   mc_rtc::log::info("mc_fleet::init 6");
+
+  globalInit(gconfig, interrupt);
+
   static int dummy_success_flag = 42;
   return &dummy_success_flag;
 }
