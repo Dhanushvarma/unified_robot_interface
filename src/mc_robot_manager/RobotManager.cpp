@@ -12,7 +12,7 @@ struct DefaultConfig
   std::string module{};
   std::string control_mode{};
   std::string driver{};
-  std::string control_freq{};
+  double time_step{};
   std::string network_protocol{};
 };
 
@@ -81,8 +81,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
     default_config.module = dc("module", std::string(""));
     default_config.control_mode = dc("control_mode", std::string("position"));
     default_config.driver = dc("driver", std::string(""));
-    // TODO: add default control_freq
-    default_config.control_freq = dc("control_freq", std::string(""));
+    default_config.time_step = dc("time_step", 0.001);
     default_config.network_protocol = dc("network_protocol", std::string("tcp"));
   }
 
@@ -111,7 +110,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
       robot_config.add("controller");
       robot_config("controller").add("mode", default_config.control_mode);
       robot_config("controller").add("driver", default_config.driver);
-      robot_config("controller").add("freq", default_config.control_freq);
+      robot_config("controller").add("time_step", default_config.time_step);
     }
     else
     {
@@ -123,9 +122,9 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
       {
         robot_config("controller").add("driver", default_config.driver);
       }
-      if(!robot_config("controller").has("freq"))
+      if(!robot_config("controller").has("time_step"))
       {
-        robot_config("controller").add("freq", default_config.control_freq);
+        robot_config("controller").add("time_step", default_config.time_step);
       }
     }
 

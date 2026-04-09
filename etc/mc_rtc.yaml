@@ -10,7 +10,7 @@ Default:
   # TODO: fix to allow snake_case
   control_mode: position # velocity or torque [optional] default to POSITION
   driver: default_driver # [optional] default to driver defined in module
-  control_freq: 500      # [optional] default to controller frequency (Hz)
+  time_step: 0.001       # [optional] default to controller frequency (Hz)
   network_protocol: tcp  # [optional] default to tcp
 
 Robots:
@@ -23,7 +23,7 @@ Robots:
     controller:
       mode: velocity
       driver: default
-      freq: 500
+      time_step: 0.002
     network:
       protocol: tcp
       ip: 192.168.1.2
