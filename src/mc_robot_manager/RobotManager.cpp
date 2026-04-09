@@ -71,6 +71,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, std::atomic<bool> & int
     default_config.module = dc("module", std::string(""));
     default_config.control_mode = dc("control_mode", std::string("POSITION"));
     default_config.driver = dc("driver", std::string(""));
+    // TODO: add default control_freq
     default_config.control_freq = dc("control_freq", std::string(""));
     default_config.network_protocol = dc("network_protocol", std::string("tcp"));
   }
@@ -81,10 +82,20 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, std::atomic<bool> & int
   for(auto & robot_name : robots_config.keys())
   {
     mc_control::Configuration robot_config = robots_config(robot_name);
+
+    if(robot_config.has("base"))
+    {
+      mc_control::Configuration base_config{};
+      base_config.load(robots_config(robot_config("base")));
+      base_config.load(robot_config);
+      robot_config.load(base_config);
+    }
+
     if(!robot_config.has("module"))
     {
       robot_config.add("module", default_config.module);
     }
+
     if(!robot_config.has("controller"))
     {
       robot_config.add("controller");
@@ -107,9 +118,17 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, std::atomic<bool> & int
         robot_config("controller").add("freq", default_config.control_freq);
       }
     }
-    if(!robot_config("network").has("protocol"))
+
+    if(robot_config.has("network"))
     {
-      robot_config("network").add("protocol", default_config.control_freq);
+      if(!robot_config("network").has("protocol"))
+      {
+        robot_config("network").add("protocol", default_config.control_freq);
+      }
+    }
+    else
+    {
+      mc_rtc::log::error("No `network` section in the configuration of robot {}", robot_name);
     }
   }
 

@@ -17,16 +17,13 @@ Robots:
   panda1:
     module: panda_default
     # visual: Sphere # TODO: what is this for ?
-
     init_pos: # [optional] default to all zeros
       translation: [0.70, 0.5, 0.0]
       rotation: [0.0, 0.0, 1.57]
-
     controller:
       mode: VELOCITY
       driver: default
       freq: 500
-
     network:
       protocol: tcp
       ip: 192.168.1.2
@@ -34,17 +31,11 @@ Robots:
 
   panda2:
     module: panda_default
-
-    init_pos:
-      translation: [0.70, 0.5, 0.0]
-      rotation: [0.0, 0.0, 1.57]
-
     network:
       ip: "localhost"
       port: 45000
 
-  # TODO: include inheritance
-  # panda3:
-  #   base: panda1
-  #   init_pos:
-  #     translation: [0.0, 1.5, 0.0]
+  panda3:
+    base: panda1
+    init_pos:
+      translation: [0.0, 1.5, 0.0]
