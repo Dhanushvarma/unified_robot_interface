@@ -138,7 +138,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
     }
     else
     {
-      mc_rtc::log::error("No `network` section in the configuration of robot {}", robot_name);
+      mc_rtc::log::error_and_throw("No `network` section in the configuration of robot {}", robot_name);
     }
   }
 
