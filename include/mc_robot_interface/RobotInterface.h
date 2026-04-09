@@ -33,8 +33,8 @@ public:
   void loadConfig(const mc_rtc::Configuration & config);
 
 private:
-  mutable std::mutex updateSensorMutex_{};
-  mutable std::mutex updateControlMutex_{};
+  mutable std::mutex update_sensor_mtx_{};
+  mutable std::mutex update_control_mtx_{};
 
   mc_rtc::Configuration config_{};
   std::unique_ptr<mc_rtc::RobotDriver> driver_{};

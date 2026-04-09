@@ -9,6 +9,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Add RPATH settings HERE (before project())
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 project(
   ${PROJECT_NAME}
   LANGUAGES CXX
@@ -29,12 +35,11 @@ if(BUILD_TESTING)
   add_subdirectory(tests)
 endif()
 
-# install(FILES etc/mc_rtc.yaml DESTINATION etc)
-
 message(STATUS "")
 message(STATUS "Configuration Summary:")
 message(STATUS "  Project: ${PROJECT_NAME} ${PROJECT_VERSION}")
 message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "  Build Tests: ${BUILD_TESTING}")
+message(STATUS "  Install RPATH: ${CMAKE_INSTALL_RPATH}")
 message(STATUS "")

@@ -10,7 +10,7 @@ struct RobotInterfaceFactory
 {
 public:
 private:
-  std::unordered_map<std::string, std::unique_ptr<RobotInterface>> robotsInterfaces_;
+  std::unordered_map<std::string, std::unique_ptr<RobotInterface>> robots_interfaces_;
 };
 
 } // namespace mc_robot

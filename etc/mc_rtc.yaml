@@ -1,32 +1,36 @@
-MainRobot: main_robot
-Enabled: posture
+MainRobot: UR5e
+Enabled: Posture
 Timestep: 0.001
 
 LogPolicy : threaded
 
 # used to override system default for all robots
-default:
+Default:
   module: default_module
-  control_mode: Position # Velocity or Torque
+  # TODO: fix to allow snake_case
+  control_mode: POSITION # VELOCITY or TORQUE [optional] default to POSITION
   driver: default_driver # [optional] default to driver defined in module
-  control_freq: 500      # [optional] use controller freq by default (Hz)
-  network_protocol: tcp  # [optional] network protocol to use (default tcp)
+  control_freq: 500      # [optional] default to controller frequency (Hz)
+  network_protocol: tcp  # [optional] default to tcp
 
-robots:
+Robots:
   panda1:
     module: panda_default
     # visual: Sphere # TODO: what is this for ?
-    init_pos:
+
+    init_pos: # [optional] default to all zeros
       translation: [0.70, 0.5, 0.0]
       rotation: [0.0, 0.0, 1.57]
-    RobotController:
-      control_mode: Position
+
+    controller:
+      mode: VELOCITY
       driver: default
-      control_freq: 500
-      network:
-        protocol: tcp
-        ip: 192.168.1.2
-        port: 45000
+      freq: 500
+
+    network:
+      protocol: tcp
+      ip: 192.168.1.2
+      port: 45000
 
   panda2:
     module: panda_default
@@ -35,15 +39,12 @@ robots:
       translation: [0.70, 0.5, 0.0]
       rotation: [0.0, 0.0, 1.57]
 
-    RobotController:
-      control_mode: Position
-      driver: default
-      network:
-        protocol: tcp
-        ip: "localhost"
-        port: 45000
+    network:
+      ip: "localhost"
+      port: 45000
 
-  panda3:
-    base: panda1
-    init_pos:
-      translation: [0.0, 1.5, 0.0]
+  # TODO: include inheritance
+  # panda3:
+  #   base: panda1
+  #   init_pos:
+  #     translation: [0.0, 1.5, 0.0]
