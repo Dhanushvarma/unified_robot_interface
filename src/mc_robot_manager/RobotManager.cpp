@@ -69,7 +69,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
   {
     mc_control::Configuration dc = gconfig.config("Default");
     default_config.module = dc("module", std::string(""));
-    default_config.control_mode = dc("control_mode", std::string("POSITION"));
+    default_config.control_mode = dc("control_mode", std::string("position"));
     default_config.driver = dc("driver", std::string(""));
     // TODO: add default control_freq
     default_config.control_freq = dc("control_freq", std::string(""));
