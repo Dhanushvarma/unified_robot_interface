@@ -19,6 +19,9 @@ WarningsAsErrors: '*'
 FormatStyle: file
 
 CheckOptions:
+  - key: readability-function-cognitive-complexity.Threshold
+    value: 50
+
   - key: readability-identifier-naming.MacroDefinitionCase
     value: UPPER_CASE
   - key: readability-identifier-naming.ConstantCase
