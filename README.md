@@ -15,9 +15,7 @@ Ideas :
 * Consider the case where we may had robot in the loop dynamically
 
 ## Tasks
-
 - [ ] Pseudo network to communicate between robot manager and robot interface
-
-- [ ] Parse and send information from config `yaml`
 - [ ] Scale to multi-thread system
 - [ ] Integrated with `mc_rtc` and sample robot interface
+- [x] Parse and send information from config `yaml`
