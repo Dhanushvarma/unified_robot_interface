@@ -384,7 +384,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
     {
       if(!robot_config("network").has("protocol"))
       {
-        robot_config("network").add("protocol", default_config.control_freq);
+        robot_config("network").add("protocol", default_config.network_protocol);
       }
     }
     else
