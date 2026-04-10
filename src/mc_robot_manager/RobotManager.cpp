@@ -59,11 +59,14 @@ void * globalInit(mc_control::MCGlobalController::GlobalConfiguration & gconfig,
 
   std::cout << "globalInit 3" << std::endl;
 
-  size_t controller_dt_ns = controller_dt * 1e9;
+  auto controller_dt_ns = static_cast<size_t>(controller_dt * 1e9);
   for(auto & dt : dts)
   {
-    if(dt > max_dt) max_dt = dt;
-    size_t dt_ns = dt * 1e9;
+    if(dt > max_dt)
+    {
+      max_dt = dt;
+    }
+    auto dt_ns = static_cast<size_t>(dt * 1e9);
     if(controller_dt_ns % dt_ns != 0)
     {
       // TODO: error and throw
