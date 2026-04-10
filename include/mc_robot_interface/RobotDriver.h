@@ -1,15 +1,22 @@
 #pragma once
 
+#include <mc_rtc/logging.h>
 #include <string>
 #include <vector>
 
+// TODO: should this be in mc_rtc
+// should we change it to mc_driver
 namespace mc_rtc
 {
 
 struct RobotDriver
 {
 public:
-  RobotDriver() = default;
+  RobotDriver(const std::string & ip, const std::string & port = "")
+  {
+    mc_rtc::log::info("[driver] Starting driver with ip {} port {}", ip, port);
+  };
+
   virtual ~RobotDriver() = default;
   RobotDriver(const RobotDriver &) = delete;
   RobotDriver & operator=(const RobotDriver &) = delete;
@@ -20,40 +27,65 @@ public:
    * @brief Wait for robot to be initialized
    *
    */
-  virtual void sync() = 0;
+  virtual void sync() {}
 
   virtual void setDataRead() {}
 
   /**
-   * @brief Get Robot Actual Q
+   * @brief Get robot joint positions
    *
    * @return std::vector<double>
    */
-  virtual std::vector<double> getActualQ() = 0;
+  virtual std::vector<double> getPosition() = 0;
 
   /**
-   * @brief Get Robot Joint Torques
+   * @brief Get robot joint velocities
    *
    * @return std::vector<double>
    */
-  virtual std::vector<double> getJointTorques() = 0;
+  virtual std::vector<double> getVelocity() = 0;
+
+  /**
+   * @brief Get robot joint torques
+   *
+   * @return std::vector<double>
+   */
+  virtual std::vector<double> getTorque() = 0;
 
   /**
    * @brief Send joint angle commands to robot
    *
-   * @param q
+   * @param command
    */
-  virtual void servoJ(const std::vector<double> & q) = 0;
+  virtual void setPosition(const std::vector<double> & command) = 0;
 
   /**
-   * @brief Send joint velocities commands to robot
+   * @brief Send joint velocity commands to robot
    *
-   * @param alpha
+   * @param command
    */
-  virtual void speedJ(const std::vector<double> & alpha) = 0;
+  virtual void setVelocity(const std::vector<double> & command) = 0;
 
-private:
-  std::string name_ = "default";
+  /**
+   * @brief Send joint torque commands to robot
+   *
+   * @param command
+   */
+  virtual void setTorque(const std::vector<double> & command) = 0;
+
+  /**
+   * @brief Set robot in freedrive mode, allow the robot to be moved around by hand
+   *
+   * @param enable
+   * @return true when the robot is in freedrive mode, false otherwise.
+   */
+  virtual bool freeDrive(bool enable)
+  {
+    return false;
+  }
+
+protected:
+  std::string name_ = "template";
 };
 
 } // namespace mc_rtc

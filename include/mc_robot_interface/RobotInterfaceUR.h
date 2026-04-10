@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mc_robot_interface/RobotDriverRTDE.h>
 #include <mc_robot_interface/RobotInterface.h>
 
 namespace mc_robot

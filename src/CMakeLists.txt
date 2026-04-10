@@ -16,6 +16,8 @@ target_include_directories(
 )
 
 # Robot Interface
+find_package(ur_rtde REQUIRED)
+
 set(INTERFACE_SRC mc_robot_interface/RobotInterfaceFactory.cpp
                   mc_robot_interface/RobotInterfaceUR.cpp
 )
@@ -25,13 +27,12 @@ add_library(mc_rtc::mc_robot_interface ALIAS mc_robot_interface)
 
 target_link_libraries(
   mc_robot_interface PUBLIC mc_rtc::mc_control mc_network_interface
+                            ur_rtde::rtde
 )
 
 target_include_directories(
-  mc_robot_interface
-  PUBLIC # ← Changed from INTERFACE
-         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-         $<INSTALL_INTERFACE:include>
+  mc_robot_interface PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+                            $<INSTALL_INTERFACE:include>
 )
 
 # Robot Manager
@@ -45,13 +46,11 @@ target_link_libraries(
 )
 
 target_include_directories(
-  mc_robot_manager
-  PUBLIC # ← Changed from INTERFACE
-         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-         $<INSTALL_INTERFACE:include>
+  mc_robot_manager PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+                          $<INSTALL_INTERFACE:include>
 )
 
-# Install ALL libraries (added mc_robot_manager) ← THIS WAS MISSING!
+# Install all libraries
 install(
   TARGETS mc_robot_interface mc_network_interface mc_robot_manager
   EXPORT "${TARGETS_EXPORT_NAME}"

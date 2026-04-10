@@ -35,6 +35,8 @@ Robots:
 
   ur5e:
     module: ur5e
+    controller:
+      driver: ur_rtde
     network:
       ip: "localhost"
       port: 10000
