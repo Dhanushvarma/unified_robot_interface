@@ -15,8 +15,10 @@ target_include_directories(
                               $<INSTALL_INTERFACE:include>
 )
 
-# Robot Interface Template
-set(INTERFACE_SRC mc_robot_interface/RobotInterfaceTemplate.cpp)
+# Robot Interface
+set(INTERFACE_SRC mc_robot_interface/RobotInterfaceFactory.cpp
+                  mc_robot_interface/RobotInterfaceUR.cpp
+)
 
 add_library(mc_robot_interface SHARED ${INTERFACE_SRC})
 add_library(mc_rtc::mc_robot_interface ALIAS mc_robot_interface)

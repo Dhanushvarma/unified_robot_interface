@@ -7,7 +7,6 @@ LogPolicy : threaded
 # used to override system default for all robots
 Default:
   module: default_module
-  # TODO: fix to allow snake_case
   control_mode: position # velocity or torque [optional] default to POSITION
   driver: default_driver # [optional] default to driver defined in module
   time_step: 0.001       # [optional] default to controller frequency (Hz)
@@ -30,12 +29,12 @@ Robots:
       port: 45000
 
   panda2:
-    module: panda_default
-    network:
-      ip: "localhost"
-      port: 45000
-
-  panda3:
     base: panda1
     init_pos:
       translation: [0.0, 1.5, 0.0]
+
+  ur5e:
+    module: ur5e
+    network:
+      ip: "localhost"
+      port: 10000

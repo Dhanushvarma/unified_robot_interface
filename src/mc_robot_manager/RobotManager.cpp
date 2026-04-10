@@ -16,6 +16,7 @@ struct DefaultConfig
   std::string network_protocol{};
 };
 
+// TODO: delete
 void printConfig(const std::string & name, const mc_control::Configuration & config)
 {
   mc_rtc::log::info(name);
@@ -319,7 +320,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
 
   mc_rtc::log::info("mc_fleet::init 2");
 
-  // Process config file
+  /* Process config file */
   mc_control::MCGlobalController::GlobalConfiguration gconfig(conf_file, nullptr);
   if(!gconfig.config.has("Robots"))
   {
@@ -343,6 +344,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
   mc_rtc::log::info("mc_fleet::init 4");
 
   mc_control::Configuration robots_config = gconfig.config("Robots");
+  mc_robot::RobotInterfaceFactory robot_factory{};
   for(auto & robot_name : robots_config.keys())
   {
     mc_control::Configuration robot_config{gconfig.config("Robots")(robot_name)};
@@ -394,6 +396,8 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
     {
       mc_rtc::log::error_and_throw("No `network` section in the configuration of robot {}", robot_name);
     }
+
+    robot_factory.addRobotInterface(robot_name, robot_config);
   }
 
   mc_rtc::log::info("mc_fleet::init 5");
@@ -402,7 +406,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
 
   mc_rtc::log::info("mc_fleet::init 6");
 
-  globalInit(gconfig, interrupt);
+  // TODO: start network - server
 
   static int dummy_success_flag = 42;
   return &dummy_success_flag;

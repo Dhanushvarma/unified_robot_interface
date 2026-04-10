@@ -1,9 +1,11 @@
 #pragma once
 
-#include <thread>
+#include <mc_network_interface/NetworkInterface.h>
+#include <mc_robot_interface/RobotInterfaceFactory.h>
 
 #include <mc_control/mc_global_controller.h>
-#include <mc_network_interface/NetworkInterface.h>
+
+#include <thread>
 
 namespace mc_fleet
 {
