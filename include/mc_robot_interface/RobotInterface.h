@@ -11,7 +11,7 @@ struct RobotInterface
 {
 
 public:
-  RobotInterface(const std::string & name, const mc_rtc::Configuration & config, uint8_t buffer_size = 6)
+  RobotInterface(const std::string & name, const mc_rtc::Configuration & config, uint8_t buffer_size)
   : name_(name), config_(config), dt_(config_("controller")("time_step")), protocol_(config_("network")("protocol")),
     ip_(config_("network")("ip")), port_(config_("network")("port")), buffer_size_(buffer_size)
   {

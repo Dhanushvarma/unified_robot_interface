@@ -8,7 +8,7 @@ namespace mc_rtde
 {
 struct RobotDriverRTDE : public mc_rtc::RobotDriver
 {
-  RobotDriverRTDE(const std::string & ip, const std::string & port = "") : RobotDriver(ip, port)
+  RobotDriverRTDE(const std::string & ip, const uint16_t & port = 0) : RobotDriver(ip, port)
   {
     name_ = "ur_rtde";
 

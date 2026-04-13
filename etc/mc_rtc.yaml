@@ -44,4 +44,5 @@ Robots:
   ur5e2:
     base: ur5e1
     network:
+      protocol: "udp"
       ip: "222.222.2.2"

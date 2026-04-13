@@ -10,7 +10,7 @@ struct RobotInterfaceUR : public RobotInterface
 {
 
 public:
-  RobotInterfaceUR(const std::string & name, const mc_rtc::Configuration & config);
+  RobotInterfaceUR(const std::string & name, const mc_rtc::Configuration & config, uint8_t buffer_size = 6);
 
   void init() override {}
   void reset() override {}

@@ -1,5 +1,6 @@
 # Network Interface
 set(NETWORK_INTERFACE_SRC
+    mc_network_interface/NetworkInterfaceFactory.cpp
     mc_network_interface/TcpNetworkInterface.cpp
     mc_network_interface/UdpNetworkInterface.cpp
     mc_network_interface/ZenohNetworkInterface.cpp
@@ -9,6 +10,8 @@ add_library(mc_network_interface SHARED ${NETWORK_INTERFACE_SRC})
 add_library(
   mc_network_interface::mc_network_interface ALIAS mc_network_interface
 )
+
+target_link_libraries(mc_network_interface PUBLIC mc_rtc::mc_control)
 
 target_include_directories(
   mc_network_interface PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>

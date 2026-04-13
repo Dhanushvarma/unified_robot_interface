@@ -3,8 +3,8 @@
 namespace mc_robot
 {
 
-RobotInterfaceUR::RobotInterfaceUR(const std::string & name, const mc_rtc::Configuration & config)
-: RobotInterface(name, config)
+RobotInterfaceUR::RobotInterfaceUR(const std::string & name, const mc_rtc::Configuration & config, uint8_t buffer_size)
+: RobotInterface(name, config, buffer_size)
 {
   const std::string driver_name{config_("controller")("driver", std::string("ur_rtde"))};
   if(driver_name == "ur_rtde")

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mc_rtc/Configuration.h>
+#include <mc_network_interface/NetworkInterfaceFactory.h>
 #include <mc_robot_interface/RobotInterface.h>
 #include <string>
 
@@ -12,7 +13,7 @@ struct RobotInterfaceFactory
 public:
   /**
    * Constructs a new RobotInterface and stores it in
-   * @ref robots_interfaces_ using the provided @p name as the key.
+   * @ref robot_interfaces_ using the provided @p name as the key.
    *
    * Example of a config
    * @code .yaml
@@ -33,10 +34,12 @@ public:
    * @param name
    * @param config
    */
-  void addRobotInterface(const std::string & name, const mc_rtc::Configuration & config);
+  void addRobotInterface(const std::string & name,
+                         const mc_rtc::Configuration & config,
+                         mc_network::NetworkInterfaceFactory & network_interface_factory);
 
 private:
-  std::unordered_map<std::string, std::unique_ptr<RobotInterface>> robots_interfaces_;
+  std::unordered_map<std::string, std::unique_ptr<RobotInterface>> robot_interfaces_;
 };
 
 } // namespace mc_robot

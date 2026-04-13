@@ -12,7 +12,7 @@ namespace mc_rtc
 struct RobotDriver
 {
 public:
-  RobotDriver(const std::string & ip, const std::string & port = "")
+  RobotDriver(const std::string & ip, const uint16_t & port = 0)
   {
     mc_rtc::log::info("[driver] Starting driver with ip {} port {}", ip, port);
   };
