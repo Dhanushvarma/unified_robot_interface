@@ -16,7 +16,7 @@ void RobotInterfaceFactory::addRobotInterface(const std::string & name, const mc
     auto [it, success] = robots_interfaces_.try_emplace(name, std::move(new_robot));
     if(!success)
     {
-      mc_rtc::log::warning("Robot {} already exists");
+      mc_rtc::log::warning("Robot {} already exists", name);
     }
   }
   else
