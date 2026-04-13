@@ -7,54 +7,101 @@ namespace po = boost::program_options;
 namespace mc_fleet
 {
 
-void run(void * data, const std::atomic<bool> & interrupt)
+void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig)
 {
-  mc_rtc::log::info("mc_fleet::run");
-}
-
-void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool> & interrupt)
-{
-  mc_rtc::log::info("mc_fleet::init 1");
-
-  std::string conf_file;
-  std::string testing_string;
-  po::options_description desc("MCFleetControl options");
-  // clang-format off
-   desc.add_options()
-    ("help,h", "Display help message")
-    ("conf,f", po::value<std::string>(&conf_file), "Configuration file")
-    ("test,t", po::value<std::string>(&testing_string), "Configuration file");
-  // clang-format on
-
-  po::variables_map vm;
-  po::store(po::parse_command_line(argc, argv, desc), vm);
-  po::notify(vm);
-
-  if(vm.count("help") != 0U)
+  if(!gconfig.config.has("Robots"))
   {
-    std::cout << desc << "\n";
-    std::cout << "see etc/mc_rtc.yaml for example configuration\n";
-    return nullptr;
+    mc_rtc::log::error_and_throw<std::runtime_error>(
+        "No `Robots` section in the configuration, see etc/mc_rtc.yaml for an example");
   }
 
-  mc_rtc::log::info("mc_fleet::init 2");
+  mc_rtc::log::info("mc_fleet::init 3");
 
-  /* Initialize robot manager */
-  mc_control::MCGlobalController::GlobalConfiguration gconfig(conf_file, nullptr);
-  RobotManager robot_manager{gconfig};
+  if(gconfig.config.has("Default"))
+  {
+    mc_control::Configuration dc = gconfig.config("Default");
+    user_default_.module = dc("module", std::string(user_default_.module));
+    user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
+    user_default_.driver = dc("driver", std::string(user_default_.driver));
+    user_default_.time_step = dc("time_step", double(user_default_.time_step));
+    user_default_.network_protocol = dc("network_protocol", std::string(user_default_.network_protocol));
+  }
 
-  mc_rtc::log::info("mc_fleet::init 5");
+  mc_rtc::log::info("mc_fleet::init 4");
 
-  mc_rtc::log::info("----------------------------------------------------------------------------");
-  mc_rtc::log::info("GLOBAL CONFIG");
-  mc_rtc::log::info(gconfig.config("Robots").dump(true, true));
+  mc_control::Configuration robots_config = gconfig.config("Robots");
+  for(auto & robot_name : robots_config.keys())
+  {
+    mc_control::Configuration robot_config{gconfig.config("Robots")(robot_name)};
 
-  mc_rtc::log::info("mc_fleet::init 6");
+    if(robot_config.has("base"))
+    {
+      mc_control::Configuration base_config{};
+      base_config.load(robots_config(robot_config("base")));
+      base_config.load(robot_config);
+      robot_config.load(base_config);
+    }
 
-  // TODO: start network - server
+    if(!robot_config.has("module"))
+    {
+      robot_config.add("module", user_default_.module);
+    }
 
-  static int dummy_success_flag = 42;
-  return &dummy_success_flag;
+    if(!robot_config.has("controller"))
+    {
+      robot_config.add("controller");
+      robot_config("controller").add("mode", user_default_.control_mode);
+      robot_config("controller").add("driver", user_default_.driver);
+      robot_config("controller").add("time_step", user_default_.time_step);
+    }
+    else
+    {
+      if(!robot_config("controller").has("mode"))
+      {
+        robot_config("controller").add("mode", user_default_.control_mode);
+      }
+      if(!robot_config("controller").has("driver"))
+      {
+        robot_config("controller").add("driver", user_default_.driver);
+      }
+      if(!robot_config("controller").has("time_step"))
+      {
+        robot_config("controller").add("time_step", user_default_.time_step);
+      }
+    }
+
+    if(robot_config.has("network"))
+    {
+      if(!robot_config("network").has("protocol"))
+      {
+        robot_config("network").add("protocol", user_default_.network_protocol);
+      }
+    }
+    else
+    {
+      mc_rtc::log::error_and_throw("No `network` section in the configuration of robot {}", robot_name);
+    }
+  }
+}
+
+void RobotManager::initNetworks()
+{
+  mc_rtc::log::success("initNetworks start");
+  mc_rtc::log::success("initNetworks done");
+}
+
+void RobotManager::initRobots()
+{
+  mc_rtc::log::success("initRobots start");
+
+  mc_control::Configuration robots_config = gcontroller_->configuration().config("Robots");
+  for(auto & robot_name : robots_config.keys())
+  {
+    mc_control::Configuration robot_config{robots_config(robot_name)};
+    robot_interface_factory_.addRobotInterface(robot_name, robot_config);
+  }
+
+  mc_rtc::log::info("initRobots done");
 }
 
 } // namespace mc_fleet

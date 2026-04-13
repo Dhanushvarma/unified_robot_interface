@@ -1,6 +1,7 @@
 #include <mc_rtc/logging.h>
-#include <mc_robot_manager/RobotManager.h>
+#include <mc_robot_manager/Fleet.h>
 
+#include <atomic>
 #include <cerrno>
 #include <csignal>
 #include <cstdint>

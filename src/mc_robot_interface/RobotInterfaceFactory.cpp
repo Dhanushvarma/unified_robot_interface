@@ -1,6 +1,5 @@
 #include <mc_rtc/logging.h>
 #include <mc_robot_interface/RobotInterfaceFactory.h>
-
 #include <mc_robot_interface/RobotInterfaceUR.h>
 
 namespace mc_robot

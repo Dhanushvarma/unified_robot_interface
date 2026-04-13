@@ -36,7 +36,9 @@ target_include_directories(
 )
 
 # Robot Manager
-set(ROBOT_MANAGER_SRC mc_robot_manager/RobotManager.cpp)
+set(ROBOT_MANAGER_SRC mc_robot_manager/Fleet.cpp
+                      mc_robot_manager/RobotManager.cpp
+)
 
 add_library(mc_robot_manager SHARED ${ROBOT_MANAGER_SRC})
 add_library(mc_fleet::mc_robot_manager ALIAS mc_robot_manager)
