@@ -1,6 +1,6 @@
 #pragma once
 
-#include <mc_control/Configuration.h>
+#include <mc_rtc/Configuration.h>
 #include <mc_robot_interface/RobotInterface.h>
 #include <string>
 
@@ -33,7 +33,7 @@ public:
    * @param name
    * @param config
    */
-  void addRobotInterface(const std::string & name, const mc_control::Configuration & config);
+  void addRobotInterface(const std::string & name, const mc_rtc::Configuration & config);
 
 private:
   std::unordered_map<std::string, std::unique_ptr<RobotInterface>> robots_interfaces_;

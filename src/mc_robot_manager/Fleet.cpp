@@ -15,12 +15,13 @@ namespace mc_fleet
 
 void run(void * data, const std::atomic<bool> & interrupt)
 {
-  mc_rtc::log::info("mc_fleet::run");
+  mc_rtc::log::success("fleet run start");
+  mc_rtc::log::info("fleet run done");
 }
 
 void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool> & interrupt)
 {
-  mc_rtc::log::info("mc_fleet::init 1");
+  mc_rtc::log::success("fleet init start");
 
   std::string conf_file;
   std::string testing_string;
@@ -49,15 +50,9 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
   mc_control::MCGlobalController::GlobalConfiguration gconfig(conf_file, nullptr);
   auto * robot_manager = new RobotManager(gconfig);
 
-  mc_rtc::log::info("mc_fleet::init 5");
-
-  mc_rtc::log::info("----------------------------------------------------------------------------");
-  mc_rtc::log::info("GLOBAL CONFIG");
-  mc_rtc::log::info(gconfig.config("Robots").dump(true, true));
-
-  mc_rtc::log::info("mc_fleet::init 6");
-
   // TODO: start network - server
+
+  mc_rtc::log::info("fleet init done");
 
   static int dummy_success_flag = 42;
   return &dummy_success_flag;
