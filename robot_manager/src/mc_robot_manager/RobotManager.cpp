@@ -1,17 +1,18 @@
 #include <mc_rtc/logging.h>
 #include <mc_robot_manager/RobotManager.h>
 
-#include <boost/program_options.hpp>
-namespace po = boost::program_options;
+#include <cstdlib>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 namespace mc_fleet
 {
 
-void RobotManager::processGConfig()
+void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig)
 {
   mc_rtc::log::success("manager processGConfig start");
 
-  if(!gconfig_.config.has("Robots"))
+  if(!gconfig.config.has("Robots"))
   {
     mc_rtc::log::error_and_throw<std::runtime_error>(
         "No `Robots` section in the configuration, see etc/mc_rtc.yaml for an example");
@@ -19,9 +20,9 @@ void RobotManager::processGConfig()
 
   mc_rtc::log::info("manager processGConfig 1");
 
-  if(gconfig_.config.has("Default"))
+  if(gconfig.config.has("Default"))
   {
-    mc_rtc::Configuration dc = gconfig_.config("Default");
+    mc_rtc::Configuration dc = gconfig.config("Default");
     user_default_.module = dc("module", std::string(user_default_.module));
     user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
     user_default_.driver = dc("driver", std::string(user_default_.driver));
@@ -31,10 +32,10 @@ void RobotManager::processGConfig()
 
   mc_rtc::log::info("manager processGConfig 2");
 
-  mc_rtc::Configuration robots_config = gconfig_.config("Robots");
+  mc_rtc::Configuration robots_config = gconfig.config("Robots");
   for(auto & robot_name : robots_config.keys())
   {
-    mc_rtc::Configuration robot_config{gconfig_.config("Robots")(robot_name)};
+    mc_rtc::Configuration robot_config{gconfig.config("Robots")(robot_name)};
 
     if(robot_config.has("base"))
     {
@@ -83,9 +84,6 @@ void RobotManager::processGConfig()
     {
       mc_rtc::log::error_and_throw("No `network` section in the configuration of robot {}", robot_name);
     }
-
-    mc_rtc::log::info("{}", robot_name);
-    mc_rtc::log::info("{}", robot_config.dump(true, true));
   }
 
   mc_rtc::log::info("manager processGConfig done");
@@ -104,7 +102,18 @@ void RobotManager::init()
     robot_interface_factory_.addRobotInterface(robot_name, robot_config, network_interface_factory_);
   }
 
-  // TODO: start NetworkInterfaceSever
+  // const char * homeDir = std::getenv("HOME");
+  // std::string keyPath = std::string(homeDir) + "/workspace/sandbox/mc_robot_manager/CMakeLists.txt";
+  // key_t key = ftok(keyPath.c_str(), 100);
+  // // Get the Shared Memory Segment ID. Initialise the shared memory with 0600 permissions.
+  // shmid_ = shmget(key, sizeof(mc_network::Message), 0666 | IPC_CREAT);
+  // if(shmid_ == -1)
+  // {
+  //   mc_rtc::log::info("keyPath {}", keyPath);
+  //   std::string error_msg = "shmget failed: " + std::string(strerror(errno));
+  //   mc_rtc::log::error_and_throw("Error creating shared memory");
+  // }
+  // mc_rtc::log::success("Shared memory successfully created shmid {}", shmid_);
 
   mc_rtc::log::info("manager init done");
 }

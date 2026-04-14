@@ -38,6 +38,11 @@ public:
                          const mc_rtc::Configuration & config,
                          mc_network::NetworkInterfaceFactory & network_interface_factory);
 
+  const std::unordered_map<std::string, std::unique_ptr<RobotInterface>> & robotInterfaces() const
+  {
+    return robot_interfaces_;
+  }
+
 private:
   std::unordered_map<std::string, std::unique_ptr<RobotInterface>> robot_interfaces_;
 };

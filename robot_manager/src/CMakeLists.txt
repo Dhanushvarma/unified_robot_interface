@@ -1,32 +1,29 @@
 # Network Interface
 set(NETWORK_INTERFACE_SRC
     mc_network_interface/NetworkInterfaceFactory.cpp
-    mc_network_interface/TcpNetworkInterface.cpp
-    mc_network_interface/UdpNetworkInterface.cpp
-    mc_network_interface/ZenohNetworkInterface.cpp
+    mc_network_interface/NetworkInterfaceTcp.cpp
+    mc_network_interface/NetworkInterfaceUdp.cpp
+    mc_network_interface/NetworkInterfaceZenoh.cpp
 )
 
 add_library(mc_network_interface SHARED ${NETWORK_INTERFACE_SRC})
-add_library(
-  mc_network_interface::mc_network_interface ALIAS mc_network_interface
-)
+add_library(${PROJECT_NAME}::network_interface ALIAS mc_network_interface)
 
 target_link_libraries(mc_network_interface PUBLIC mc_rtc::mc_control)
 
 target_include_directories(
-  mc_network_interface PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-                              $<INSTALL_INTERFACE:include>
+  mc_network_interface
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+         $<INSTALL_INTERFACE:include>
 )
 
 # Robot Interface
-find_package(ur_rtde REQUIRED)
-
 set(INTERFACE_SRC mc_robot_interface/RobotInterfaceFactory.cpp
                   mc_robot_interface/RobotInterfaceUR.cpp
 )
 
 add_library(mc_robot_interface SHARED ${INTERFACE_SRC})
-add_library(mc_rtc::mc_robot_interface ALIAS mc_robot_interface)
+add_library(${PROJECT_NAME}::robot_interface ALIAS mc_robot_interface)
 
 target_link_libraries(
   mc_robot_interface PUBLIC mc_rtc::mc_control mc_network_interface
@@ -34,8 +31,9 @@ target_link_libraries(
 )
 
 target_include_directories(
-  mc_robot_interface PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-                            $<INSTALL_INTERFACE:include>
+  mc_robot_interface
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+         $<INSTALL_INTERFACE:include>
 )
 
 # Robot Manager
@@ -44,27 +42,32 @@ set(ROBOT_MANAGER_SRC mc_robot_manager/Fleet.cpp
 )
 
 add_library(mc_robot_manager SHARED ${ROBOT_MANAGER_SRC})
-add_library(mc_fleet::mc_robot_manager ALIAS mc_robot_manager)
+add_library(${PROJECT_NAME}::robot_manager ALIAS mc_robot_manager)
 
 target_link_libraries(
   mc_robot_manager PUBLIC mc_rtc::mc_control mc_network_interface
 )
 
 target_include_directories(
-  mc_robot_manager PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-                          $<INSTALL_INTERFACE:include>
+  mc_robot_manager
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+         $<INSTALL_INTERFACE:include>
 )
 
 # Install all libraries
 install(
   TARGETS mc_robot_interface mc_network_interface mc_robot_manager
-  EXPORT "${TARGETS_EXPORT_NAME}"
+  EXPORT "${PROJECT_NAME}Targets"
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
 
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION include)
+install(
+  EXPORT "${PROJECT_NAME}Targets" FILE "${PROJECT_NAME}Targets.cmake" NAMESPACE
+                                  ${PROJECT_NAME}::
+  DESTINATION lib/cmake/${PROJECT_NAME}
+)
 
 # Executable
 add_executable(MCFleetControl mc_robot_manager/main.cpp)

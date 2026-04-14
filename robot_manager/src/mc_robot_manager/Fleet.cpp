@@ -9,6 +9,7 @@
 namespace po = boost::program_options;
 
 #include <iostream>
+#include <sys/shm.h>
 
 namespace mc_fleet
 {
@@ -17,6 +18,11 @@ void run(void * data, const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("fleet run start");
   std::unique_ptr<RobotManager> robot_manager{static_cast<RobotManager *>(data)};
+
+  while(!interrupt)
+  {
+  }
+
   mc_rtc::log::info("fleet run done");
 }
 
@@ -25,13 +31,11 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
   mc_rtc::log::success("fleet init start");
 
   std::string conf_file;
-  std::string testing_string;
   po::options_description desc("MCFleetControl options");
   // clang-format off
    desc.add_options()
     ("help,h", "Display help message")
-    ("conf,f", po::value<std::string>(&conf_file), "Configuration file")
-    ("test,t", po::value<std::string>(&testing_string), "Configuration file");
+    ("conf,f", po::value<std::string>(&conf_file), "Configuration file");
   // clang-format on
 
   po::variables_map vm;

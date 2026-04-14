@@ -1,6 +1,9 @@
 #include <mc_rtc/logging.h>
 #include <mc_robot_manager/Fleet.h>
 
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+
 #include <atomic>
 #include <cerrno>
 #include <csignal>

@@ -6,7 +6,7 @@
 namespace mc_rtde
 {
 
-struct RobotInterfaceUR : public mc_robot::RobotInterface
+class RobotInterfaceUR : public mc_robot::RobotInterface
 {
 
 public:

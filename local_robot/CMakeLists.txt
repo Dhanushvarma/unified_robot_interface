@@ -1,39 +1,43 @@
 cmake_minimum_required(VERSION 3.14)
 
-set(PROJECT_NAME mc_robot_interface)
+# Project Name
+set(PROJECT_NAME mc_local)
 set(PROJECT_VERSION 1.0.0)
-set(CXX_DISABLE_WERROR 1)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# Add RPATH settings HERE (before project())
-set(CMAKE_SKIP_BUILD_RPATH FALSE)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
 project(
   ${PROJECT_NAME}
   LANGUAGES CXX
   VERSION ${PROJECT_VERSION}
 )
 
-option(BUILD_TESTING "Build tests" OFF)
+set(CXX_DISABLE_WERROR 1)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(NOT TARGET mc_rtc::mc_control)
-  find_package(mc_rtc REQUIRED)
-endif()
+# RPATH settings
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-include_directories(${CMAKE_SOURCE_DIR}/include)
+# Dependencies
+find_package(mc_fleet REQUIRED)
+find_package(mc_rtc REQUIRED)
+find_package(Boost REQUIRED COMPONENTS program_options thread)
+# find_package(Threads REQUIRED)
+
+# Add Subdirectories
+include_directories(include)
 add_subdirectory(src)
 
-if(BUILD_TESTING)
-  enable_testing()
-  add_subdirectory(tests)
-endif()
+install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
+
+# # Optional Testing
+# option(BUILD_TESTING "Build tests" OFF)
+# if(BUILD_TESTING)
+#   enable_testing()
+# endif()
 
 message(STATUS "")
 message(STATUS "Configuration Summary:")

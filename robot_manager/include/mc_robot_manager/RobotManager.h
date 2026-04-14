@@ -19,18 +19,20 @@ struct DefaultConfig
   std::string network_protocol{};
 };
 
-struct RobotManager
+class RobotManager
 {
+public:
+  RobotManager();
   // TODO: include gcontroller_ instead
   RobotManager(mc_control::MCGlobalController::GlobalConfiguration & gconfig) : gconfig_(gconfig)
   {
-    processGConfig();
+    processGConfig(gconfig_);
     // gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig);
 
     init();
   };
 
-  void processGConfig();
+  void processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig);
 
   void init();
 
@@ -43,7 +45,7 @@ private:
   mc_network::NetworkInterfaceFactory network_interface_factory_{};
   mc_robot::RobotInterfaceFactory robot_interface_factory_{};
 
-  mc_network::NetworkInterfaceSever network_interface_server_;
+  // mc_network::NetworkInterfaceSever network_interface_server_;
 
   // TODO idea here is to have a thread for each network we are lauching for each robot
   // Would be nice to consider the case where robot are sharing the same timestep and protocol

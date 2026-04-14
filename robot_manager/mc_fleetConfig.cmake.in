@@ -1,0 +1,12 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# Find dependencies that mc_fleet needs
+find_dependency(mc_rtc REQUIRED)
+find_dependency(ur_rtde REQUIRED)
+
+# Include the targets file
+include("${CMAKE_CURRENT_LIST_DIR}/mc_fleetTargets.cmake")
+
+check_required_components(mc_fleet)

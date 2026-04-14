@@ -10,20 +10,21 @@ namespace mc_robot
 class RobotInterface
 {
 public:
+  RobotInterface() {};
+
   RobotInterface(std::string name, mc_rtc::Configuration config, uint8_t buffer_size)
   : name_(std::move(name)), config_(std::move(config)), dt_(config_("controller")("time_step")),
     protocol_(config_("network")("protocol")), ip_(config_("network")("ip")), port_(config_("network")("port")),
-    buffer_size_(buffer_size)
-  {
-    mc_rtc::log::info("name_ {}", name_);
-    mc_rtc::log::info("dt_ {}", dt_);
-    mc_rtc::log::info("protocol_ {}", protocol_);
-    mc_rtc::log::info("ip_ {}", ip_);
-    mc_rtc::log::info("port_ {}", port_);
-    mc_rtc::log::info("buffer_size_ {}", buffer_size_);
+    buffer_size_(buffer_size) {
+      // mc_rtc::log::info("name_ {}", name_);
+      // mc_rtc::log::info("dt_ {}", dt_);
+      // mc_rtc::log::info("protocol_ {}", protocol_);
+      // mc_rtc::log::info("ip_ {}", ip_);
+      // mc_rtc::log::info("port_ {}", port_);
+      // mc_rtc::log::info("buffer_size_ {}", buffer_size_);
 
-    mc_rtc::log::info("config_ {}", config_.dump(true, true));
-  };
+      // mc_rtc::log::info("config_ {}", config_.dump(true, true));
+    };
 
   virtual ~RobotInterface() = default;
   RobotInterface(const RobotInterface &) = delete;
@@ -82,7 +83,7 @@ private:
   const std::string name_{};
   const mc_rtc::Configuration config_{};
   const double dt_{};
-  // const std::unique_ptr<mc_network_interface::NetworkInterface> network_interface_{};
+  // std::unique_ptr<mc_network_interface::NetworkInterface> network_interface_{};
   const std::string protocol_{};
   const std::string ip_{};
   const uint16_t port_{};

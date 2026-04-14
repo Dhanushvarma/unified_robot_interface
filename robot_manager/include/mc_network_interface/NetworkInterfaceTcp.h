@@ -11,8 +11,7 @@ namespace mc_network
 
 struct NetworkInterfaceTcp : public NetworkInterface
 {
-  NetworkInterfaceTcp(const std::string & name, const std::string & ip, const uint16_t & port)
-  : NetworkInterface(name, ip, port)
+  NetworkInterfaceTcp(const std::string & name, const mc_rtc::Configuration & config) : NetworkInterface(name, config)
   {
     mc_rtc::log::success("network Tcp start");
 

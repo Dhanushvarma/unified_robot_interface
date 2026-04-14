@@ -10,7 +10,7 @@
 namespace mc_network
 {
 
-void NetworkInterfaceFactory::addNetworkInterface(const std::string & name, const mc_rtc::Configuration & config)
+bool NetworkInterfaceFactory::addNetworkInterface(const std::string & name, const mc_rtc::Configuration & config)
 {
   mc_rtc::log::success("network addNetworkInterface start");
 
@@ -23,10 +23,7 @@ void NetworkInterfaceFactory::addNetworkInterface(const std::string & name, cons
 
   if(protocol == "tcp")
   {
-    const std::string ip = config("network")("ip");
-    const uint16_t port = config("network")("port");
-
-    auto new_client = std::make_unique<mc_network::NetworkInterfaceTcp>(name, ip, port);
+    auto new_client = std::make_unique<mc_network::NetworkInterfaceTcp>(name, config);
     auto [it, success] = network_interfaces_.try_emplace(name, std::move(new_client));
     if(!success)
     {
@@ -36,9 +33,12 @@ void NetworkInterfaceFactory::addNetworkInterface(const std::string & name, cons
   else
   {
     mc_rtc::log::warning("Network protocol {} is not supported", protocol);
+    return false;
   }
 
   mc_rtc::log::info("network addNetworkInterface done");
+
+  return true;
 }
 
 } // namespace mc_network
