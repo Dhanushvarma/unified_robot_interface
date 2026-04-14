@@ -3,10 +3,10 @@
 #include <mc_robot_interface/RobotDriverRTDE.h>
 #include <mc_robot_interface/RobotInterface.h>
 
-namespace mc_robot
+namespace mc_rtde
 {
 
-struct RobotInterfaceUR : public RobotInterface
+struct RobotInterfaceUR : public mc_robot::RobotInterface
 {
 
 public:
@@ -19,4 +19,4 @@ public:
   void updateControl() override {}
 };
 
-} // namespace mc_robot
+} // namespace mc_rtde

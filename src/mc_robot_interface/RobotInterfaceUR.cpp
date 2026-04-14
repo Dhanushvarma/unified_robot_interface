@@ -1,6 +1,6 @@
 #include <mc_robot_interface/RobotInterfaceUR.h>
 
-namespace mc_robot
+namespace mc_rtde
 {
 
 RobotInterfaceUR::RobotInterfaceUR(const std::string & name, const mc_rtc::Configuration & config, uint8_t buffer_size)
@@ -17,4 +17,4 @@ RobotInterfaceUR::RobotInterfaceUR(const std::string & name, const mc_rtc::Confi
   }
 };
 
-} // namespace mc_robot
+} // namespace mc_rtde

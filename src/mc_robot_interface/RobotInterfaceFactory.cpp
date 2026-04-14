@@ -19,9 +19,10 @@ void RobotInterfaceFactory::addRobotInterface(const std::string & name,
 
     /* Initialize network */
     // Ensure network compatibility before additional initialization
+    // TODO: potentially this coupled behaviour need to change
     network_interface_factory.addNetworkInterface(name, config);
 
-    auto new_robot = std::make_unique<RobotInterfaceUR>(name, config);
+    auto new_robot = std::make_unique<mc_rtde::RobotInterfaceUR>(name, config);
     auto [it, success] = robot_interfaces_.try_emplace(name, std::move(new_robot));
     if(!success)
     {
