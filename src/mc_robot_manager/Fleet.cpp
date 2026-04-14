@@ -16,6 +16,7 @@ namespace mc_fleet
 void run(void * data, const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("fleet run start");
+  std::unique_ptr<RobotManager> robot_manager{static_cast<RobotManager *>(data)};
   mc_rtc::log::info("fleet run done");
 }
 
@@ -48,14 +49,13 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
 
   /* Initialize robot manager */
   mc_control::MCGlobalController::GlobalConfiguration gconfig(conf_file, nullptr);
-  auto * robot_manager = new RobotManager(gconfig);
+  auto robot_manager = std::make_unique<RobotManager>(gconfig);
 
   // TODO: start network - server
 
   mc_rtc::log::info("fleet init done");
 
-  static int dummy_success_flag = 42;
-  return &dummy_success_flag;
+  return robot_manager.release();
 }
 
 } // namespace mc_fleet

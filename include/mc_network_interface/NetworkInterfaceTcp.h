@@ -2,6 +2,8 @@
 
 #include <mc_network_interface/NetworkInterface.h>
 
+#include <mc_rtc/logging.h>
+
 #include <string>
 
 namespace mc_network
@@ -14,9 +16,9 @@ struct NetworkInterfaceTcp : public NetworkInterface
   {
     mc_rtc::log::success("network Tcp start");
 
-    mc_rtc::log::info("name {}", name_);
-    mc_rtc::log::info("ip {}", ip_);
-    mc_rtc::log::info("port {}", port_);
+    mc_rtc::log::info("name {}", NetworkInterface::name());
+    mc_rtc::log::info("ip {}", NetworkInterface::ip());
+    mc_rtc::log::info("port {}", NetworkInterface::port());
 
     mc_rtc::log::info("network Tcp done");
   };

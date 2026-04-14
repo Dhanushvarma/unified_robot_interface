@@ -43,7 +43,7 @@ private:
   mc_network::NetworkInterfaceFactory network_interface_factory_{};
   mc_robot::RobotInterfaceFactory robot_interface_factory_{};
 
-  mc_network::NetworkInterfaceSever network_interface_server;
+  mc_network::NetworkInterfaceSever network_interface_server_;
 
   // TODO idea here is to have a thread for each network we are lauching for each robot
   // Would be nice to consider the case where robot are sharing the same timestep and protocol

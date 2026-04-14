@@ -45,8 +45,8 @@ int main(int argc, char * argv[])
   }
 
   /* Initialize callback (non real-time yet) */
-  void * data = mc_fleet::init(argc, argv, cycle_ns, interrupt);
-  if(data == nullptr)
+  void * robot_manager = mc_fleet::init(argc, argv, cycle_ns, interrupt);
+  if(robot_manager == nullptr)
   {
     mc_rtc::log::error("Initialization failed");
     return -2;
@@ -55,7 +55,7 @@ int main(int argc, char * argv[])
   mc_rtc::log::info("Running thread at {}ms per cycle", double(cycle_ns) / 1e6);
 
   /* Run */
-  mc_fleet::run(data, interrupt);
+  mc_fleet::run(robot_manager, interrupt);
 
   return 0;
 }

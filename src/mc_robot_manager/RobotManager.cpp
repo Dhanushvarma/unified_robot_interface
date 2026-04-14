@@ -109,18 +109,4 @@ void RobotManager::init()
   mc_rtc::log::info("manager init done");
 }
 
-// void RobotManager::initRobots()
-// {
-//   mc_rtc::log::success("manager initRobots start");
-
-//   mc_rtc::Configuration robots_config = gcontroller_->configuration().config("Robots");
-//   for(auto & robot_name : robots_config.keys())
-//   {
-//     mc_rtc::Configuration robot_config{robots_config(robot_name)};
-//     robot_interface_factory_.addRobotInterface(robot_name, robot_config);
-//   }
-
-//   mc_rtc::log::info("manager initRobots done");
-// }
-
 } // namespace mc_fleet

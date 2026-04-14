@@ -9,7 +9,7 @@
 namespace mc_rtc
 {
 
-struct RobotDriver
+class RobotDriver
 {
 public:
   RobotDriver(const std::string & ip, const uint16_t & port = 0)
@@ -83,9 +83,6 @@ public:
   {
     return false;
   }
-
-protected:
-  std::string name_ = "template";
 };
 
 } // namespace mc_rtc
