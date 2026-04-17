@@ -9,7 +9,9 @@ namespace mc_network
 
 struct NetworkInterfaceFactory
 {
-  bool addNetworkInterface(const std::string & name, const mc_rtc::Configuration & config);
+  std::unique_ptr<NetworkInterface> makeNetworkInterface(const mc_rtc::Configuration & config);
+
+  void addNetworkInterface(const std::string & name, const std::unique_ptr<NetworkInterface> network);
 
   const std::unordered_map<std::string, std::unique_ptr<mc_network::NetworkInterface>> & networkInterfaces() const
   {

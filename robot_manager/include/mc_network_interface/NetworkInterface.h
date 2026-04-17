@@ -9,78 +9,55 @@
 namespace mc_network
 {
 
-struct InitMessage
+struct MessageConfig
 {
   bool read = true;
-  char name[100];
-  char config[4096];
+  std::string name;
+  mc_rtc::Configuration config;
 };
 
-struct Message
+struct MessageState
 {
-  pthread_mutex_t mutex;
-  bool read = true;
-  double command[100];
+  std::vector<double> state;
+};
+
+struct MessageCommand
+{
+  std::vector<double> command;
 };
 
 class NetworkInterface
 {
 public:
-  NetworkInterface(std::string name, const mc_rtc::Configuration & config)
-  : name_(std::move(name)), ip_(config("network")("ip")), port_(config("network")("port"))
-  {
-    const char * homeDir = std::getenv("HOME");
-    std::string keyPath = std::string(homeDir) + "/workspace/sandbox/mc_robot_manager/CMakeLists.txt";
-    key_t key = ftok(keyPath.c_str(), 99);
-    shmid_ = shmget(key, sizeof(mc_network::InitMessage), 0666 | IPC_CREAT);
-    if(shmid_ == -1)
-    {
-      mc_rtc::log::info("keyPath {}", keyPath);
-      std::string error_msg = "shmget failed: " + std::string(strerror(errno));
-      mc_rtc::log::error_and_throw("Error creating shared memory");
-    }
-    mc_rtc::log::success("Shared memory successfully created shmid_ {}", shmid_);
+  // TODO: move NetworkInterface() here
+  // Look for ../etc/network.yaml
+  NetworkInterface() : NetworkInterface(mc_rtc::Configuration("../etc/network.yaml")) {};
 
-    InitMessage * init_message = (InitMessage *)shmat(shmid_, NULL, 0);
-    if(init_message == (void *)-1)
-    {
-      mc_rtc::log::error_and_throw("Error attaching shared memory");
-    }
-
-    strncpy(init_message->name, name_.c_str(), sizeof(init_message->name) - 1);
-    std::string dump = config.dump();
-    strncpy(init_message->config, dump.c_str(), sizeof(init_message->config) - 1);
-    init_message->read = false;
-
-    shmdt(init_message);
-  }
-
-  ~NetworkInterface()
-  {
-    shmctl(shmid_, IPC_RMID, nullptr);
-  }
+  NetworkInterface(const mc_rtc::Configuration & network_config)
+  : ip_(network_config("ip")), ports_(network_config("port")) {};
 
 protected:
-  // Accessors for derived classes
-  [[nodiscard]] const std::string & name() const
-  {
-    return name_;
-  }
   [[nodiscard]] const std::string & ip() const
   {
     return ip_;
   }
-  [[nodiscard]] uint16_t port() const
+  [[nodiscard]] std::vector<uint16_t> ports() const
   {
-    return port_;
+    return ports_;
+  }
+  [[nodiscard]] uint16_t port(const std::string & category) const
+  {
+    if(category == "config")
+      return ports_[0];
+    else if(category == "state")
+      return ports_[1];
+    else
+      return ports_[2];
   }
 
 private:
-  int shmid_;
-
-  const std::string name_;
   const std::string ip_;
-  uint16_t port_;
+  std::vector<uint16_t> ports_;
 };
 
 } // namespace mc_network

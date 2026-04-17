@@ -33,16 +33,9 @@ Robots:
     init_pos:
       translation: [0.0, 1.5, 0.0]
 
-  ur5e1:
-    module: ur5e
-    controller:
-      driver: ur_rtde
+  local_robot:
+    module: local_robot
     network:
-      ip: "111.111.1.1"
-      port: 10000
-
-  ur5e2:
-    base: ur5e1
-    network:
-      protocol: "udp"
-      ip: "222.222.2.2"
+      protocol: shm
+      ip: /workspace/sandbox/mc_robot_manager/
+      port: [1, 2, 3]

@@ -34,9 +34,7 @@ public:
    * @param name
    * @param config
    */
-  void addRobotInterface(const std::string & name,
-                         const mc_rtc::Configuration & config,
-                         mc_network::NetworkInterfaceFactory & network_interface_factory);
+  void addRobotInterface(const std::string & name, const mc_rtc::Configuration & config);
 
   const std::unordered_map<std::string, std::unique_ptr<RobotInterface>> & robotInterfaces() const
   {

@@ -93,27 +93,20 @@ void RobotManager::init()
 {
   mc_rtc::log::success("manager init start");
 
-  /* Check compatibility*/
   mc_rtc::Configuration robots_config = gconfig_.config("Robots");
+  mc_rtc::log::info(robots_config.dump(true, true));
   mc_rtc::log::info("manager init 1");
+
   for(auto & robot_name : robots_config.keys())
   {
     mc_rtc::Configuration robot_config{robots_config(robot_name)};
-    robot_interface_factory_.addRobotInterface(robot_name, robot_config, network_interface_factory_);
-  }
+    // robot_interface_factory_.makeRobotInterface(robot_name, robot_config);
+    // robot_interface_factory_.addRobotInterface(robot_name, robot_config);
 
-  // const char * homeDir = std::getenv("HOME");
-  // std::string keyPath = std::string(homeDir) + "/workspace/sandbox/mc_robot_manager/CMakeLists.txt";
-  // key_t key = ftok(keyPath.c_str(), 100);
-  // // Get the Shared Memory Segment ID. Initialise the shared memory with 0600 permissions.
-  // shmid_ = shmget(key, sizeof(mc_network::Message), 0666 | IPC_CREAT);
-  // if(shmid_ == -1)
-  // {
-  //   mc_rtc::log::info("keyPath {}", keyPath);
-  //   std::string error_msg = "shmget failed: " + std::string(strerror(errno));
-  //   mc_rtc::log::error_and_throw("Error creating shared memory");
-  // }
-  // mc_rtc::log::success("Shared memory successfully created shmid {}", shmid_);
+    std::unique_ptr<mc_network::NetworkInterface> network =
+        network_interface_factory_.makeNetworkInterface(robot_config);
+    network_interface_factory_.addNetworkInterface(robot_name, std::move(network));
+  }
 
   mc_rtc::log::info("manager init done");
 }
