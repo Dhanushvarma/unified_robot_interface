@@ -45,6 +45,15 @@ public:
   // TODO: use loadConfig instead of constructor to process
   void loadConfig(const mc_rtc::Configuration & config);
 
+  void setDriver(std::unique_ptr<mc_rtc::RobotDriver> driver)
+  {
+    driver_ = std::move(driver);
+  }
+  void setNetwork(std::unique_ptr<mc_network::NetworkInterface> network)
+  {
+    network_ = std::move(network);
+  }
+
 protected:
   [[nodiscard]] const std::string & name() const
   {
@@ -70,11 +79,6 @@ protected:
   {
     return *network_;
   }
-
-  // void setDriver(std::unique_ptr<mc_rtc::RobotDriver> driver)
-  // {
-  //   driver_ = std::move(driver);
-  // }
 
 private:
   mutable std::mutex update_sensor_mtx_{};

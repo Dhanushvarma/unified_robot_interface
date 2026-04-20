@@ -8,38 +8,20 @@
 namespace mc_network
 {
 
-std::unique_ptr<NetworkInterface> NetworkInterfaceFactory::makeNetworkInterface(const mc_rtc::Configuration & config)
+std::unique_ptr<NetworkInterface> NetworkInterfaceFactory::makeNetwork(const mc_rtc::Configuration & network_config)
 {
-  mc_rtc::log::success("network addNetworkInterface start");
-
-  const mc_rtc::Configuration network_config = config("network");
+  mc_rtc::log::success("makeNetwork start");
   const std::string protocol = network_config("protocol");
-
-  std::unique_ptr<NetworkInterface> network;
 
   mc_rtc::log::info("network addNetworkInterface 1");
 
   if(protocol == "shm")
   {
-    network = std::make_unique<NetworkInterfaceShm>(network_config);
-  }
-  // else if(protocol == "shm")
-  // {
-  //   network = std::make_unique<mc_network::NetworkInterfaceShm>(name, config);
-  //   //   auto [it, success] = network_interfaces_.try_emplace(name, std::move(network));
-  //   //   if(!success)
-  //   //   {
-  //   //     mc_rtc::log::warning("Network for robot {} already exists", name);
-  //   //   }
-  // }
-  else
-  {
-    mc_rtc::log::warning("Network protocol {} is not supported", protocol);
+    return std::make_unique<NetworkInterfaceShm>(network_config);
   }
 
-  mc_rtc::log::info("network addNetworkInterface done");
-
-  return network;
+  mc_rtc::log::error("Network protocol {} is not supported", protocol);
+  return nullptr;
 }
 
 void NetworkInterfaceFactory::addNetworkInterface(const std::string & name, std::unique_ptr<NetworkInterface> network)

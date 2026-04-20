@@ -11,7 +11,7 @@ struct NetworkInterfaceFactory
 {
   void checkCompatibility();
 
-  std::unique_ptr<NetworkInterface> makeNetworkInterface(const mc_rtc::Configuration & config);
+  std::unique_ptr<NetworkInterface> makeNetwork(const mc_rtc::Configuration & config);
 
   void addNetworkInterface(const std::string & name, const std::unique_ptr<NetworkInterface> network);
 

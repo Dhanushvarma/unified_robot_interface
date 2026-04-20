@@ -41,7 +41,7 @@ std::unique_ptr<RobotInterface> RobotInterfaceFactory::makeInterface(const std::
     return std::make_unique<mc_interface_template::InterfaceTemplate>(name, config, buffer_size);
   }
 
-  mc_rtc::log::warning("Robot module {} is not supported", module);
+  mc_rtc::log::error("Robot module {} is not supported", module);
   return nullptr;
 }
 
