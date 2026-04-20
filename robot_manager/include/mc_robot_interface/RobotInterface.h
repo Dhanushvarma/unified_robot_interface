@@ -2,6 +2,8 @@
 
 #include <mc_rtc/Configuration.h>
 
+#include <mc_network_interface/NetworkInterface.h>
+#include <mc_network_interface/NetworkInterfaceFactory.h>
 #include <mc_robot_interface/RobotDriver.h>
 
 namespace mc_robot
@@ -14,17 +16,15 @@ public:
 
   RobotInterface(std::string name, mc_rtc::Configuration config, uint8_t buffer_size)
   : name_(std::move(name)), config_(std::move(config)), dt_(config_("controller")("time_step")),
-    protocol_(config_("network")("protocol")), ip_(config_("network")("ip")), port_(config_("network")("port")),
-    buffer_size_(buffer_size) {
-      // mc_rtc::log::info("name_ {}", name_);
-      // mc_rtc::log::info("dt_ {}", dt_);
-      // mc_rtc::log::info("protocol_ {}", protocol_);
-      // mc_rtc::log::info("ip_ {}", ip_);
-      // mc_rtc::log::info("port_ {}", port_);
-      // mc_rtc::log::info("buffer_size_ {}", buffer_size_);
+    buffer_size_(buffer_size) {};
+  // mc_rtc::log::info("name_ {}", name_);
+  // mc_rtc::log::info("dt_ {}", dt_);
+  // mc_rtc::log::info("protocol_ {}", protocol_);
+  // mc_rtc::log::info("ip_ {}", ip_);
+  // mc_rtc::log::info("port_ {}", port_);
+  // mc_rtc::log::info("buffer_size_ {}", buffer_size_);
 
-      // mc_rtc::log::info("config_ {}", config_.dump(true, true));
-    };
+  // mc_rtc::log::info("config_ {}", config_.dump(true, true));
 
   virtual ~RobotInterface() = default;
   RobotInterface(const RobotInterface &) = delete;
@@ -54,27 +54,27 @@ protected:
   {
     return config_;
   }
-  [[nodiscard]] double dt() const
+  [[nodiscard]] const double dt() const
   {
     return dt_;
   }
-  [[nodiscard]] const std::string & protocol() const
+  [[nodiscard]] const uint8_t buffer_size() const
   {
-    return protocol_;
+    return buffer_size_;
   }
-  [[nodiscard]] const std::string & ip() const
+  [[nodiscard]] mc_rtc::RobotDriver & driver()
   {
-    return ip_;
+    return *driver_;
   }
-  [[nodiscard]] uint16_t port() const
+  [[nodiscard]] mc_network::NetworkInterface & network()
   {
-    return port_;
+    return *network_;
   }
 
-  void setDriver(std::unique_ptr<mc_rtc::RobotDriver> driver)
-  {
-    driver_ = std::move(driver);
-  }
+  // void setDriver(std::unique_ptr<mc_rtc::RobotDriver> driver)
+  // {
+  //   driver_ = std::move(driver);
+  // }
 
 private:
   mutable std::mutex update_sensor_mtx_{};
@@ -83,14 +83,15 @@ private:
   const std::string name_{};
   const mc_rtc::Configuration config_{};
   const double dt_{};
-  // std::unique_ptr<mc_network_interface::NetworkInterface> network_interface_{};
-  const std::string protocol_{};
-  const std::string ip_{};
-  const uint16_t port_{};
-  uint8_t buffer_size_{};
+  const uint8_t buffer_size_{};
+  // const uint16_t port_{};
+
+  std::vector<double> state_{};
+  std::vector<double> command_{};
 
   // TODO: control mode ?
   std::unique_ptr<mc_rtc::RobotDriver> driver_{};
+  std::unique_ptr<mc_network::NetworkInterface> network_{};
 
   /**
    * @brief Method in charge of robot sensors and commands update

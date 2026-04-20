@@ -5,7 +5,9 @@
 
 #include <mc_control/mc_global_controller.h>
 
+#include <string>
 #include <thread>
+#include <unordered_map>
 
 namespace mc_fleet
 {
@@ -42,10 +44,10 @@ private:
   std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
   mc_control::MCGlobalController::GlobalConfiguration gconfig_;
 
-  mc_network::NetworkInterfaceFactory network_interface_factory_{};
-  mc_robot::RobotInterfaceFactory robot_interface_factory_{};
+  mc_network::NetworkInterfaceFactory network_factory_{};
+  mc_robot::RobotInterfaceFactory interface_factory_{};
 
-  // mc_network::NetworkInterfaceSever network_interface_server_;
+  std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterface>> interfaces_{};
 
   // TODO idea here is to have a thread for each network we are lauching for each robot
   // Would be nice to consider the case where robot are sharing the same timestep and protocol

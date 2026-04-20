@@ -97,15 +97,17 @@ void RobotManager::init()
   mc_rtc::log::info(robots_config.dump(true, true));
   mc_rtc::log::info("manager init 1");
 
+  /* Set up robot interface and network*/
   for(auto & robot_name : robots_config.keys())
   {
     mc_rtc::Configuration robot_config{robots_config(robot_name)};
-    // robot_interface_factory_.makeRobotInterface(robot_name, robot_config);
-    // robot_interface_factory_.addRobotInterface(robot_name, robot_config);
 
-    std::unique_ptr<mc_network::NetworkInterface> network =
-        network_interface_factory_.makeNetworkInterface(robot_config);
-    network_interface_factory_.addNetworkInterface(robot_name, std::move(network));
+    std::unique_ptr<mc_robot::RobotInterface> interface = interface_factory_.makeInterface(robot_name, robot_config);
+    auto [it, success] = interfaces_.try_emplace(robot_name, std::move(interface));
+    if(!success)
+    {
+      mc_rtc::log::error("Interface for robot {} already exists", robot_name);
+    }
   }
 
   mc_rtc::log::info("manager init done");

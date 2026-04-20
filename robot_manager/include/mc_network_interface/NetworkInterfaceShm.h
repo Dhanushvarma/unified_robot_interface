@@ -38,17 +38,25 @@ public:
   NetworkInterfaceShm(const mc_rtc::Configuration & network_config);
   ~NetworkInterfaceShm();
 
+  // Send messages
   void sendMessage(const MessageConfigShm & msg);
   void sendMessage(const MessageStateShm & msg);
   void sendMessage(const MessageCommandShm & msg);
 
-  void receiveMessage(const MessageConfigShm & msg);
-  void receiveMessage(const MessageStateShm & msg);
-  void receiveMessage(const MessageCommandShm & msg);
+  // Receive messages
+  bool receiveMessage(MessageConfigShm & msg);
+  bool receiveMessage(MessageStateShm & msg);
+  bool receiveMessage(MessageCommandShm & msg);
 
 private:
   template<typename msg>
   void createShmBlock(uint8_t port);
+
+  template<typename msg>
+  void sendMessageImpl(const msg & message, uint8_t port);
+
+  template<typename msg>
+  bool receiveMessageImpl(msg & message, uint8_t port);
 
   std::string keyPath_;
   std::vector<int> shmid_;

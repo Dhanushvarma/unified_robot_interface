@@ -34,7 +34,7 @@ Robots:
       translation: [0.0, 1.5, 0.0]
 
   local_robot:
-    module: local_robot
+    module: interface_template
     network:
       protocol: shm
       ip: /workspace/sandbox/mc_robot_manager/
