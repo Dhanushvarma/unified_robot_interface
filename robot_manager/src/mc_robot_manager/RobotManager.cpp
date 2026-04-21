@@ -119,6 +119,17 @@ void RobotManager::init()
   }
 
   /* Send config to real robots */
+  for(auto & [robot_name, interface] : interfaces_)
+  {
+    mc_rtc::log::info("manager init send config {}", robot_name);
+
+    mc_rtc::log::info("manager init send config 1", robot_name);
+
+    mc_network::MessageConfig messageConfig = {.name = robot_name, .config = interface->config(), .read = false};
+    mc_rtc::log::info("manager init send config 2", robot_name);
+
+    interface->network().sendMessage(messageConfig);
+  }
 
   mc_rtc::log::info("manager init done");
 }

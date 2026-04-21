@@ -12,17 +12,29 @@ NetworkInterfaceShm::NetworkInterfaceShm(const mc_rtc::Configuration & network_c
 
   /* Initialize shared memory blocks*/
   const char * homeDir = std::getenv("HOME");
-  keyPath_ = std::string(homeDir) + NetworkInterface::ip();
-  createShmBlock<MessageConfigShm>(NetworkInterface::port("config"));
-  createShmBlock<MessageStateShm>(NetworkInterface::port("state"));
-  createShmBlock<MessageCommandShm>(NetworkInterface::port("command"));
+  key_path_ = std::string(homeDir) + NetworkInterface::ip();
+  {
+    auto [id, ptr] = createShmBlock<MessageConfigShm>(key_path_, NetworkInterface::ports()["config"]);
+    shm_ids_.push_back(id);
+    shm_map_["config"] = ptr;
+  }
+  {
+    auto [id, ptr] = createShmBlock<MessageStateShm>(key_path_, NetworkInterface::ports()["state"]);
+    shm_ids_.push_back(id);
+    shm_map_["state"] = ptr;
+  }
+  {
+    auto [id, ptr] = createShmBlock<MessageCommandShm>(key_path_, NetworkInterface::ports()["command"]);
+    shm_ids_.push_back(id);
+    shm_map_["command"] = ptr;
+  }
 
   mc_rtc::log::info("network shm done");
 };
 
 NetworkInterfaceShm::~NetworkInterfaceShm()
 {
-  for(void * ptr : shmptr_)
+  for(auto & [type, ptr] : shm_map_)
   {
     if(ptr && ptr != (void *)-1)
     {
@@ -30,85 +42,76 @@ NetworkInterfaceShm::~NetworkInterfaceShm()
     }
   }
 
-  for(int id : shmid_)
+  for(int id : shm_ids_)
   {
     shmctl(id, IPC_RMID, nullptr);
   }
 }
 
-template<typename msg>
-void NetworkInterfaceShm::createShmBlock(uint8_t port)
+void NetworkInterfaceShm::sendMessage(const MessageConfig & msg)
 {
-  key_t key = ftok(keyPath_.c_str(), port);
-  int id = shmget(key, sizeof(msg), 0666 | IPC_CREAT);
-  if(id < 0)
+  mc_rtc::log::success("network shm sendMessage config start");
+
+  /* Convert to shared memory compatible message */
+  MessageConfigShm msgShm;
+
+  size_t nameLen = msg.name.size();
+  if(nameLen > 255)
   {
-    perror("shmget");
-    throw std::runtime_error("shmget failed");
+    mc_rtc::log::info("name: {}", msg.name);
+    mc_rtc::log::error_and_throw("Name is longer than 255 characters");
   }
+  msgShm.name_size = static_cast<uint8_t>(nameLen);
+  std::memcpy(msgShm.name, msg.name.c_str(), nameLen);
+  msgShm.name[nameLen] = '\0'; // Ensure null termination
 
-  void * ptr = shmat(id, nullptr, 0);
-  if(ptr == (void *)-1)
+  mc_rtc::log::info("network shm sendMessage config 1");
+
+  std::string configStr = msg.config.dump();
+  size_t configLen = configStr.size();
+  if(configLen > 4095)
   {
-    shmctl(id, IPC_RMID, nullptr);
-    // TODO: error
+    mc_rtc::log::info("config: {}", configStr);
+    mc_rtc::log::error_and_throw("Config is longer than 4095 characters");
   }
+  msgShm.config_size = static_cast<uint16_t>(configLen);
+  std::memcpy(msgShm.config, configStr.c_str(), configLen);
+  msgShm.config[configLen] = '\0';
 
-  shmid_.push_back(id);
-  shmptr_.push_back(ptr);
+  mc_rtc::log::info("network shm sendMessage config 2");
 
-  mc_rtc::log::success("Shared memory created: port={}, shmid={}", port, id);
-};
+  msgShm.read = msg.read;
 
-void NetworkInterfaceShm::sendMessage(const MessageConfigShm & msg)
-{
-  sendMessageImpl(msg, NetworkInterface::port("config"));
+  mc_rtc::log::info("network shm sendMessage config 3");
+
+  sendMessageImpl(msgShm, "config");
+
+  mc_rtc::log::info("network shm sendMessage config done");
 }
 
-void NetworkInterfaceShm::sendMessage(const MessageStateShm & msg)
+void NetworkInterfaceShm::sendMessage(const MessageState & msg)
 {
-  sendMessageImpl(msg, NetworkInterface::port("state"));
+  sendMessageImpl(msg, "state");
 }
 
-void NetworkInterfaceShm::sendMessage(const MessageCommandShm & msg)
+void NetworkInterfaceShm::sendMessage(const MessageCommand & msg)
 {
-  sendMessageImpl(msg, NetworkInterface::port("command"));
-}
-
-template<typename msg>
-void NetworkInterfaceShm::sendMessageImpl(const msg & message, uint8_t port)
-{
-  msg * dest = static_cast<msg *>(shmptr_[port]);
-  if(dest)
-  {
-    *dest = message;
-  }
+  sendMessageImpl(msg, "command");
 }
 
 bool NetworkInterfaceShm::receiveMessage(MessageConfigShm & msg)
 {
-  return receiveMessageImpl(msg, NetworkInterface::port("config"));
+  return receiveMessageImpl(msg, NetworkInterface::ports()["config"]);
 }
 
 bool NetworkInterfaceShm::receiveMessage(MessageStateShm & msg)
 {
-  return receiveMessageImpl(msg, NetworkInterface::port("state"));
+  return receiveMessageImpl(msg, NetworkInterface::ports()["state"]);
 }
 
 bool NetworkInterfaceShm::receiveMessage(MessageCommandShm & msg)
 {
-  return receiveMessageImpl(msg, NetworkInterface::port("command"));
-}
-
-template<typename msg>
-bool NetworkInterfaceShm::receiveMessageImpl(msg & message, uint8_t port)
-{
-  const msg * src = static_cast<const msg *>(shmptr_[port]);
-  if(src)
-  {
-    message = *src;
-    return true;
-  }
+  return receiveMessageImpl(msg, NetworkInterface::ports()["command"]);
 }
 
 } // namespace mc_network

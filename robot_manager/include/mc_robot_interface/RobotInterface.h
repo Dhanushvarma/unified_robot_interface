@@ -17,14 +17,6 @@ public:
   RobotInterface(std::string name, mc_rtc::Configuration config, uint8_t buffer_size)
   : name_(std::move(name)), config_(std::move(config)), dt_(config_("controller")("time_step")),
     buffer_size_(buffer_size) {};
-  // mc_rtc::log::info("name_ {}", name_);
-  // mc_rtc::log::info("dt_ {}", dt_);
-  // mc_rtc::log::info("protocol_ {}", protocol_);
-  // mc_rtc::log::info("ip_ {}", ip_);
-  // mc_rtc::log::info("port_ {}", port_);
-  // mc_rtc::log::info("buffer_size_ {}", buffer_size_);
-
-  // mc_rtc::log::info("config_ {}", config_.dump(true, true));
 
   virtual ~RobotInterface() = default;
   RobotInterface(const RobotInterface &) = delete;
@@ -54,7 +46,6 @@ public:
     network_ = std::move(network);
   }
 
-protected:
   [[nodiscard]] const std::string & name() const
   {
     return name_;
