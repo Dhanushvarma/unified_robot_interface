@@ -60,7 +60,7 @@ private:
   std::pair<int, void *> createShmBlock(const std::string & path, const int & id);
 
   template<typename msg>
-  void sendMessageImpl(const msg & message, const std::string & category);
+  void sendMessageImpl(const msg & message, const std::string & type);
 
   template<typename msg>
   bool receiveMessageImpl(msg & message, uint8_t port);
@@ -109,20 +109,20 @@ std::pair<int, void *> NetworkInterfaceShm::createShmBlock(const std::string & p
 };
 
 template<typename MessageType>
-void NetworkInterfaceShm::sendMessageImpl(const MessageType & msg, const std::string & category)
+void NetworkInterfaceShm::sendMessageImpl(const MessageType & msg, const std::string & type)
 {
-  mc_rtc::log::success("network shm sendMessageImpl start for category: {}", category);
+  mc_rtc::log::success("network shm sendMessageImpl start for type: {}", type);
 
-  MessageType * dest = static_cast<MessageType *>(shm_map_[category]);
+  MessageType * dest = static_cast<MessageType *>(shm_map_[type]);
 
   if(dest)
   {
     *dest = msg;
-    mc_rtc::log::info("Successfully copied message to SHM for category: {}", category);
+    mc_rtc::log::info("Successfully copied message to SHM for type: {}", type);
   }
   else
   {
-    mc_rtc::log::error("Destination pointer for {} is null", category);
+    mc_rtc::log::error("Destination pointer for {} is null", type);
   }
 
   mc_rtc::log::info("network shm sendMessageImpl done");

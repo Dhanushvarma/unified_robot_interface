@@ -34,17 +34,33 @@ NetworkInterfaceShm::NetworkInterfaceShm(const mc_rtc::Configuration & network_c
 
 NetworkInterfaceShm::~NetworkInterfaceShm()
 {
+  mc_rtc::log::info("Destructor called, cleaning up {} segments", shm_ids_.size());
+
   for(auto & [type, ptr] : shm_map_)
   {
     if(ptr && ptr != (void *)-1)
     {
-      shmdt(ptr);
+      if(shmdt(ptr) == -1)
+      {
+        perror("shmdt failed");
+      }
+      else
+      {
+        mc_rtc::log::info("Detached shmptr {}", ptr);
+      }
     }
   }
 
   for(int id : shm_ids_)
   {
-    shmctl(id, IPC_RMID, nullptr);
+    if(shmctl(id, IPC_RMID, nullptr) == -1)
+    {
+      perror("shmctl failed"); // This will tell you exactly WHY it failed
+    }
+    else
+    {
+      mc_rtc::log::info("Marked shmid {} for destruction", id);
+    }
   }
 }
 
