@@ -49,9 +49,9 @@ public:
   NetworkInterface & operator=(NetworkInterface &&) = delete;
 
   // Send messages
-  virtual void sendMessage(const MessageConfig & msg) = 0;
-  virtual void sendMessage(const MessageState & msg) = 0;
-  virtual void sendMessage(const MessageCommand & msg) = 0;
+  virtual bool sendMessage(const MessageConfig & msg) = 0;
+  virtual bool sendMessage(const MessageState & msg) = 0;
+  virtual bool sendMessage(const MessageCommand & msg) = 0;
 
   // Receive messages
   virtual bool receiveMessage(MessageConfig & msg) = 0;

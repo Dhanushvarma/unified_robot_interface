@@ -64,7 +64,7 @@ NetworkInterfaceShm::~NetworkInterfaceShm()
   }
 }
 
-void NetworkInterfaceShm::sendMessage(const MessageConfig & msg)
+bool NetworkInterfaceShm::sendMessage(const MessageConfig & msg)
 {
   mc_rtc::log::success("network shm sendMessage config start");
 
@@ -79,7 +79,7 @@ void NetworkInterfaceShm::sendMessage(const MessageConfig & msg)
   }
   msgShm.name_size = static_cast<uint8_t>(nameLen);
   std::memcpy(msgShm.name, msg.name.c_str(), nameLen);
-  msgShm.name[nameLen] = '\0'; // Ensure null termination
+  msgShm.name[nameLen] = '\0';
 
   mc_rtc::log::info("network shm sendMessage config 1");
 
@@ -98,21 +98,19 @@ void NetworkInterfaceShm::sendMessage(const MessageConfig & msg)
 
   msgShm.read = msg.read;
 
-  mc_rtc::log::info("network shm sendMessage config 3");
-
-  sendMessageImpl(msgShm, "config");
-
+  /* Send message */
   mc_rtc::log::info("network shm sendMessage config done");
+  return sendMessageImpl(msgShm, "config");
 }
 
-void NetworkInterfaceShm::sendMessage(const MessageState & msg)
+bool NetworkInterfaceShm::sendMessage(const MessageState & msg)
 {
-  sendMessageImpl(msg, "state");
+  return sendMessageImpl(msg, "state");
 }
 
-void NetworkInterfaceShm::sendMessage(const MessageCommand & msg)
+bool NetworkInterfaceShm::sendMessage(const MessageCommand & msg)
 {
-  sendMessageImpl(msg, "command");
+  return sendMessageImpl(msg, "command");
 }
 
 bool NetworkInterfaceShm::receiveMessage(MessageConfigShm & msg)

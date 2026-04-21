@@ -39,9 +39,9 @@ public:
   NetworkInterfaceShm(const mc_rtc::Configuration & network_config);
   ~NetworkInterfaceShm();
 
-  void sendMessage(const MessageConfig & msg) override;
-  void sendMessage(const MessageState & msg) override;
-  void sendMessage(const MessageCommand & msg) override;
+  bool sendMessage(const MessageConfig & msg) override;
+  bool sendMessage(const MessageState & msg) override;
+  bool sendMessage(const MessageCommand & msg) override;
 
   bool receiveMessage(MessageConfig & msg) override {}
   bool receiveMessage(MessageState & msg) override {}
@@ -60,7 +60,7 @@ private:
   std::pair<int, void *> createShmBlock(const std::string & path, const int & id);
 
   template<typename msg>
-  void sendMessageImpl(const msg & message, const std::string & type);
+  bool sendMessageImpl(const msg & message, const std::string & type);
 
   template<typename msg>
   bool receiveMessageImpl(msg & message, uint8_t port);
@@ -109,7 +109,7 @@ std::pair<int, void *> NetworkInterfaceShm::createShmBlock(const std::string & p
 };
 
 template<typename MessageType>
-void NetworkInterfaceShm::sendMessageImpl(const MessageType & msg, const std::string & type)
+bool NetworkInterfaceShm::sendMessageImpl(const MessageType & msg, const std::string & type)
 {
   mc_rtc::log::success("network shm sendMessageImpl start for type: {}", type);
 
@@ -118,14 +118,12 @@ void NetworkInterfaceShm::sendMessageImpl(const MessageType & msg, const std::st
   if(dest)
   {
     *dest = msg;
-    mc_rtc::log::info("Successfully copied message to SHM for type: {}", type);
-  }
-  else
-  {
-    mc_rtc::log::error("Destination pointer for {} is null", type);
+    mc_rtc::log::info("Copied message to SHM for type: {}", type);
+    return true;
   }
 
   mc_rtc::log::info("network shm sendMessageImpl done");
+  return false;
 }
 
 template<typename msg>
