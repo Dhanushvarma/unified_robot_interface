@@ -22,8 +22,10 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Dependencies
+find_package(mc_local REQUIRED)
 find_package(mc_rtc REQUIRED)
 find_package(ur_rtde REQUIRED)
+find_package(Boost REQUIRED COMPONENTS program_options thread)
 # find_package(Threads REQUIRED)
 
 # Add Subdirectories

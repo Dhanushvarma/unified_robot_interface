@@ -16,7 +16,7 @@ target_include_directories(
 
 # Robot Interface
 set(INTERFACE_SRC mc_robot_interface/RobotInterfaceFactory.cpp
-                  mc_robot_interface/InterfaceTemplate.cpp
+                  # mc_robot_interface/InterfaceTemplate.cpp
 )
 
 add_library(mc_robot_interface SHARED ${INTERFACE_SRC})
@@ -24,7 +24,7 @@ add_library(${PROJECT_NAME}::robot_interface ALIAS mc_robot_interface)
 
 target_link_libraries(
   mc_robot_interface PUBLIC mc_rtc::mc_control mc_network_interface
-                            ur_rtde::rtde
+                            mc_local::mc_local_lib ur_rtde::rtde
 )
 
 target_include_directories(

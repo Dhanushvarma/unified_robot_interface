@@ -1,4 +1,4 @@
-#include <Interface.h>
+#include <InterfaceTemplate.h>
 
 #include <mc_rtc/logging.h>
 
@@ -50,7 +50,7 @@ int main(int argc, char * argv[])
   }
 
   /* Initialize callback (non real-time yet) */
-  void * data = mc_interface::init(argc, argv, cycle_ns, interrupt);
+  void * data = mc_interface_template::init(argc, argv, cycle_ns, interrupt);
   if(data == nullptr)
   {
     mc_rtc::log::error("[mc_rtde] Initialization failed");
@@ -58,18 +58,18 @@ int main(int argc, char * argv[])
   }
 
   /* Run */
-  mc_interface::run(data, interrupt);
+  mc_interface_template::run(data, interrupt);
 
   return 0;
 }
 
-namespace mc_interface
+namespace mc_interface_template
 {
 
 void run(void * data, const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("local run start");
-  std::unique_ptr<RobotInterfaceTemplate> interface_template{static_cast<RobotInterfaceTemplate *>(data)};
+  std::unique_ptr<InterfaceTemplate> interface_template{static_cast<InterfaceTemplate *>(data)};
 
   while(!interrupt)
   {
@@ -83,7 +83,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
   mc_rtc::log::success("local init start");
 
   std::string conf_file;
-  po::options_description desc("mc_interface options");
+  po::options_description desc("mc_interface_template options");
   // clang-format off
    desc.add_options()
     ("help,h", "Display help message")
@@ -110,11 +110,11 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
   mc_rtc::log::info("local init 2");
 
   /* Initialize robot manager */
-  auto interface = std::make_unique<mc_interface::RobotInterfaceTemplate>();
+  auto interface = std::make_unique<mc_interface_template::InterfaceTemplate>(interrupt);
 
   mc_rtc::log::info("local init done");
 
   return interface.release();
 }
 
-} // namespace mc_interface
+} // namespace mc_interface_template

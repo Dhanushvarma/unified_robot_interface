@@ -33,11 +33,10 @@ add_subdirectory(src)
 
 install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 
-# # Optional Testing
-# option(BUILD_TESTING "Build tests" OFF)
-# if(BUILD_TESTING)
-#   enable_testing()
-# endif()
+# ONLY INSTALL THE EXPORT FILE HERE
+install(EXPORT mc_localTargets FILE mc_localConfig.cmake NAMESPACE mc_local::
+        DESTINATION lib/cmake/mc_local
+)
 
 message(STATUS "")
 message(STATUS "Configuration Summary:")

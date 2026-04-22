@@ -1,5 +1,5 @@
+#include <mc_local/InterfaceTemplate.h>
 #include <mc_rtc/logging.h>
-#include <mc_robot_interface/InterfaceTemplate.h>
 #include <mc_robot_interface/RobotInterfaceFactory.h>
 
 namespace mc_robot
