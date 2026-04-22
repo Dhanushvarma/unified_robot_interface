@@ -6,7 +6,9 @@ set(NETWORK_INTERFACE_SRC mc_network_interface/NetworkInterfaceFactory.cpp
 add_library(mc_network_interface SHARED ${NETWORK_INTERFACE_SRC})
 add_library(${PROJECT_NAME}::network_interface ALIAS mc_network_interface)
 
-target_link_libraries(mc_network_interface PUBLIC mc_rtc::mc_control)
+target_link_libraries(
+  mc_network_interface PUBLIC mc_rtc::mc_control zenohcxx::zenohc
+)
 
 target_include_directories(
   mc_network_interface
@@ -24,7 +26,7 @@ add_library(${PROJECT_NAME}::robot_interface ALIAS mc_robot_interface)
 
 target_link_libraries(
   mc_robot_interface PUBLIC mc_rtc::mc_control mc_network_interface
-                            mc_local::mc_local_lib ur_rtde::rtde
+                            mc_local::mc_local_lib
 )
 
 target_include_directories(
