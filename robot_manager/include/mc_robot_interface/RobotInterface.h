@@ -71,7 +71,7 @@ public:
     return *network_;
   }
 
-private:
+protected:
   mutable std::mutex update_sensor_mtx_{};
   mutable std::mutex update_control_mtx_{};
 

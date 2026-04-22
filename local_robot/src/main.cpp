@@ -100,6 +100,12 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
     return nullptr;
   }
 
+  if(vm.count("conf"))
+  {
+    mc_rtc::log::error("'conf' is not supported");
+    return nullptr;
+  }
+
   mc_rtc::log::info("local init 2");
 
   /* Initialize robot manager */
