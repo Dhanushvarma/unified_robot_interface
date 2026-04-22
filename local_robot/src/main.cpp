@@ -69,6 +69,7 @@ namespace mc_interface
 void run(void * data, const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("local run start");
+  std::unique_ptr<RobotInterfaceTemplate> interface_template{static_cast<RobotInterfaceTemplate *>(data)};
 
   while(!interrupt)
   {
