@@ -1,5 +1,7 @@
 #include <mc_network_interface/NetworkInterfaceShm.h>
 
+#include <mc_rtc/Configuration.h>
+
 // #include <type_traits>
 
 namespace mc_network
@@ -105,27 +107,44 @@ bool NetworkInterfaceShm::sendMessage(const MessageConfig & msg)
 
 bool NetworkInterfaceShm::sendMessage(const MessageState & msg)
 {
-  return sendMessageImpl(msg, "state");
+  MessageStateShm msgShm;
+  return sendMessageImpl(msgShm, "state");
 }
 
 bool NetworkInterfaceShm::sendMessage(const MessageCommand & msg)
 {
-  return sendMessageImpl(msg, "command");
+  MessageCommandShm msgShm;
+  return sendMessageImpl(msgShm, "command");
 }
 
-bool NetworkInterfaceShm::receiveMessage(MessageConfigShm & msg)
+bool NetworkInterfaceShm::receiveMessage(MessageConfig & msg)
 {
-  return receiveMessageImpl(msg, NetworkInterface::ports()["config"]);
+  mc_rtc::log::success("network shm sendMessage config start");
+
+  /* Receive message */
+  MessageConfigShm msgShm;
+  bool status = receiveMessageImpl(msgShm, "config");
+  if(!status) return status;
+
+  /* Convert to standard message */
+  msg.name = std::string(msgShm.name, msgShm.name_size);
+  std::string config_data(msgShm.config, msgShm.config_size);
+  msg.config = mc_rtc::Configuration::fromData(config_data);
+  msg.read = msgShm.read;
+
+  return status;
 }
 
-bool NetworkInterfaceShm::receiveMessage(MessageStateShm & msg)
+bool NetworkInterfaceShm::receiveMessage(MessageState & msg)
 {
-  return receiveMessageImpl(msg, NetworkInterface::ports()["state"]);
+  MessageStateShm msgShm;
+  return receiveMessageImpl(msgShm, "state");
 }
 
-bool NetworkInterfaceShm::receiveMessage(MessageCommandShm & msg)
+bool NetworkInterfaceShm::receiveMessage(MessageCommand & msg)
 {
-  return receiveMessageImpl(msg, NetworkInterface::ports()["command"]);
+  MessageCommandShm msgShm;
+  return receiveMessageImpl(msgShm, "command");
 }
 
 } // namespace mc_network

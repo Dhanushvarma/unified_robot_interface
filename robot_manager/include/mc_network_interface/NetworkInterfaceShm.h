@@ -43,40 +43,40 @@ public:
   bool sendMessage(const MessageState & msg) override;
   bool sendMessage(const MessageCommand & msg) override;
 
-  bool receiveMessage(MessageConfig & msg) override {}
-  bool receiveMessage(MessageState & msg) override {}
-  bool receiveMessage(MessageCommand & msg) override {}
+  bool receiveMessage(MessageConfig & msg) override;
+  bool receiveMessage(MessageState & msg) override;
+  bool receiveMessage(MessageCommand & msg) override;
 
 private:
-  template<typename msg>
+  template<typename MessageType>
   std::pair<int, void *> createShmBlock(const std::string & path, const int & id);
 
-  template<typename msg>
-  bool sendMessageImpl(const msg & message, const std::string & type);
+  template<typename MessageType>
+  bool sendMessageImpl(const MessageType & msg, const std::string & type);
 
-  template<typename msg>
-  bool receiveMessageImpl(msg & message, uint8_t port);
+  template<typename MessageType>
+  bool receiveMessageImpl(MessageType & msg, const std::string & type);
 
   std::string key_path_;
   std::vector<int> shm_ids_;
   std::unordered_map<std::string, void *> shm_map_;
 };
 
-template<typename msg>
+template<typename MessageType>
 std::pair<int, void *> NetworkInterfaceShm::createShmBlock(const std::string & path, const int & id)
 {
   mc_rtc::log::success("network shm createShmBlock start");
-  mc_rtc::log::info("id {} size {}", id, sizeof(msg));
+  mc_rtc::log::info("id {} size {}", id, sizeof(MessageType));
   key_t key = ftok(path.c_str(), id);
 
   mc_rtc::log::info("network shm createShmBlock 1");
 
-  int shm_id = shmget(key, sizeof(msg), 0666 | IPC_CREAT | IPC_EXCL);
+  int shm_id = shmget(key, sizeof(MessageType), 0666 | IPC_CREAT | IPC_EXCL);
   if(shm_id < 0)
   {
     if(errno == EEXIST)
     {
-      shm_id = shmget(key, sizeof(msg), 0666);
+      shm_id = shmget(key, sizeof(MessageType), 0666);
       mc_rtc::log::warning("Shared memory already exists for id = {}", shm_id);
     }
     else
@@ -118,15 +118,20 @@ bool NetworkInterfaceShm::sendMessageImpl(const MessageType & msg, const std::st
   return false;
 }
 
-template<typename msg>
-bool NetworkInterfaceShm::receiveMessageImpl(msg & message, uint8_t port)
+template<typename MessageType>
+bool NetworkInterfaceShm::receiveMessageImpl(MessageType & msg, const std::string & type)
 {
-  // const msg * src = static_cast<const msg *>(shmptr_[port]);
-  // if(src)
-  // {
-  //   message = *src;
-  //   return true;
-  // }
+  mc_rtc::log::success("network shm receiveMessageImpl start for type: {}", type);
+
+  MessageType * src = static_cast<MessageType *>(shm_map_[type]);
+
+  if(src)
+  {
+    msg = *src;
+    mc_rtc::log::info("Coppied message from SHM for type: {}", type);
+    return true;
+  }
+
   return false;
 }
 
