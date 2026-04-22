@@ -128,8 +128,11 @@ bool NetworkInterfaceShm::receiveMessage(MessageConfig & msg)
 
   /* Convert to standard message */
   msg.name = std::string(msgShm.name, msgShm.name_size);
+
   std::string config_data(msgShm.config, msgShm.config_size);
   msg.config = mc_rtc::Configuration::fromData(config_data);
+  if(!msg.config.has("controller") || !msg.config.has("network")) return false;
+
   msg.read = msgShm.read;
 
   return status;
