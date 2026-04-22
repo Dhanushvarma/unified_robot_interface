@@ -48,14 +48,6 @@ public:
   bool receiveMessage(MessageCommand & msg) override {}
 
 private:
-  void sendMessage(const MessageConfigShm & msg);
-  void sendMessage(const MessageStateShm & msg);
-  void sendMessage(const MessageCommandShm & msg);
-
-  bool receiveMessage(MessageConfigShm & msg);
-  bool receiveMessage(MessageStateShm & msg);
-  bool receiveMessage(MessageCommandShm & msg);
-
   template<typename msg>
   std::pair<int, void *> createShmBlock(const std::string & path, const int & id);
 
