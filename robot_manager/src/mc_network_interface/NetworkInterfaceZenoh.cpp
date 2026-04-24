@@ -149,11 +149,11 @@ void NetworkInterfaceZenoh::setupPubSub(const std::string & name)
   //     [this](const zenoh::Sample & sample)
   //     {
   //       std::lock_guard<std::mutex> lock(mutex_);
-  //       MessageConfig msg;
+  //       MessageConfig message;
   //       auto payload = sample.get_payload().as_vector();
-  //       if(deserialize(payload, msg))
+  //       if(deserialize(payload, message))
   //       {
-  //         latest_config_ = msg;
+  //         latest_config_ = message;
   //         mc_rtc::log::info("Received config message");
   //       }
   //     },
@@ -164,11 +164,11 @@ void NetworkInterfaceZenoh::setupPubSub(const std::string & name)
   //     [this](const zenoh::Sample & sample)
   //     {
   //       std::lock_guard<std::mutex> lock(mutex_);
-  //       MessageState msg;
+  //       MessageState message;
   //       auto payload = sample.get_payload().as_vector();
-  //       if(deserialize(payload, msg))
+  //       if(deserialize(payload, message))
   //       {
-  //         latest_state_ = msg;
+  //         latest_state_ = message;
   //       }
   //     },
   //     zenoh::closures::none));
@@ -178,11 +178,11 @@ void NetworkInterfaceZenoh::setupPubSub(const std::string & name)
   //     [this](const zenoh::Sample & sample)
   //     {
   //       std::lock_guard<std::mutex> lock(mutex_);
-  //       MessageCommand msg;
+  //       MessageCommand message;
   //       auto payload = sample.get_payload().as_vector();
-  //       if(deserialize(payload, msg))
+  //       if(deserialize(payload, message))
   //       {
-  //         latest_command_ = msg;
+  //         latest_command_ = message;
   //       }
   //     },
   //     zenoh::closures::none));
@@ -191,12 +191,12 @@ void NetworkInterfaceZenoh::setupPubSub(const std::string & name)
 }
 
 // Serialization implementations
-std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageConfig & msg)
+std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageConfig & message)
 {
   // Simple serialization: name_size + name + config_size + config + read flag
-  std::string config_str = msg.config.dump();
+  std::string config_str = message.config.dump();
 
-  size_t name_len = msg.name.size();
+  size_t name_len = message.name.size();
   size_t config_len = config_str.size();
 
   std::vector<uint8_t> buffer;
@@ -205,49 +205,49 @@ std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageConfig & msg)
   // Name size (1 byte)
   buffer.push_back(static_cast<uint8_t>(name_len));
   // Name data
-  buffer.insert(buffer.end(), msg.name.begin(), msg.name.end());
+  buffer.insert(buffer.end(), message.name.begin(), message.name.end());
   // Config size (2 bytes)
   buffer.push_back(static_cast<uint8_t>(config_len & 0xFF));
   buffer.push_back(static_cast<uint8_t>((config_len >> 8) & 0xFF));
   // Config data
   buffer.insert(buffer.end(), config_str.begin(), config_str.end());
   // Read flag
-  buffer.push_back(msg.read ? 1 : 0);
+  buffer.push_back(message.read ? 1 : 0);
 
   return buffer;
 }
 
-std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageState & msg)
+std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageState & message)
 {
-  size_t size = msg.state.size();
+  size_t size = message.state.size();
   std::vector<uint8_t> buffer;
   buffer.reserve(1 + size * sizeof(double));
 
   // Size (1 byte)
   buffer.push_back(static_cast<uint8_t>(size));
   // State data
-  const uint8_t * data_ptr = reinterpret_cast<const uint8_t *>(msg.state.data());
+  const uint8_t * data_ptr = reinterpret_cast<const uint8_t *>(message.state.data());
   buffer.insert(buffer.end(), data_ptr, data_ptr + size * sizeof(double));
 
   return buffer;
 }
 
-std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageCommand & msg)
+std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageCommand & message)
 {
-  size_t size = msg.command.size();
+  size_t size = message.command.size();
   std::vector<uint8_t> buffer;
   buffer.reserve(1 + size * sizeof(double));
 
   // Size (1 byte)
   buffer.push_back(static_cast<uint8_t>(size));
   // Command data
-  const uint8_t * data_ptr = reinterpret_cast<const uint8_t *>(msg.command.data());
+  const uint8_t * data_ptr = reinterpret_cast<const uint8_t *>(message.command.data());
   buffer.insert(buffer.end(), data_ptr, data_ptr + size * sizeof(double));
 
   return buffer;
 }
 
-bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, MessageConfig & msg)
+bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, MessageConfig & message)
 {
   if(data.empty()) return false;
 
@@ -258,7 +258,7 @@ bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, Messa
   if(pos + name_len > data.size()) return false;
 
   // Name data
-  msg.name = std::string(data.begin() + pos, data.begin() + pos + name_len);
+  message.name = std::string(data.begin() + pos, data.begin() + pos + name_len);
   pos += name_len;
 
   // Config size
@@ -271,96 +271,59 @@ bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, Messa
   std::string config_str(data.begin() + pos, data.begin() + pos + config_len);
   pos += config_len;
 
-  msg.config = mc_rtc::Configuration::fromData(config_str);
+  message.config = mc_rtc::Configuration::fromData(config_str);
 
   // Read flag
   if(pos < data.size())
   {
-    msg.read = (data[pos] != 0);
+    message.read = (data[pos] != 0);
   }
 
   return true;
 }
 
-bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, MessageState & msg)
+bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, MessageState & message)
 {
   if(data.empty()) return false;
 
   uint8_t size = data[0];
   if(data.size() < 1 + size * sizeof(double)) return false;
 
-  msg.state.resize(size);
-  std::memcpy(msg.state.data(), data.data() + 1, size * sizeof(double));
+  message.state.resize(size);
+  std::memcpy(message.state.data(), data.data() + 1, size * sizeof(double));
 
   return true;
 }
 
-bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, MessageCommand & msg)
+bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, MessageCommand & message)
 {
   if(data.empty()) return false;
 
   uint8_t size = data[0];
   if(data.size() < 1 + size * sizeof(double)) return false;
 
-  msg.command.resize(size);
-  std::memcpy(msg.command.data(), data.data() + 1, size * sizeof(double));
+  message.command.resize(size);
+  std::memcpy(message.command.data(), data.data() + 1, size * sizeof(double));
 
   return true;
 }
 
-// Send/Receive implementations
-bool NetworkInterfaceZenoh::sendMessage(const MessageConfig & msg)
+bool NetworkInterfaceZenoh::sendMessage(const std::string & message)
 {
-  mc_rtc::log::info("Sending config message");
-  auto data = serialize(msg);
-  config_pub_->put(zenoh::Bytes(data));
+  // mc_rtc::log::info("Sending config message");
+  // auto data = serialize(message);
+  // config_pub_->put(zenoh::Bytes(data));
   return true;
 }
 
-bool NetworkInterfaceZenoh::sendMessage(const MessageState & msg)
+bool NetworkInterfaceZenoh::receiveMessage(std::string & message)
 {
-  auto data = serialize(msg);
-  state_pub_->put(zenoh::Bytes(data));
-  return true;
-}
-
-bool NetworkInterfaceZenoh::sendMessage(const MessageCommand & msg)
-{
-  auto data = serialize(msg);
-  command_pub_->put(zenoh::Bytes(data));
-  return true;
-}
-
-bool NetworkInterfaceZenoh::receiveMessage(MessageConfig & msg)
-{
-  std::lock_guard<std::mutex> lock(mutex_);
-  if(latest_config_)
-  {
-    msg = *latest_config_;
-    return true;
-  }
-  return false;
-}
-
-bool NetworkInterfaceZenoh::receiveMessage(MessageState & msg)
-{
-  std::lock_guard<std::mutex> lock(mutex_);
-  if(latest_state_)
-  {
-    msg = *latest_state_;
-    return true;
-  }
-  return false;
-}
-
-bool NetworkInterfaceZenoh::receiveMessage(MessageCommand & msg)
-{
-  std::lock_guard<std::mutex> lock(mutex_);
-  if(latest_command_)
-  {
-    msg = *latest_command_;
-    return true;
-  }
+  // std::lock_guard<std::mutex> lock(mutex_);
+  // if(latest_config_)
+  // {
+  //   message = *latest_config_;
+  //   return true;
+  // }
   return false;
 }
 

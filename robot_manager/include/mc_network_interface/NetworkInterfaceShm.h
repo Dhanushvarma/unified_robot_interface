@@ -39,23 +39,23 @@ public:
   NetworkInterfaceShm(const mc_rtc::Configuration & network_config);
   ~NetworkInterfaceShm();
 
-  bool sendMessage(const MessageConfig & msg) override;
-  bool sendMessage(const MessageState & msg) override;
-  bool sendMessage(const MessageCommand & msg) override;
+  bool sendMessage(const MessageConfig & message) override;
+  bool sendMessage(const MessageState & message) override;
+  bool sendMessage(const MessageCommand & message) override;
 
-  bool receiveMessage(MessageConfig & msg) override;
-  bool receiveMessage(MessageState & msg) override;
-  bool receiveMessage(MessageCommand & msg) override;
+  bool receiveMessage(MessageConfig & message) override;
+  bool receiveMessage(MessageState & message) override;
+  bool receiveMessage(MessageCommand & message) override;
 
 private:
   template<typename MessageType>
   std::pair<int, void *> createShmBlock(const std::string & path, const int & id);
 
   template<typename MessageType>
-  bool sendMessageImpl(const MessageType & msg, const std::string & type);
+  bool sendMessageImpl(const MessageType & message, const std::string & type);
 
   template<typename MessageType>
-  bool receiveMessageImpl(MessageType & msg, const std::string & type);
+  bool receiveMessageImpl(MessageType & message, const std::string & type);
 
   std::string key_path_;
   std::vector<int> shm_ids_;
@@ -101,7 +101,7 @@ std::pair<int, void *> NetworkInterfaceShm::createShmBlock(const std::string & p
 };
 
 template<typename MessageType>
-bool NetworkInterfaceShm::sendMessageImpl(const MessageType & msg, const std::string & type)
+bool NetworkInterfaceShm::sendMessageImpl(const MessageType & message, const std::string & type)
 {
   mc_rtc::log::success("network shm sendMessageImpl start for type: {}", type);
 
@@ -109,7 +109,7 @@ bool NetworkInterfaceShm::sendMessageImpl(const MessageType & msg, const std::st
 
   if(dest)
   {
-    *dest = msg;
+    *dest = message;
     mc_rtc::log::info("Copied message to SHM for type: {}", type);
     return true;
   }
@@ -119,7 +119,7 @@ bool NetworkInterfaceShm::sendMessageImpl(const MessageType & msg, const std::st
 }
 
 template<typename MessageType>
-bool NetworkInterfaceShm::receiveMessageImpl(MessageType & msg, const std::string & type)
+bool NetworkInterfaceShm::receiveMessageImpl(MessageType & message, const std::string & type)
 {
   mc_rtc::log::success("network shm receiveMessageImpl start for type: {}", type);
 
@@ -127,7 +127,7 @@ bool NetworkInterfaceShm::receiveMessageImpl(MessageType & msg, const std::strin
 
   if(src)
   {
-    msg = *src;
+    message = *src;
     mc_rtc::log::info("Coppied message from SHM for type: {}", type);
     return true;
   }
