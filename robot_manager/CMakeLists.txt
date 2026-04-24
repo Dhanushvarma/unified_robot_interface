@@ -22,7 +22,6 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Dependencies
-find_package(mc_local REQUIRED)
 find_package(mc_rtc REQUIRED)
 find_package(zenohc REQUIRED)
 find_package(zenohcxx REQUIRED)
@@ -51,21 +50,32 @@ message(STATUS "  Build Tests: ${BUILD_TESTING}")
 message(STATUS "  Install RPATH: ${CMAKE_INSTALL_RPATH}")
 message(STATUS "")
 
-# Generate and install package configuration files
 include(CMakePackageConfigHelpers)
 
+# 1. Define where the export file will be generated
+set(TARGETS_EXPORT_NAME "mc_fleetTargets")
+
+# 2. Configure the config file (you need an mc_fleetConfig.cmake.in file)
 configure_package_config_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/mc_fleetConfig.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/mc_fleetConfig.cmake"
   INSTALL_DESTINATION lib/cmake/${PROJECT_NAME}
 )
 
+# 3. Create version file
 write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/mc_fleetConfigVersion.cmake"
   VERSION ${PROJECT_VERSION}
   COMPATIBILITY AnyNewerVersion
 )
 
+# 4. Install the export file
+# install(
+#   EXPORT ${TARGETS_EXPORT_NAME} FILE mc_fleetTargets.cmake NAMESPACE mc_fleet::
+#   DESTINATION lib/cmake/${PROJECT_NAME}
+# )
+
+# 5. Install the config and version files
 install(
   FILES "${CMAKE_CURRENT_BINARY_DIR}/mc_fleetConfig.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/mc_fleetConfigVersion.cmake"

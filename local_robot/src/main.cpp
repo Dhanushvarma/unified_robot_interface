@@ -1,4 +1,4 @@
-#include <InterfaceTemplate.h>
+#include <mc_robot_interface/InterfaceTemplate.h>
 
 #include <mc_rtc/logging.h>
 
@@ -24,7 +24,7 @@ std::atomic<bool> interrupt{false};
 
 void signalHandler(int s)
 {
-  mc_rtc::log::warning("[mc_rtde] Caught signal {}", s);
+  mc_rtc::log::warning("[mc_local] Caught signal {}", s);
   interrupt = true;
 }
 
@@ -35,10 +35,10 @@ int main(int argc, char * argv[])
   /* Lock Memory*/
   if(mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
   {
-    mc_rtc::log::error("[mc_rtde] mlockall failed: {}", strerror(errno));
+    mc_rtc::log::error("[mc_local] mlockall failed: {}", strerror(errno));
     if(errno == ENOMEM)
     {
-      mc_rtc::log::info("[mc_rtde] Check /etc/security/limits.conf for memlock limits.");
+      mc_rtc::log::info("[mc_local] Check /etc/security/limits.conf for memlock limits.");
     }
   }
 
@@ -53,7 +53,7 @@ int main(int argc, char * argv[])
   void * data = mc_interface_template::init(argc, argv, cycle_ns, interrupt);
   if(data == nullptr)
   {
-    mc_rtc::log::error("[mc_rtde] Initialization failed");
+    mc_rtc::log::error("[mc_local] Initialization failed");
     return -2;
   }
 

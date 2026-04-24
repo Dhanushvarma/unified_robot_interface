@@ -1,3 +1,4 @@
+name: local_robot
 protocol: shm
 ip: /workspace/sandbox/mc_robot_manager/
-port: [1, 2, 3]
+port: 100

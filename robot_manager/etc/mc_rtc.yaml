@@ -1,4 +1,4 @@
-MainRobot: UR5e
+# MainRobot: UR5e
 Enabled: Posture
 Timestep: 0.001
 
@@ -38,4 +38,4 @@ Robots:
     network:
       protocol: shm
       ip: /workspace/sandbox/mc_robot_manager/
-      port: [1, 2, 3]
+      port: 100

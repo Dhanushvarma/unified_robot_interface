@@ -1,6 +1,8 @@
 # Network Interface
-set(NETWORK_INTERFACE_SRC mc_network_interface/NetworkInterfaceFactory.cpp
-                          mc_network_interface/NetworkInterfaceShm.cpp
+set(NETWORK_INTERFACE_SRC
+    mc_network_interface/NetworkInterfaceFactory.cpp
+    # mc_network_interface/NetworkInterfaceShm.cpp
+    mc_network_interface/NetworkInterfaceZenoh.cpp
 )
 
 add_library(mc_network_interface SHARED ${NETWORK_INTERFACE_SRC})
@@ -18,7 +20,7 @@ target_include_directories(
 
 # Robot Interface
 set(INTERFACE_SRC mc_robot_interface/RobotInterfaceFactory.cpp
-                  # mc_robot_interface/InterfaceTemplate.cpp
+                  mc_robot_interface/InterfaceTemplate.cpp
 )
 
 add_library(mc_robot_interface SHARED ${INTERFACE_SRC})
@@ -26,7 +28,7 @@ add_library(${PROJECT_NAME}::robot_interface ALIAS mc_robot_interface)
 
 target_link_libraries(
   mc_robot_interface PUBLIC mc_rtc::mc_control mc_network_interface
-                            mc_local::mc_local_lib
+                            # mc_local::mc_local_lib
 )
 
 target_include_directories(
@@ -55,7 +57,7 @@ target_include_directories(
 
 # Install all libraries
 install(
-  TARGETS mc_robot_interface mc_network_interface mc_robot_manager
+  TARGETS mc_network_interface mc_robot_interface mc_robot_manager
   EXPORT "${PROJECT_NAME}Targets"
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib

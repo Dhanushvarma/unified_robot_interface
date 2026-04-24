@@ -34,13 +34,8 @@ public:
   // Look for ../etc/network.yaml
   NetworkInterface() : NetworkInterface(mc_rtc::Configuration("../etc/network.yaml")) {};
 
-  NetworkInterface(const mc_rtc::Configuration & network_config) : ip_(network_config("ip"))
-  {
-    std::vector<uint16_t> config_port = network_config("port");
-    ports_["config"] = config_port[0];
-    ports_["state"] = config_port[1];
-    ports_["command"] = config_port[2];
-  };
+  NetworkInterface(const mc_rtc::Configuration & network_config)
+  : ip_(network_config("ip")), port_(network_config("port")) {};
 
   virtual ~NetworkInterface() = default;
   NetworkInterface(const NetworkInterface &) = delete;
@@ -63,14 +58,14 @@ protected:
   {
     return ip_;
   }
-  [[nodiscard]] std::unordered_map<std::string, uint16_t> ports() const
+  [[nodiscard]] const uint16_t port() const
   {
-    return ports_;
+    return port_;
   }
 
 private:
   const std::string ip_;
-  std::unordered_map<std::string, uint16_t> ports_;
+  const uint16_t port_;
 };
 
 } // namespace mc_network

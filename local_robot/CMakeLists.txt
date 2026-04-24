@@ -31,12 +31,10 @@ find_package(Boost REQUIRED COMPONENTS program_options thread)
 include_directories(include)
 add_subdirectory(src)
 
-install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
+# Install the executable to the system binary directory
+install(TARGETS mc_local RUNTIME DESTINATION bin)
 
-# ONLY INSTALL THE EXPORT FILE HERE
-install(EXPORT mc_localTargets FILE mc_localConfig.cmake NAMESPACE mc_local::
-        DESTINATION lib/cmake/mc_local
-)
+install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 
 message(STATUS "")
 message(STATUS "Configuration Summary:")

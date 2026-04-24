@@ -111,9 +111,9 @@ void RobotManager::init()
     std::unique_ptr<mc_robot::RobotInterface> interface = interface_factory_.makeInterface(robot_name, robot_config);
     if(!interface) continue;
 
-    std::unique_ptr<mc_network::NetworkInterface> network = network_factory_.makeNetwork(robot_config("network"));
-    if(!network) continue;
-    interface->setNetwork(std::move(network));
+    // std::unique_ptr<mc_network::NetworkInterface> network = network_factory_.makeNetwork(robot_config("network"));
+    // if(!network) continue;
+    // interface->setNetwork(std::move(network));
 
     interfaces_.try_emplace(robot_name, std::move(interface));
   }

@@ -1,9 +1,8 @@
 #include <mc_network_interface/NetworkInterfaceFactory.h>
 #include <mc_network_interface/NetworkInterfaceShm.h>
+#include <mc_network_interface/NetworkInterfaceZenoh.h>
 
 #include <mc_rtc/logging.h>
-
-#include <string>
 
 namespace mc_network
 {
@@ -11,17 +10,19 @@ namespace mc_network
 std::unique_ptr<NetworkInterface> NetworkInterfaceFactory::makeNetwork(const mc_rtc::Configuration & network_config)
 {
   mc_rtc::log::success("makeNetwork start");
-  const std::string protocol = network_config("protocol");
+  // const std::string protocol = network_config("protocol");
 
-  mc_rtc::log::info("network addNetworkInterface 1");
+  // mc_rtc::log::info("network addNetworkInterface 1");
 
-  if(protocol == "shm")
-  {
-    return std::make_unique<NetworkInterfaceShm>(network_config);
-  }
+  // if(protocol == "shm")
+  // {
+  //   return std::make_unique<NetworkInterfaceShm>(network_config);
+  // }
 
-  mc_rtc::log::error("Network protocol {} is not supported", protocol);
-  return nullptr;
+  // mc_rtc::log::error("Network protocol {} is not supported", protocol);
+  // return nullptr;
+
+  return std::make_unique<NetworkInterfaceZenoh>(network_config);
 }
 
 void NetworkInterfaceFactory::addNetworkInterface(const std::string & name, std::unique_ptr<NetworkInterface> network)
