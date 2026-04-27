@@ -1,103 +1,89 @@
+#include <mc_communication/CommunicationZenoh.h>
 #include <mc_rtc/Configuration.h>
-#include <mc_network_interface/NetworkInterfaceZenoh.h>
 
 #include <cstring>
 
-namespace mc_network
+namespace mc_communication
 {
 
-NetworkInterfaceZenoh::NetworkInterfaceZenoh(const mc_rtc::Configuration & network_config)
-: NetworkInterface(network_config)
+CommunicationZenoh::CommunicationZenoh(const mc_rtc::Configuration & com_config) : Communication(com_config)
 {
-  mc_rtc::log::success("NetworkInterfaceZenoh constructor start");
-
-  std::string protocol = network_config("protocol");
-
-  mc_rtc::log::info("NetworkInterfaceZenoh constructor 1");
+  mc_rtc::log::success("com Zenoh constructor start");
 
   // Configure Zenoh transport based on protocol
   auto zenoh_config = zenoh::Config::create_default();
 
-  mc_rtc::log::info("NetworkInterfaceZenoh constructor 2");
+  mc_rtc::log::info("com Zenoh constructor 1");
+
+  configureTransport(com_config, zenoh_config);
+
+  // Open session with proper config
+  session_ = std::make_unique<zenoh::Session>(std::move(zenoh_config));
+
+  mc_rtc::log::info("com Zenoh constructor 2");
+
+  setupPubSub(com_config);
+
+  mc_rtc::log::success("CommunicationZenoh initialized with protocol: {}", com_config("protocol"));
+}
+
+CommunicationZenoh::~CommunicationZenoh()
+{
+  mc_rtc::log::info("CommunicationZenoh destructor called");
+  // Zenoh handles cleanup automatically via RAII
+}
+
+void CommunicationZenoh::configureTransport(const mc_rtc::Configuration & com_config, zenoh::Config & zenoh_config)
+{
+  std::string protocol = com_config("protocol");
 
   if(protocol == "zenoh/shm")
   {
-    configureShm(zenoh_config);
+    mc_rtc::log::info("com Zenoh configureShm");
+    zenoh_config.insert_json5("transport/shared_memory/enabled", "true");
+    zenoh_config.insert_json5("mode", "\"peer\"");
   }
   else if(protocol == "zenoh/tcp")
   {
-    configureTcp(zenoh_config);
+    // const std::string & ip_addr = ip();
+    // uint16_t zenoh_port = Communication::port();
+
+    // std::string listen_endpoint = "tcp/" + ip_addr + ":" + std::to_string(zenoh_port);
+
+    // mc_rtc::log::info("Configuring TCP transport: {}", listen_endpoint);
+
+    // std::string listen_json = "[\"" + listen_endpoint + "\"]";
+    // zenoh_config.insert_json5("listen", listen_json);
+    // zenoh_config.insert_json5("mode", "\"peer\"");
   }
   else if(protocol == "zenoh/udp")
   {
-    configureUdp(zenoh_config);
+    // const std::string & multicast_ip = ip();
+    // uint16_t udp_port = Communication::port();
+
+    // std::string multicast_endpoint = "udp/" + multicast_ip + ":" + std::to_string(udp_port);
+
+    // mc_rtc::log::info("Configuring UDP multicast: {}", multicast_endpoint);
+
+    // std::string listen_json = "[\"" + multicast_endpoint + "\"]";
+    // zenoh_config.insert_json5("listen", listen_json);
+    // zenoh_config.insert_json5("mode", "\"peer\"");
   }
   else
   {
     mc_rtc::log::error_and_throw("Unsupported protocol: {}", protocol);
   }
-
-  // Open session with proper config
-  session_ = std::make_unique<zenoh::Session>(std::move(zenoh_config));
-
-  mc_rtc::log::info("NetworkInterfaceZenoh constructor 3");
-
-  setupPubSub(network_config);
-
-  mc_rtc::log::success("NetworkInterfaceZenoh initialized with protocol: {}", protocol);
 }
 
-NetworkInterfaceZenoh::~NetworkInterfaceZenoh()
-{
-  mc_rtc::log::info("NetworkInterfaceZenoh destructor called");
-  // Zenoh handles cleanup automatically via RAII
-}
-
-void NetworkInterfaceZenoh::configureShm(zenoh::Config & zenoh_config)
-{
-  mc_rtc::log::info("network Zenoh configureShm");
-
-  zenoh_config.insert_json5("transport/shared_memory/enabled", "true");
-  zenoh_config.insert_json5("mode", "\"peer\"");
-}
-
-void NetworkInterfaceZenoh::configureTcp(zenoh::Config & zenoh_config)
-{
-  // const std::string & ip_addr = ip();
-  // uint16_t zenoh_port = NetworkInterface::port();
-
-  // std::string listen_endpoint = "tcp/" + ip_addr + ":" + std::to_string(zenoh_port);
-
-  // mc_rtc::log::info("Configuring TCP transport: {}", listen_endpoint);
-
-  // std::string listen_json = "[\"" + listen_endpoint + "\"]";
-  // zenoh_config.insert_json5("listen", listen_json);
-  // zenoh_config.insert_json5("mode", "\"peer\"");
-}
-
-void NetworkInterfaceZenoh::configureUdp(zenoh::Config & zenoh_config)
-{
-  // const std::string & multicast_ip = ip();
-  // uint16_t udp_port = NetworkInterface::port();
-
-  // std::string multicast_endpoint = "udp/" + multicast_ip + ":" + std::to_string(udp_port);
-
-  // mc_rtc::log::info("Configuring UDP multicast: {}", multicast_endpoint);
-
-  // std::string listen_json = "[\"" + multicast_endpoint + "\"]";
-  // zenoh_config.insert_json5("listen", listen_json);
-  // zenoh_config.insert_json5("mode", "\"peer\"");
-}
-
-void NetworkInterfaceZenoh::setupPubSub(const mc_rtc::Configuration & network_config)
+void CommunicationZenoh::setupPubSub(const mc_rtc::Configuration & com_config)
 {
 
-  // if(network_config.has("name"))
+  // if(com_config.has("name"))
   // {
-  //   mc_rtc::log::info("NetworkInterfaceZenoh constructor subscriber");
+  //   mc_rtc::log::info("CommunicationZenoh constructor subscriber");
 
   //   // create subscriber then wait for first message
-  //   std::string config_key = network_config("name");
+  //   std::string config_key = com_config("name");
 
   //   auto data_handler = [](const zenoh::Sample & sample)
   //   {
@@ -113,14 +99,14 @@ void NetworkInterfaceZenoh::setupPubSub(const mc_rtc::Configuration & network_co
   //     std::cout << std::endl;
   //   };
 
-  //   mc_rtc::log::info("NetworkInterfaceZenoh constructor subscriber 1");
+  //   mc_rtc::log::info("CommunicationZenoh constructor subscriber 1");
 
   //   config_sub_ = session_->declare_subscriber(zenoh::KeyExpr(config_key), data_handler, zenoh::closures::none);
   //   mc_rtc::log::info("Created subsriber with key {}", config_sub_->get_keyexpr().as_string_view());
   // }
   // else
   // {
-  //   mc_rtc::log::info("NetworkInterfaceZenoh constructor publisher");
+  //   mc_rtc::log::info("CommunicationZenoh constructor publisher");
 
   //   // create publisher and subscriber
   //   std::string config_key = "manager/" + name + "/config";
@@ -131,9 +117,9 @@ void NetworkInterfaceZenoh::setupPubSub(const mc_rtc::Configuration & network_co
 
   std::string robot_name;
 
-  if(network_config.has("name"))
+  if(com_config.has("name"))
   {
-    robot_name = static_cast<std::string>(network_config("name"));
+    robot_name = static_cast<std::string>(com_config("name"));
     mc_rtc::log::info("Setting up publishers and subscribers for robot: {}", robot_name);
   }
   else
@@ -141,7 +127,7 @@ void NetworkInterfaceZenoh::setupPubSub(const mc_rtc::Configuration & network_co
     // mc_rtc::log::info("NAME EXTRACTED {}", RoboterInterface::name_);
   }
 
-  // // Setup publishers
+  // Setup publishers
   std::string config_key = robot_name + "/config";
   std::string state_key = robot_name + "/state";
   std::string command_key = robot_name + "/command";
@@ -150,20 +136,20 @@ void NetworkInterfaceZenoh::setupPubSub(const mc_rtc::Configuration & network_co
   state_pub_ = session_->declare_publisher(zenoh::KeyExpr(state_key));
   command_pub_ = session_->declare_publisher(zenoh::KeyExpr(command_key));
 
-  // Setup subscribers with callbacks
-  auto config_handler = [this](const zenoh::Sample & sample)
-  {
-    // std::lock_guard<std::mutex> lock(mutex_);
-    MessageConfig message;
-    auto payload = sample.get_payload().as_vector();
-    if(deserialize(payload, message))
-    {
-      latest_config_ = message;
-      mc_rtc::log::info("Received config message");
-    }
-  };
+  // // Setup subscribers with callbacks
+  // auto config_handler = [this](const zenoh::Sample & sample)
+  // {
+  //   // std::lock_guard<std::mutex> lock(mutex_);
+  //   MessageConfig message;
+  //   auto payload = sample.get_payload().as_vector();
+  //   if(deserialize(payload, message))
+  //   {
+  //     latest_config_ = message;
+  //     mc_rtc::log::info("Received config message");
+  //   }
+  // };
 
-  config_sub_ = session_->declare_subscriber(zenoh::KeyExpr(config_key), config_handler, zenoh::closures::none);
+  // config_sub_ = session_->declare_subscriber(zenoh::KeyExpr(config_key), config_handler, zenoh::closures::none);
 
   // state_sub_ = std::make_unique<zenoh::Subscriber<void>>(session_->declare_subscriber(
   //     zenoh::KeyExpr(state_key),
@@ -197,7 +183,7 @@ void NetworkInterfaceZenoh::setupPubSub(const mc_rtc::Configuration & network_co
 }
 
 // Serialization implementations
-std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageConfig & message)
+std::vector<uint8_t> CommunicationZenoh::serialize(const MessageConfig & message)
 {
   // Simple serialization: name_size + name + config_size + config + read flag
   std::string config_str = message.config.dump();
@@ -223,7 +209,7 @@ std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageConfig & mess
   return buffer;
 }
 
-std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageState & message)
+std::vector<uint8_t> CommunicationZenoh::serialize(const MessageState & message)
 {
   size_t size = message.state.size();
   std::vector<uint8_t> buffer;
@@ -238,7 +224,7 @@ std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageState & messa
   return buffer;
 }
 
-std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageCommand & message)
+std::vector<uint8_t> CommunicationZenoh::serialize(const MessageCommand & message)
 {
   size_t size = message.command.size();
   std::vector<uint8_t> buffer;
@@ -253,7 +239,7 @@ std::vector<uint8_t> NetworkInterfaceZenoh::serialize(const MessageCommand & mes
   return buffer;
 }
 
-bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, MessageConfig & message)
+bool CommunicationZenoh::deserialize(const std::vector<uint8_t> & data, MessageConfig & message)
 {
   if(data.empty()) return false;
 
@@ -288,7 +274,7 @@ bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, Messa
   return true;
 }
 
-bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, MessageState & message)
+bool CommunicationZenoh::deserialize(const std::vector<uint8_t> & data, MessageState & message)
 {
   if(data.empty()) return false;
 
@@ -301,7 +287,7 @@ bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, Messa
   return true;
 }
 
-bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, MessageCommand & message)
+bool CommunicationZenoh::deserialize(const std::vector<uint8_t> & data, MessageCommand & message)
 {
   if(data.empty()) return false;
 
@@ -314,7 +300,7 @@ bool NetworkInterfaceZenoh::deserialize(const std::vector<uint8_t> & data, Messa
   return true;
 }
 
-bool NetworkInterfaceZenoh::sendMessage(const std::string & message)
+bool CommunicationZenoh::sendMessage(const std::string & message)
 {
   // mc_rtc::log::info("Sending config message");
   // auto data = serialize(message);
@@ -322,7 +308,7 @@ bool NetworkInterfaceZenoh::sendMessage(const std::string & message)
   return true;
 }
 
-bool NetworkInterfaceZenoh::receiveMessage(std::string & message)
+bool CommunicationZenoh::receiveMessage(std::string & message)
 {
   // std::lock_guard<std::mutex> lock(mutex_);
   // if(latest_config_)
@@ -333,4 +319,4 @@ bool NetworkInterfaceZenoh::receiveMessage(std::string & message)
   return false;
 }
 
-} // namespace mc_network
+} // namespace mc_communication

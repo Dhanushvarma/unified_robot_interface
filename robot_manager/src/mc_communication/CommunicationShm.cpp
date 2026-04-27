@@ -1,40 +1,39 @@
-#include <mc_network_interface/NetworkInterfaceShm.h>
+#include <mc_communication/CommunicationShm.h>
 
 #include <mc_rtc/Configuration.h>
 
 // #include <type_traits>
 
-namespace mc_network
+namespace mc_communication
 {
 
-NetworkInterfaceShm::NetworkInterfaceShm(const mc_rtc::Configuration & network_config)
-: NetworkInterface(network_config)
+CommunicationShm::CommunicationShm(const mc_rtc::Configuration & com_config) : Communication(com_config)
 {
-  mc_rtc::log::success("network shm start");
+  mc_rtc::log::success("com shm start");
 
   /* Initialize shared memory blocks*/
   const char * homeDir = std::getenv("HOME");
-  key_path_ = std::string(homeDir) + NetworkInterface::ip();
+  key_path_ = std::string(homeDir) + Communication::ip();
   {
-    auto [id, ptr] = createShmBlock<MessageConfigShm>(key_path_, NetworkInterface::ports()["config"]);
+    auto [id, ptr] = createShmBlock<MessageConfigShm>(key_path_, Communication::ports()["config"]);
     shm_ids_.push_back(id);
     shm_map_["config"] = ptr;
   }
   {
-    auto [id, ptr] = createShmBlock<MessageStateShm>(key_path_, NetworkInterface::ports()["state"]);
+    auto [id, ptr] = createShmBlock<MessageStateShm>(key_path_, Communication::ports()["state"]);
     shm_ids_.push_back(id);
     shm_map_["state"] = ptr;
   }
   {
-    auto [id, ptr] = createShmBlock<MessageCommandShm>(key_path_, NetworkInterface::ports()["command"]);
+    auto [id, ptr] = createShmBlock<MessageCommandShm>(key_path_, Communication::ports()["command"]);
     shm_ids_.push_back(id);
     shm_map_["command"] = ptr;
   }
 
-  mc_rtc::log::info("network shm done");
+  mc_rtc::log::info("com shm done");
 };
 
-NetworkInterfaceShm::~NetworkInterfaceShm()
+CommunicationShm::~CommunicationShm()
 {
   mc_rtc::log::info("Destructor called, cleaning up {} segments", shm_ids_.size());
 
@@ -66,9 +65,9 @@ NetworkInterfaceShm::~NetworkInterfaceShm()
   }
 }
 
-bool NetworkInterfaceShm::sendMessage(const MessageConfig & msg)
+bool CommunicationShm::sendMessage(const MessageConfig & msg)
 {
-  mc_rtc::log::success("network shm sendMessage config start");
+  mc_rtc::log::success("com shm sendMessage config start");
 
   /* Convert to shared memory compatible message */
   MessageConfigShm msgShm;
@@ -83,7 +82,7 @@ bool NetworkInterfaceShm::sendMessage(const MessageConfig & msg)
   std::memcpy(msgShm.name, msg.name.c_str(), nameLen);
   msgShm.name[nameLen] = '\0';
 
-  mc_rtc::log::info("network shm sendMessage config 1");
+  mc_rtc::log::info("com shm sendMessage config 1");
 
   std::string configStr = msg.config.dump();
   size_t configLen = configStr.size();
@@ -96,30 +95,30 @@ bool NetworkInterfaceShm::sendMessage(const MessageConfig & msg)
   std::memcpy(msgShm.config, configStr.c_str(), configLen);
   msgShm.config[configLen] = '\0';
 
-  mc_rtc::log::info("network shm sendMessage config 2");
+  mc_rtc::log::info("com shm sendMessage config 2");
 
   msgShm.read = msg.read;
 
   /* Send message */
-  mc_rtc::log::info("network shm sendMessage config done");
+  mc_rtc::log::info("com shm sendMessage config done");
   return sendMessageImpl(msgShm, "config");
 }
 
-bool NetworkInterfaceShm::sendMessage(const MessageState & msg)
+bool CommunicationShm::sendMessage(const MessageState & msg)
 {
   MessageStateShm msgShm;
   return sendMessageImpl(msgShm, "state");
 }
 
-bool NetworkInterfaceShm::sendMessage(const MessageCommand & msg)
+bool CommunicationShm::sendMessage(const MessageCommand & msg)
 {
   MessageCommandShm msgShm;
   return sendMessageImpl(msgShm, "command");
 }
 
-bool NetworkInterfaceShm::receiveMessage(MessageConfig & msg)
+bool CommunicationShm::receiveMessage(MessageConfig & msg)
 {
-  mc_rtc::log::success("network shm sendMessage config start");
+  mc_rtc::log::success("com shm sendMessage config start");
 
   /* Receive message */
   MessageConfigShm msgShm;
@@ -131,23 +130,23 @@ bool NetworkInterfaceShm::receiveMessage(MessageConfig & msg)
 
   std::string config_data(msgShm.config, msgShm.config_size);
   msg.config = mc_rtc::Configuration::fromData(config_data);
-  if(!msg.config.has("controller") || !msg.config.has("network")) return false;
+  if(!msg.config.has("controller") || !msg.config.has("communication")) return false;
 
   msg.read = msgShm.read;
 
   return status;
 }
 
-bool NetworkInterfaceShm::receiveMessage(MessageState & msg)
+bool CommunicationShm::receiveMessage(MessageState & msg)
 {
   MessageStateShm msgShm;
   return receiveMessageImpl(msgShm, "state");
 }
 
-bool NetworkInterfaceShm::receiveMessage(MessageCommand & msg)
+bool CommunicationShm::receiveMessage(MessageCommand & msg)
 {
   MessageCommandShm msgShm;
   return receiveMessageImpl(msgShm, "command");
 }
 
-} // namespace mc_network
+} // namespace mc_communication

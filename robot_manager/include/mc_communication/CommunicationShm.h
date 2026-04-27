@@ -1,13 +1,13 @@
 #pragma once
 
-#include <mc_network_interface/NetworkInterface.h>
+#include <mc_communication/Communication.h>
 
 #include <mc_rtc/logging.h>
 
 #include <iostream>
 #include <string>
 
-namespace mc_network
+namespace mc_communication
 {
 
 struct MessageConfigShm
@@ -32,12 +32,12 @@ struct MessageCommandShm
   double command[256];
 };
 
-class NetworkInterfaceShm : public NetworkInterface
+class CommunicationShm : public Communication
 {
 public:
-  NetworkInterfaceShm();
-  NetworkInterfaceShm(const mc_rtc::Configuration & network_config);
-  ~NetworkInterfaceShm();
+  CommunicationShm();
+  CommunicationShm(const mc_rtc::Configuration & com_config);
+  ~CommunicationShm();
 
   bool sendMessage(const MessageConfig & message) override;
   bool sendMessage(const MessageState & message) override;
@@ -63,13 +63,13 @@ private:
 };
 
 template<typename MessageType>
-std::pair<int, void *> NetworkInterfaceShm::createShmBlock(const std::string & path, const int & id)
+std::pair<int, void *> CommunicationShm::createShmBlock(const std::string & path, const int & id)
 {
-  mc_rtc::log::success("network shm createShmBlock start");
+  mc_rtc::log::success("com shm createShmBlock start");
   mc_rtc::log::info("id {} size {}", id, sizeof(MessageType));
   key_t key = ftok(path.c_str(), id);
 
-  mc_rtc::log::info("network shm createShmBlock 1");
+  mc_rtc::log::info("com shm createShmBlock 1");
 
   int shm_id = shmget(key, sizeof(MessageType), 0666 | IPC_CREAT | IPC_EXCL);
   if(shm_id < 0)
@@ -86,7 +86,7 @@ std::pair<int, void *> NetworkInterfaceShm::createShmBlock(const std::string & p
     }
   }
 
-  mc_rtc::log::info("network shm createShmBlock 2");
+  mc_rtc::log::info("com shm createShmBlock 2");
 
   void * shm_ptr = shmat(shm_id, nullptr, 0);
   if(shm_ptr == (void *)-1)
@@ -95,15 +95,15 @@ std::pair<int, void *> NetworkInterfaceShm::createShmBlock(const std::string & p
     throw std::runtime_error("shmat failed");
   }
 
-  mc_rtc::log::info("network shm createShmBlock done");
+  mc_rtc::log::info("com shm createShmBlock done");
 
   return {shm_id, shm_ptr};
 };
 
 template<typename MessageType>
-bool NetworkInterfaceShm::sendMessageImpl(const MessageType & message, const std::string & type)
+bool CommunicationShm::sendMessageImpl(const MessageType & message, const std::string & type)
 {
-  mc_rtc::log::success("network shm sendMessageImpl start for type: {}", type);
+  mc_rtc::log::success("com shm sendMessageImpl start for type: {}", type);
 
   MessageType * dest = static_cast<MessageType *>(shm_map_[type]);
 
@@ -114,14 +114,14 @@ bool NetworkInterfaceShm::sendMessageImpl(const MessageType & message, const std
     return true;
   }
 
-  mc_rtc::log::info("network shm sendMessageImpl done");
+  mc_rtc::log::info("com shm sendMessageImpl done");
   return false;
 }
 
 template<typename MessageType>
-bool NetworkInterfaceShm::receiveMessageImpl(MessageType & message, const std::string & type)
+bool CommunicationShm::receiveMessageImpl(MessageType & message, const std::string & type)
 {
-  mc_rtc::log::success("network shm receiveMessageImpl start for type: {}", type);
+  mc_rtc::log::success("com shm receiveMessageImpl start for type: {}", type);
 
   MessageType * src = static_cast<MessageType *>(shm_map_[type]);
 
@@ -135,4 +135,4 @@ bool NetworkInterfaceShm::receiveMessageImpl(MessageType & message, const std::s
   return false;
 }
 
-} // namespace mc_network
+} // namespace mc_communication

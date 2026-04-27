@@ -2,8 +2,8 @@
 
 #include <mc_rtc/Configuration.h>
 
-#include <mc_network_interface/NetworkInterface.h>
-#include <mc_network_interface/NetworkInterfaceFactory.h>
+#include <mc_communication/Communication.h>
+#include <mc_communication/CommunicationFactory.h>
 #include <mc_robot_interface/RobotDriver.h>
 
 namespace mc_robot
@@ -41,9 +41,9 @@ public:
   {
     driver_ = std::move(driver);
   }
-  void setNetwork(std::unique_ptr<mc_network::NetworkInterface> network)
+  void setCommunication(std::unique_ptr<mc_communication::Communication> communication)
   {
-    network_ = std::move(network);
+    communication_ = std::move(communication);
   }
 
   [[nodiscard]] const std::string & name() const
@@ -66,9 +66,9 @@ public:
   {
     return *driver_;
   }
-  [[nodiscard]] mc_network::NetworkInterface & network()
+  [[nodiscard]] mc_communication::Communication & communication()
   {
-    return *network_;
+    return *communication_;
   }
 
 protected:
@@ -86,7 +86,7 @@ protected:
 
   // TODO: control mode ?
   std::unique_ptr<mc_rtc::RobotDriver> driver_{};
-  std::unique_ptr<mc_network::NetworkInterface> network_{};
+  std::unique_ptr<mc_communication::Communication> communication_{};
 
   /**
    * @brief Method in charge of robot sensors and commands update

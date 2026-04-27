@@ -1,4 +1,4 @@
-#include <mc_network_interface/NetworkInterfaceZenoh.h>
+#include <mc_communication/CommunicationZenoh.h>
 #include <mc_robot_interface/InterfaceTemplate.h>
 
 #include <mc_rtc/logging.h>
@@ -12,17 +12,23 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("InterfaceTemplate remote start");
 
-  mc_rtc::Configuration network_config("../etc/network.yaml");
-  // network_ = mc_network::NetworkInterfaceFactory::makeNetwork(network_config);
-  network_ = std::make_unique<mc_network::NetworkInterfaceZenoh>(network_config);
+  mc_rtc::Configuration com_config("../etc/communication.yaml");
+  if(com_config.has("name"))
+  {
+    communication_ = mc_communication::CommunicationFactory::makeCommunication(com_config("name"), com_config);
+  }
+  else
+  {
+    mc_rtc::log::error_and_throw("Missing name of robot");
+  }
 
   bool got_config = false;
-  mc_network::MessageConfig msgConfig;
+  mc_communication::MessageConfig msgConfig;
 
   // while(!got_config && !interrupt)
   // {
-  //   mc_rtc::log::info("[mc_network] Waiting for config from robot manager");
-  //   got_config = network_->receiveMessage(msgConfig);
+  //   mc_rtc::log::info("[mc_communication] Waiting for config from robot manager");
+  //   got_config = communication_->receiveMessage(msgConfig);
   //   if(!got_config)
   //   {
   //     std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -45,9 +51,9 @@ InterfaceTemplate::InterfaceTemplate(const std::string & name,
 {
   mc_rtc::log::success("RobotInterfaceTemplate manager start");
 
-  mc_rtc::Configuration network_config(config("network"));
-  // network_ = std::make_unique<mc_network::NetworkInterfaceZenoh>(network_config, RobotInterface::name_);
-  network_ = mc_network::NetworkInterfaceFactory::makeNetwork(network_config);
+  mc_rtc::Configuration com_config(config("communication"));
+  // communication_ = std::make_unique<mc_communication::CommunicationZenoh>(com_config, RobotInterface::name_);
+  communication_ = mc_communication::CommunicationFactory::makeCommunication(name, com_config);
 
   mc_rtc::log::info("RobotInterfaceTemplate done");
 };

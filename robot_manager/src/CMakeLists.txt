@@ -1,17 +1,17 @@
-# Network Interface
-set(NETWORK_INTERFACE_SRC mc_network_interface/NetworkInterfaceFactory.cpp
-                          mc_network_interface/NetworkInterfaceZenoh.cpp
+# Communication Interface
+set(COMMUNICATION_SRC mc_communication/CommunicationFactory.cpp
+                      mc_communication/CommunicationZenoh.cpp
 )
 
-add_library(mc_network_interface SHARED ${NETWORK_INTERFACE_SRC})
-add_library(${PROJECT_NAME}::network_interface ALIAS mc_network_interface)
+add_library(mc_communication SHARED ${COMMUNICATION_SRC})
+add_library(${PROJECT_NAME}::communication ALIAS mc_communication)
 
 target_link_libraries(
-  mc_network_interface PUBLIC mc_rtc::mc_control zenohcxx::zenohc
+  mc_communication PUBLIC mc_rtc::mc_control zenohcxx::zenohc
 )
 
 target_include_directories(
-  mc_network_interface
+  mc_communication
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
          $<INSTALL_INTERFACE:include>
 )
@@ -25,8 +25,7 @@ add_library(mc_robot_interface SHARED ${INTERFACE_SRC})
 add_library(${PROJECT_NAME}::robot_interface ALIAS mc_robot_interface)
 
 target_link_libraries(
-  mc_robot_interface PUBLIC mc_rtc::mc_control mc_network_interface
-                            # mc_local::mc_local_lib
+  mc_robot_interface PUBLIC mc_rtc::mc_control mc_communication
 )
 
 target_include_directories(
@@ -44,7 +43,7 @@ add_library(mc_robot_manager SHARED ${ROBOT_MANAGER_SRC})
 add_library(${PROJECT_NAME}::robot_manager ALIAS mc_robot_manager)
 
 target_link_libraries(
-  mc_robot_manager PUBLIC mc_rtc::mc_control mc_network_interface
+  mc_robot_manager PUBLIC mc_rtc::mc_control mc_communication
 )
 
 target_include_directories(
@@ -55,7 +54,7 @@ target_include_directories(
 
 # Install all libraries
 install(
-  TARGETS mc_network_interface mc_robot_interface mc_robot_manager
+  TARGETS mc_communication mc_robot_interface mc_robot_manager
   EXPORT "${PROJECT_NAME}Targets"
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
@@ -72,8 +71,8 @@ install(
 add_executable(MCFleetControl mc_robot_manager/main.cpp)
 
 target_link_libraries(
-  MCFleetControl PRIVATE mc_robot_manager mc_robot_interface
-                         mc_network_interface boost_program_options
+  MCFleetControl PRIVATE mc_robot_manager mc_robot_interface mc_communication
+                         boost_program_options
 )
 
 install(TARGETS MCFleetControl RUNTIME DESTINATION bin)

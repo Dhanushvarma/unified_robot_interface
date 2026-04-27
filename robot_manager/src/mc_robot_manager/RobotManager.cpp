@@ -27,7 +27,7 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
     user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
     user_default_.driver = dc("driver", std::string(user_default_.driver));
     user_default_.time_step = dc("time_step", double(user_default_.time_step));
-    user_default_.network_protocol = dc("network_protocol", std::string(user_default_.network_protocol));
+    user_default_.communication_protocol = dc("communication", std::string(user_default_.communication_protocol));
   }
 
   mc_rtc::log::info("manager processGConfig 2");
@@ -73,16 +73,16 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
       }
     }
 
-    if(robot_config.has("network"))
+    if(robot_config.has("communication"))
     {
-      if(!robot_config("network").has("protocol"))
+      if(!robot_config("communication").has("protocol"))
       {
-        robot_config("network").add("protocol", user_default_.network_protocol);
+        robot_config("communication").add("protocol", user_default_.communication_protocol);
       }
     }
     else
     {
-      mc_rtc::log::error_and_throw("No `network` section in the configuration of robot {}", robot_name);
+      mc_rtc::log::error_and_throw("No `communication` section in the configuration of robot {}", robot_name);
     }
   }
 
@@ -96,7 +96,7 @@ void RobotManager::init()
   mc_rtc::Configuration robots_config = gconfig_.config("Robots");
   mc_rtc::log::info(robots_config.dump(true, true));
 
-  /* Set up robot interface and network*/
+  /* Set up robot interface and communication*/
   for(auto & robot_name : robots_config.keys())
   {
     mc_rtc::log::info("manager init robot {}", robot_name);
@@ -111,9 +111,9 @@ void RobotManager::init()
     std::unique_ptr<mc_robot::RobotInterface> interface = interface_factory_.makeInterface(robot_name, robot_config);
     if(!interface) continue;
 
-    // std::unique_ptr<mc_network::NetworkInterface> network = network_factory_.makeNetwork(robot_config("network"));
-    // if(!network) continue;
-    // interface->setNetwork(std::move(network));
+    // std::unique_ptr<mc_communication::Communication> communication =
+    // communication_factory_.makeCommunication(robot_config("communication")); if(!communication) continue;
+    // interface->setCommunication(std::move(communication));
 
     interfaces_.try_emplace(robot_name, std::move(interface));
   }
@@ -125,13 +125,13 @@ void RobotManager::init()
 
     mc_rtc::log::info("manager init send config 1", robot_name);
 
-    mc_network::MessageConfig messageConfig = {.name = robot_name, .config = interface->config(), .read = false};
+    mc_communication::MessageConfig messageConfig = {.name = robot_name, .config = interface->config(), .read = false};
     mc_rtc::log::info("manager init send config 2", robot_name);
 
-    // interface->network().sendMessage(messageConfig);
+    // interface->communication().sendMessage(messageConfig);
 
-    // mc_network::MessageConfig config_test;
-    // interface->network().receiveMessage(config_test);
+    // mc_communication::MessageConfig config_test;
+    // interface->communication().receiveMessage(config_test);
     // mc_rtc::log::success(config_test.name);
     // mc_rtc::log::success(config_test.config.dump(true, true));
     // mc_rtc::log::success(config_test.read);

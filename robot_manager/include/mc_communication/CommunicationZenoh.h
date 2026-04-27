@@ -1,7 +1,8 @@
 #pragma once
 
+#include <mc_communication/Communication.h>
+
 #include <mc_rtc/logging.h>
-#include <mc_network_interface/NetworkInterface.h>
 
 #include "zenoh.hxx"
 
@@ -10,26 +11,25 @@
 #include <optional>
 #include <string>
 
-namespace mc_network
+namespace mc_communication
 {
 
-class NetworkInterfaceZenoh : public NetworkInterface
+class CommunicationZenoh : public Communication
 {
 public:
-  NetworkInterfaceZenoh();
-  NetworkInterfaceZenoh(const mc_rtc::Configuration & network_config);
-  ~NetworkInterfaceZenoh() override;
+  CommunicationZenoh();
+  CommunicationZenoh(const mc_rtc::Configuration & com_config);
+  ~CommunicationZenoh() override;
 
   bool sendMessage(const std::string & message) override;
   bool receiveMessage(std::string & message) override;
 
 private:
-  void configureShm(zenoh::Config & zenoh_config);
-  void configureTcp(zenoh::Config & zenoh_config);
-  void configureUdp(zenoh::Config & zenoh_config);
-  void setupPubSub(const mc_rtc::Configuration & network_config);
+  void configureTransport(const mc_rtc::Configuration & com_config, zenoh::Config & zenoh_config);
+  void setupPubSub(const mc_rtc::Configuration & com_config);
 
-  // Serialization helpers
+  /* UNSTABLE */
+  // TODO: replace with FlatBuffers
   std::vector<uint8_t> serialize(const MessageConfig & message);
   std::vector<uint8_t> serialize(const MessageState & message);
   std::vector<uint8_t> serialize(const MessageCommand & message);
@@ -56,4 +56,4 @@ private:
   std::optional<MessageCommand> latest_command_;
 };
 
-} // namespace mc_network
+} // namespace mc_communication

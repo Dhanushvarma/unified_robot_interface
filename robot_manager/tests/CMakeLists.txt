@@ -1,7 +1,7 @@
 find_package(GTest)
 if(NOT GTest_FOUND)
   include(FetchContent)
-  fetchcontent_declare(
+  FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG v1.14.0
@@ -10,13 +10,13 @@ if(NOT GTest_FOUND)
       ON
       CACHE BOOL "" FORCE
   )
-  fetchcontent_makeavailable(googletest)
+  FetchContent_MakeAvailable(googletest)
 endif()
 
 add_executable(test_init test_init.cpp)
 
 target_link_libraries(
-  test_init PRIVATE mc_robot_manager mc_robot_interface mc_network_interface
+  test_init PRIVATE mc_robot_manager mc_robot_interface mc_communication
                     mc_rtc::mc_control gtest_main
 )
 

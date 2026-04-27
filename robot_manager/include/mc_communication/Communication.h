@@ -6,7 +6,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-namespace mc_network
+namespace mc_communication
 {
 
 struct MessageConfig
@@ -27,21 +27,18 @@ struct MessageCommand
   std::vector<double> command;
 };
 
-class NetworkInterface
+class Communication
 {
 public:
-  // TODO: move NetworkInterface() here
-  // Look for ../etc/network.yaml
-  NetworkInterface() : NetworkInterface(mc_rtc::Configuration("../etc/network.yaml")) {};
+  Communication() : Communication(mc_rtc::Configuration("../etc/communication.yaml")) {};
 
-  NetworkInterface(const mc_rtc::Configuration & network_config)
-  : ip_(network_config("ip")), port_(network_config("port")) {};
+  Communication(const mc_rtc::Configuration & com_config) : ip_(com_config("ip")), port_(com_config("port")) {};
 
-  virtual ~NetworkInterface() = default;
-  NetworkInterface(const NetworkInterface &) = delete;
-  NetworkInterface & operator=(const NetworkInterface &) = delete;
-  NetworkInterface(NetworkInterface &&) = delete;
-  NetworkInterface & operator=(NetworkInterface &&) = delete;
+  virtual ~Communication() = default;
+  Communication(const Communication &) = delete;
+  Communication & operator=(const Communication &) = delete;
+  Communication(Communication &&) = delete;
+  Communication & operator=(Communication &&) = delete;
 
   virtual bool sendMessage(const std::string & message) = 0;
   virtual bool receiveMessage(std::string & message) = 0;
@@ -62,4 +59,4 @@ private:
   const uint16_t port_;
 };
 
-} // namespace mc_network
+} // namespace mc_communication
