@@ -5,6 +5,7 @@
 
 #include <mc_control/mc_global_controller.h>
 
+#include <atomic>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -12,14 +13,9 @@
 namespace mc_fleet
 {
 
-struct DefaultConfig
-{
-  std::string module{};
-  std::string control_mode{};
-  std::string driver{};
-  double time_step{};
-  std::string network_protocol{};
-};
+void run(void * data, const std::atomic<bool> & interrupt);
+
+void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool> & interrupt);
 
 class RobotManager
 {
@@ -39,7 +35,16 @@ public:
   void init();
 
 private:
-  DefaultConfig user_default_{"", "position", "", 0.001, "tcp"};
+  struct DefaultConfig
+  {
+    std::string module{};
+    std::string control_mode{"position"};
+    std::string driver{};
+    double time_step{0.001};
+    std::string network_protocol{"zenoh"};
+  };
+
+  DefaultConfig user_default_;
 
   std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
   mc_control::MCGlobalController::GlobalConfiguration gconfig_;

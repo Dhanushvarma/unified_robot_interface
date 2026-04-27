@@ -1,5 +1,5 @@
 #include <mc_rtc/logging.h>
-#include <mc_robot_manager/Fleet.h>
+#include <mc_robot_manager/RobotManager.h>
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
