@@ -24,9 +24,9 @@ public:
   bool receiveMessage(std::string & message) override;
 
 private:
-  void configureShmTransport(zenoh::Config & zenoh_config);
-  void configureTcpTransport(zenoh::Config & zenoh_config);
-  void configureUdpTransport(zenoh::Config & zenoh_config);
+  void configureShm(zenoh::Config & zenoh_config);
+  void configureTcp(zenoh::Config & zenoh_config);
+  void configureUdp(zenoh::Config & zenoh_config);
   void setupPubSub(const std::string & name);
 
   // Serialization helpers

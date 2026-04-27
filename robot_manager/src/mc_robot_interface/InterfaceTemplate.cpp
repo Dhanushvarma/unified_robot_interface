@@ -49,7 +49,8 @@ InterfaceTemplate::InterfaceTemplate(const std::string & name,
   mc_rtc::log::success("RobotInterfaceTemplate manager start");
 
   mc_rtc::Configuration network_config(config("network"));
-  network_ = std::make_unique<mc_network::NetworkInterfaceZenoh>(network_config, RobotInterface::name_);
+  // network_ = std::make_unique<mc_network::NetworkInterfaceZenoh>(network_config, RobotInterface::name_);
+  network_ = mc_network::NetworkInterfaceFactory::makeNetwork(network_config);
 
   mc_rtc::log::info("RobotInterfaceTemplate done");
 };

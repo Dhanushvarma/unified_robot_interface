@@ -20,17 +20,17 @@ NetworkInterfaceZenoh::NetworkInterfaceZenoh(const mc_rtc::Configuration & netwo
 
   mc_rtc::log::info("NetworkInterfaceZenoh constructor 2");
 
-  if(protocol == "shm")
+  if(protocol == "zenoh/shm")
   {
-    configureShmTransport(zenoh_config);
+    configureShm(zenoh_config);
   }
-  else if(protocol == "tcp")
+  else if(protocol == "zenoh/tcp")
   {
-    configureTcpTransport(zenoh_config);
+    configureTcp(zenoh_config);
   }
-  else if(protocol == "udp")
+  else if(protocol == "zenoh/udp")
   {
-    configureUdpTransport(zenoh_config);
+    configureUdp(zenoh_config);
   }
   else
   {
@@ -90,15 +90,17 @@ NetworkInterfaceZenoh::~NetworkInterfaceZenoh()
   // Zenoh handles cleanup automatically via RAII
 }
 
-void NetworkInterfaceZenoh::configureShmTransport(zenoh::Config & zenoh_config)
+void NetworkInterfaceZenoh::configureShm(zenoh::Config & zenoh_config)
 {
-  // zenoh_config.insert_json5("transport/shared_memory/enabled", "true");
+  mc_rtc::log::info("NetworkInterfaceZenoh configureShm");
+
+  zenoh_config.insert_json5("transport/shared_memory/enabled", "true");
   // zenoh_config.insert_json5("transport/unicast/enabled", "false");
   // zenoh_config.insert_json5("transport/multicast/enabled", "false");
-  // zenoh_config.insert_json5("mode", "\"peer\"");
+  zenoh_config.insert_json5("mode", "\"peer\"");
 }
 
-void NetworkInterfaceZenoh::configureTcpTransport(zenoh::Config & zenoh_config)
+void NetworkInterfaceZenoh::configureTcp(zenoh::Config & zenoh_config)
 {
   // const std::string & ip_addr = ip();
   // uint16_t zenoh_port = NetworkInterface::port();
@@ -112,7 +114,7 @@ void NetworkInterfaceZenoh::configureTcpTransport(zenoh::Config & zenoh_config)
   // zenoh_config.insert_json5("mode", "\"peer\"");
 }
 
-void NetworkInterfaceZenoh::configureUdpTransport(zenoh::Config & zenoh_config)
+void NetworkInterfaceZenoh::configureUdp(zenoh::Config & zenoh_config)
 {
   // const std::string & multicast_ip = ip();
   // uint16_t udp_port = NetworkInterface::port();

@@ -128,13 +128,13 @@ void RobotManager::init()
     mc_network::MessageConfig messageConfig = {.name = robot_name, .config = interface->config(), .read = false};
     mc_rtc::log::info("manager init send config 2", robot_name);
 
-    interface->network().sendMessage(messageConfig);
+    // interface->network().sendMessage(messageConfig);
 
-    mc_network::MessageConfig config_test;
-    interface->network().receiveMessage(config_test);
-    mc_rtc::log::success(config_test.name);
-    mc_rtc::log::success(config_test.config.dump(true, true));
-    mc_rtc::log::success(config_test.read);
+    // mc_network::MessageConfig config_test;
+    // interface->network().receiveMessage(config_test);
+    // mc_rtc::log::success(config_test.name);
+    // mc_rtc::log::success(config_test.config.dump(true, true));
+    // mc_rtc::log::success(config_test.read);
   }
 
   mc_rtc::log::info("manager init done");

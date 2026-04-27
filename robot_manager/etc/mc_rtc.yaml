@@ -36,6 +36,6 @@ Robots:
   local_robot:
     module: interface_template
     network:
-      protocol: shm
+      protocol: zenoh/shm
       ip: /workspace/sandbox/mc_robot_manager/
       port: 100
