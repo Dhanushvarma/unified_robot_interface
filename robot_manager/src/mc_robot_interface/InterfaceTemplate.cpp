@@ -19,9 +19,6 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
   bool got_config = false;
   mc_network::MessageConfig msgConfig;
 
-  // FIX: Include the global interrupt atomic in your loop condition
-  // You may need to pass this reference or access it globally
-
   // while(!got_config && !interrupt)
   // {
   //   mc_rtc::log::info("[mc_network] Waiting for config from robot manager");

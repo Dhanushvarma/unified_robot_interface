@@ -6,7 +6,7 @@
 namespace mc_network
 {
 
-NetworkInterfaceZenoh::NetworkInterfaceZenoh(const mc_rtc::Configuration & network_config, const std::string & name)
+NetworkInterfaceZenoh::NetworkInterfaceZenoh(const mc_rtc::Configuration & network_config)
 : NetworkInterface(network_config)
 {
   mc_rtc::log::success("NetworkInterfaceZenoh constructor start");
@@ -42,44 +42,7 @@ NetworkInterfaceZenoh::NetworkInterfaceZenoh(const mc_rtc::Configuration & netwo
 
   mc_rtc::log::info("NetworkInterfaceZenoh constructor 3");
 
-  if(name.empty())
-  {
-    mc_rtc::log::info("NetworkInterfaceZenoh constructor subscriber");
-
-    // create subscriber then wait for first message
-    std::string config_key = "manager/**";
-
-    auto data_handler = [](const zenoh::Sample & sample)
-    {
-      std::cout << ">> [Subscriber] Received "
-                << " ('" << sample.get_keyexpr().as_string_view() << "' : '" << sample.get_payload().as_string()
-                << "')";
-
-      auto attachment = sample.get_attachment();
-      if(attachment.has_value())
-      {
-        std::cout << "  (" << attachment->get().as_string() << ")";
-      }
-      std::cout << std::endl;
-    };
-
-    mc_rtc::log::info("NetworkInterfaceZenoh constructor subscriber 1");
-
-    config_sub_ = session_->declare_subscriber(zenoh::KeyExpr(config_key), data_handler, zenoh::closures::none);
-    mc_rtc::log::info("Created subsriber with key {}", config_sub_->get_keyexpr().as_string_view());
-  }
-  else
-  {
-    mc_rtc::log::info("NetworkInterfaceZenoh constructor publisher");
-
-    // create publisher and subscriber
-    std::string config_key = "manager/" + name + "/config";
-    config_pub_ = session_->declare_publisher(zenoh::KeyExpr(config_key));
-    mc_rtc::log::info("Created publisher with key {}", config_pub_->get_keyexpr().as_string_view());
-    config_pub_->put("Simple from publisher.put!");
-  }
-
-  // setupPublishersSubscribers(name);
+  setupPubSub(network_config);
 
   mc_rtc::log::success("NetworkInterfaceZenoh initialized with protocol: {}", protocol);
 }
@@ -92,11 +55,9 @@ NetworkInterfaceZenoh::~NetworkInterfaceZenoh()
 
 void NetworkInterfaceZenoh::configureShm(zenoh::Config & zenoh_config)
 {
-  mc_rtc::log::info("NetworkInterfaceZenoh configureShm");
+  mc_rtc::log::info("network Zenoh configureShm");
 
   zenoh_config.insert_json5("transport/shared_memory/enabled", "true");
-  // zenoh_config.insert_json5("transport/unicast/enabled", "false");
-  // zenoh_config.insert_json5("transport/multicast/enabled", "false");
   zenoh_config.insert_json5("mode", "\"peer\"");
 }
 
@@ -128,38 +89,81 @@ void NetworkInterfaceZenoh::configureUdp(zenoh::Config & zenoh_config)
   // zenoh_config.insert_json5("mode", "\"peer\"");
 }
 
-void NetworkInterfaceZenoh::setupPubSub(const std::string & name)
+void NetworkInterfaceZenoh::setupPubSub(const mc_rtc::Configuration & network_config)
 {
-  mc_rtc::log::info("Setting up publishers and subscribers for robot: {}", name);
 
-  // std::string base_key = "robot/" + name;
+  // if(network_config.has("name"))
+  // {
+  //   mc_rtc::log::info("NetworkInterfaceZenoh constructor subscriber");
+
+  //   // create subscriber then wait for first message
+  //   std::string config_key = network_config("name");
+
+  //   auto data_handler = [](const zenoh::Sample & sample)
+  //   {
+  //     std::cout << ">> [Subscriber] Received "
+  //               << " ('" << sample.get_keyexpr().as_string_view() << "' : '" << sample.get_payload().as_string()
+  //               << "')";
+
+  //     auto attachment = sample.get_attachment();
+  //     if(attachment.has_value())
+  //     {
+  //       std::cout << "  (" << attachment->get().as_string() << ")";
+  //     }
+  //     std::cout << std::endl;
+  //   };
+
+  //   mc_rtc::log::info("NetworkInterfaceZenoh constructor subscriber 1");
+
+  //   config_sub_ = session_->declare_subscriber(zenoh::KeyExpr(config_key), data_handler, zenoh::closures::none);
+  //   mc_rtc::log::info("Created subsriber with key {}", config_sub_->get_keyexpr().as_string_view());
+  // }
+  // else
+  // {
+  //   mc_rtc::log::info("NetworkInterfaceZenoh constructor publisher");
+
+  //   // create publisher and subscriber
+  //   std::string config_key = "manager/" + name + "/config";
+  //   config_pub_ = session_->declare_publisher(zenoh::KeyExpr(config_key));
+  //   mc_rtc::log::info("Created publisher with key {}", config_pub_->get_keyexpr().as_string_view());
+  //   config_pub_->put("Simple from publisher.put!");
+  // }
+
+  std::string robot_name;
+
+  if(network_config.has("name"))
+  {
+    robot_name = static_cast<std::string>(network_config("name"));
+    mc_rtc::log::info("Setting up publishers and subscribers for robot: {}", robot_name);
+  }
+  else
+  {
+    // mc_rtc::log::info("NAME EXTRACTED {}", RoboterInterface::name_);
+  }
 
   // // Setup publishers
-  // std::string config_key = base_key + "/config";
-  // std::string state_key = base_key + "/state";
-  // std::string command_key = base_key + "/command";
+  std::string config_key = robot_name + "/config";
+  std::string state_key = robot_name + "/state";
+  std::string command_key = robot_name + "/command";
 
-  // config_pub_ = std::make_unique<zenoh::Publisher>(session_->declare_publisher(zenoh::KeyExpr(config_key)));
-  // state_pub_ = std::make_unique<zenoh::Publisher>(session_->declare_publisher(zenoh::KeyExpr(state_key)));
-  // command_pub_ = std::make_unique<zenoh::Publisher>(session_->declare_publisher(zenoh::KeyExpr(command_key)));
+  config_pub_ = session_->declare_publisher(zenoh::KeyExpr(config_key));
+  state_pub_ = session_->declare_publisher(zenoh::KeyExpr(state_key));
+  command_pub_ = session_->declare_publisher(zenoh::KeyExpr(command_key));
 
-  // mc_rtc::log::info("Publishers created");
+  // Setup subscribers with callbacks
+  auto config_handler = [this](const zenoh::Sample & sample)
+  {
+    // std::lock_guard<std::mutex> lock(mutex_);
+    MessageConfig message;
+    auto payload = sample.get_payload().as_vector();
+    if(deserialize(payload, message))
+    {
+      latest_config_ = message;
+      mc_rtc::log::info("Received config message");
+    }
+  };
 
-  // // Setup subscribers with callbacks
-  // config_sub_ = std::make_unique<zenoh::Subscriber<void>>(session_->declare_subscriber(
-  //     zenoh::KeyExpr(config_key),
-  //     [this](const zenoh::Sample & sample)
-  //     {
-  //       std::lock_guard<std::mutex> lock(mutex_);
-  //       MessageConfig message;
-  //       auto payload = sample.get_payload().as_vector();
-  //       if(deserialize(payload, message))
-  //       {
-  //         latest_config_ = message;
-  //         mc_rtc::log::info("Received config message");
-  //       }
-  //     },
-  //     zenoh::closures::none));
+  config_sub_ = session_->declare_subscriber(zenoh::KeyExpr(config_key), config_handler, zenoh::closures::none);
 
   // state_sub_ = std::make_unique<zenoh::Subscriber<void>>(session_->declare_subscriber(
   //     zenoh::KeyExpr(state_key),

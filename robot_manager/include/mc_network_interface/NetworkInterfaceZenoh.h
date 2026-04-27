@@ -17,7 +17,7 @@ class NetworkInterfaceZenoh : public NetworkInterface
 {
 public:
   NetworkInterfaceZenoh();
-  NetworkInterfaceZenoh(const mc_rtc::Configuration & network_config, const std::string & name = "");
+  NetworkInterfaceZenoh(const mc_rtc::Configuration & network_config);
   ~NetworkInterfaceZenoh() override;
 
   bool sendMessage(const std::string & message) override;
@@ -27,7 +27,7 @@ private:
   void configureShm(zenoh::Config & zenoh_config);
   void configureTcp(zenoh::Config & zenoh_config);
   void configureUdp(zenoh::Config & zenoh_config);
-  void setupPubSub(const std::string & name);
+  void setupPubSub(const mc_rtc::Configuration & network_config);
 
   // Serialization helpers
   std::vector<uint8_t> serialize(const MessageConfig & message);
@@ -54,17 +54,6 @@ private:
   std::optional<MessageConfig> latest_config_;
   std::optional<MessageState> latest_state_;
   std::optional<MessageCommand> latest_command_;
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wreturn-type"
-  /* Obsolete */
-  bool sendMessage(const MessageConfig & msg) override {};
-  bool sendMessage(const MessageState & msg) override {};
-  bool sendMessage(const MessageCommand & msg) override {};
-  bool receiveMessage(MessageConfig & msg) override {};
-  bool receiveMessage(MessageState & msg) override {};
-  bool receiveMessage(MessageCommand & msg) override {};
-#pragma GCC diagnostic pop
 };
 
 } // namespace mc_network

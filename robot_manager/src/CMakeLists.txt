@@ -1,8 +1,6 @@
 # Network Interface
-set(NETWORK_INTERFACE_SRC
-    mc_network_interface/NetworkInterfaceFactory.cpp
-    # mc_network_interface/NetworkInterfaceShm.cpp
-    mc_network_interface/NetworkInterfaceZenoh.cpp
+set(NETWORK_INTERFACE_SRC mc_network_interface/NetworkInterfaceFactory.cpp
+                          mc_network_interface/NetworkInterfaceZenoh.cpp
 )
 
 add_library(mc_network_interface SHARED ${NETWORK_INTERFACE_SRC})

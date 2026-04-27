@@ -46,14 +46,6 @@ public:
   virtual bool sendMessage(const std::string & message) = 0;
   virtual bool receiveMessage(std::string & message) = 0;
 
-  /* Obsolete */
-  virtual bool sendMessage(const MessageConfig & msg) = 0;
-  virtual bool sendMessage(const MessageState & msg) = 0;
-  virtual bool sendMessage(const MessageCommand & msg) = 0;
-  virtual bool receiveMessage(MessageConfig & msg) = 0;
-  virtual bool receiveMessage(MessageState & msg) = 0;
-  virtual bool receiveMessage(MessageCommand & msg) = 0;
-
 protected:
   [[nodiscard]] const std::string & ip() const
   {
@@ -65,6 +57,7 @@ protected:
   }
 
 private:
+  const std::string name_;
   const std::string ip_;
   const uint16_t port_;
 };

@@ -1,5 +1,4 @@
 #include <mc_network_interface/NetworkInterfaceFactory.h>
-#include <mc_network_interface/NetworkInterfaceShm.h>
 #include <mc_network_interface/NetworkInterfaceZenoh.h>
 
 #include <mc_rtc/logging.h>
@@ -22,11 +21,6 @@ std::unique_ptr<NetworkInterface> NetworkInterfaceFactory::makeNetwork(const mc_
   {
     return std::make_unique<NetworkInterfaceZenoh>(network_config);
   }
-
-  // if(protocol == "shm")
-  // {
-  //   return std::make_unique<NetworkInterfaceShm>(network_config);
-  // }
 
   mc_rtc::log::error("Network protocol {} is not supported", protocol);
   return nullptr;

@@ -13,9 +13,9 @@ struct RobotInterfaceFactory
 public:
   void checkCompatibility();
 
-  std::unique_ptr<RobotInterface> makeInterface(const std::string & name,
-                                                const mc_rtc::Configuration & config,
-                                                const uint8_t & buffer_size = 0);
+  static std::unique_ptr<RobotInterface> makeInterface(const std::string & name,
+                                                       const mc_rtc::Configuration & config,
+                                                       const uint8_t & buffer_size = 0);
 
   /**
    * Constructs a new RobotInterface and stores it in
