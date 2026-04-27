@@ -38,15 +38,11 @@ private:
   bool deserialize(const std::vector<uint8_t> & data, MessageState & message);
   bool deserialize(const std::vector<uint8_t> & data, MessageCommand & message);
 
-  // Zenoh session and publishers (moved to unique_ptr to avoid default constructor issues)
   std::unique_ptr<zenoh::Session> session_;
-  std::optional<zenoh::Publisher> config_pub_;
+  std::optional<zenoh::Querier> config_pub_;
   std::optional<zenoh::Publisher> state_pub_;
-  std::optional<zenoh::Publisher> command_pub_;
-
-  // Subscribers
-  std::optional<zenoh::Subscriber<void>> config_sub_;
   std::optional<zenoh::Subscriber<void>> state_sub_;
+  std::optional<zenoh::Publisher> command_pub_;
   std::optional<zenoh::Subscriber<void>> command_sub_;
 
   // Cached messages from subscribers

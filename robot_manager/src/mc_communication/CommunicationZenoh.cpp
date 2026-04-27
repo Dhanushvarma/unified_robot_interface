@@ -30,7 +30,6 @@ CommunicationZenoh::CommunicationZenoh(const mc_rtc::Configuration & com_config)
 CommunicationZenoh::~CommunicationZenoh()
 {
   mc_rtc::log::info("CommunicationZenoh destructor called");
-  // Zenoh handles cleanup automatically via RAII
 }
 
 void CommunicationZenoh::configureTransport(const mc_rtc::Configuration & com_config, zenoh::Config & zenoh_config)
@@ -132,9 +131,9 @@ void CommunicationZenoh::setupPubSub(const mc_rtc::Configuration & com_config)
   std::string state_key = robot_name + "/state";
   std::string command_key = robot_name + "/command";
 
-  config_pub_ = session_->declare_publisher(zenoh::KeyExpr(config_key));
-  state_pub_ = session_->declare_publisher(zenoh::KeyExpr(state_key));
-  command_pub_ = session_->declare_publisher(zenoh::KeyExpr(command_key));
+  // config_pub_ = session_->declare_publisher(zenoh::KeyExpr(config_key));
+  // state_pub_ = session_->declare_publisher(zenoh::KeyExpr(state_key));
+  // command_pub_ = session_->declare_publisher(zenoh::KeyExpr(command_key));
 
   // // Setup subscribers with callbacks
   // auto config_handler = [this](const zenoh::Sample & sample)
