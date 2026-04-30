@@ -28,16 +28,6 @@ private:
   void configureTransport(const mc_rtc::Configuration & com_config, zenoh::Config & zenoh_config);
   void setupPubSub(const mc_rtc::Configuration & com_config);
 
-  /* UNSTABLE */
-  // TODO: replace with FlatBuffers
-  std::vector<uint8_t> serialize(const MessageConfig & message);
-  std::vector<uint8_t> serialize(const MessageState & message);
-  std::vector<uint8_t> serialize(const MessageCommand & message);
-
-  bool deserialize(const std::vector<uint8_t> & data, MessageConfig & message);
-  bool deserialize(const std::vector<uint8_t> & data, MessageState & message);
-  bool deserialize(const std::vector<uint8_t> & data, MessageCommand & message);
-
   std::unique_ptr<zenoh::Session> session_;
   std::optional<zenoh::Querier> config_pub_;
   std::optional<zenoh::Publisher> state_pub_;

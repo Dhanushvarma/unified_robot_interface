@@ -6,8 +6,10 @@ set(COMMUNICATION_SRC mc_communication/CommunicationFactory.cpp
 add_library(mc_communication SHARED ${COMMUNICATION_SRC})
 add_library(${PROJECT_NAME}::communication ALIAS mc_communication)
 
+add_dependencies(mc_communication generate_fbs)
+
 target_link_libraries(
-  mc_communication PUBLIC mc_rtc::mc_control zenohcxx::zenohc
+  mc_communication PUBLIC flatbuffers zenohcxx::zenohc mc_rtc::mc_control
 )
 
 target_include_directories(

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mc_communication/flatbuffers/Message_generated.h>
+
 #include <mc_rtc/Configuration.h>
 
 #include <string>
@@ -8,24 +10,6 @@
 
 namespace mc_communication
 {
-
-struct MessageConfig
-{
-  std::string name;
-  mc_rtc::Configuration config;
-
-  bool read = true;
-};
-
-struct MessageState
-{
-  std::vector<double> state;
-};
-
-struct MessageCommand
-{
-  std::vector<double> command;
-};
 
 class Communication
 {

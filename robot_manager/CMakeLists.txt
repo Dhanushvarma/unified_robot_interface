@@ -22,11 +22,28 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Dependencies
+find_package(Boost REQUIRED COMPONENTS program_options thread)
+find_package(Flatbuffers REQUIRED)
 find_package(mc_rtc REQUIRED)
+find_package(Threads REQUIRED)
 find_package(zenohc REQUIRED)
 find_package(zenohcxx REQUIRED)
-find_package(Boost REQUIRED COMPONENTS program_options thread)
-# find_package(Threads REQUIRED)
+
+# Flatbuffers
+find_program(FLATC_EXECUTABLE NAMES flatc REQUIRED)
+set(SCHEMA_FILE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/mc_communication/flatbuffers/Message.fbs"
+)
+set(OUTPUT_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/mc_communication/flatbuffers"
+)
+add_custom_command(
+  OUTPUT "${OUTPUT_DIR}/Message_generated.h"
+  COMMAND ${FLATC_EXECUTABLE} --cpp -o "${OUTPUT_DIR}" "${SCHEMA_FILE}"
+  DEPENDS "${SCHEMA_FILE}"
+  VERBATIM
+)
+add_custom_target(generate_fbs DEPENDS "${OUTPUT_DIR}/Message_generated.h")
 
 # Add Subdirectories
 include_directories(include)
@@ -50,32 +67,23 @@ message(STATUS "  Build Tests: ${BUILD_TESTING}")
 message(STATUS "  Install RPATH: ${CMAKE_INSTALL_RPATH}")
 message(STATUS "")
 
+# Export
 include(CMakePackageConfigHelpers)
 
-# 1. Define where the export file will be generated
 set(TARGETS_EXPORT_NAME "mc_fleetTargets")
 
-# 2. Configure the config file (you need an mc_fleetConfig.cmake.in file)
 configure_package_config_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/mc_fleetConfig.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/mc_fleetConfig.cmake"
   INSTALL_DESTINATION lib/cmake/${PROJECT_NAME}
 )
 
-# 3. Create version file
 write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/mc_fleetConfigVersion.cmake"
   VERSION ${PROJECT_VERSION}
   COMPATIBILITY AnyNewerVersion
 )
 
-# 4. Install the export file
-# install(
-#   EXPORT ${TARGETS_EXPORT_NAME} FILE mc_fleetTargets.cmake NAMESPACE mc_fleet::
-#   DESTINATION lib/cmake/${PROJECT_NAME}
-# )
-
-# 5. Install the config and version files
 install(
   FILES "${CMAKE_CURRENT_BINARY_DIR}/mc_fleetConfig.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/mc_fleetConfigVersion.cmake"
