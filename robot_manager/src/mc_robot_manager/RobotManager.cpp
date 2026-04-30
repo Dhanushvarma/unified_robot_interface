@@ -111,10 +111,6 @@ void RobotManager::init()
     std::unique_ptr<mc_robot::RobotInterface> interface = interface_factory_.makeInterface(robot_name, robot_config);
     if(!interface) continue;
 
-    // std::unique_ptr<mc_communication::Communication> communication =
-    // communication_factory_.makeCommunication(robot_config("communication")); if(!communication) continue;
-    // interface->setCommunication(std::move(communication));
-
     interfaces_.try_emplace(robot_name, std::move(interface));
   }
 
@@ -123,18 +119,7 @@ void RobotManager::init()
   {
     mc_rtc::log::info("manager init send config {}", robot_name);
 
-    mc_rtc::log::info("manager init send config 1", robot_name);
-
-    mc_communication::MessageConfig messageConfig = {.name = robot_name, .config = interface->config(), .read = false};
-    mc_rtc::log::info("manager init send config 2", robot_name);
-
-    // interface->communication().sendMessage(messageConfig);
-
-    // mc_communication::MessageConfig config_test;
-    // interface->communication().receiveMessage(config_test);
-    // mc_rtc::log::success(config_test.name);
-    // mc_rtc::log::success(config_test.config.dump(true, true));
-    // mc_rtc::log::success(config_test.read);
+    // ToDo
   }
 
   mc_rtc::log::info("manager init done");

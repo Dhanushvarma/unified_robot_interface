@@ -55,8 +55,6 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
   mc_control::MCGlobalController::GlobalConfiguration gconfig(conf_file, nullptr);
   auto robot_manager = std::make_unique<RobotManager>(gconfig);
 
-  // TODO: start communication - server
-
   mc_rtc::log::info("fleet init done");
 
   return robot_manager.release();

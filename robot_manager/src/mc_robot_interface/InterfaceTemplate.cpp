@@ -22,8 +22,8 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
     mc_rtc::log::error_and_throw("Missing name of robot");
   }
 
-  bool got_config = false;
-  mc_communication::MessageConfig msgConfig;
+  // bool got_config = false;
+  // mc_communication::MessageConfig msgConfig;
 
   // while(!got_config && !interrupt)
   // {
@@ -52,7 +52,6 @@ InterfaceTemplate::InterfaceTemplate(const std::string & name,
   mc_rtc::log::success("RobotInterfaceTemplate manager start");
 
   mc_rtc::Configuration com_config(config("communication"));
-  // communication_ = std::make_unique<mc_communication::CommunicationZenoh>(com_config, RobotInterface::name_);
   communication_ = mc_communication::CommunicationFactory::makeCommunication(name, com_config);
 
   mc_rtc::log::info("RobotInterfaceTemplate done");
