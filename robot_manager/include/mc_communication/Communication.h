@@ -24,8 +24,10 @@ public:
   Communication(Communication &&) = delete;
   Communication & operator=(Communication &&) = delete;
 
-  virtual bool sendMessage(const std::string & message) = 0;
-  virtual bool receiveMessage(std::string & message) = 0;
+  virtual bool sendMessage(const uint8_t * data, size_t size) = 0;
+  virtual flatbuffers::FlatBufferBuilder serialize(const mc_rtc::Configuration & config) = 0;
+
+  virtual bool receiveMessage(const uint8_t * data, size_t size) = 0;
 
 protected:
   [[nodiscard]] const std::string & ip() const

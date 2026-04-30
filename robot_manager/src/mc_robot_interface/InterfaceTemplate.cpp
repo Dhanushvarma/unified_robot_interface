@@ -8,6 +8,19 @@
 namespace mc_interface_template
 {
 
+InterfaceTemplate::InterfaceTemplate(const std::string & name,
+                                     const mc_rtc::Configuration & config,
+                                     uint8_t buffer_size)
+: RobotInterface(name, config, (buffer_size == 0) ? 6 : buffer_size)
+{
+  mc_rtc::log::success("RobotInterfaceTemplate manager start");
+
+  mc_rtc::Configuration com_config(config("communication"));
+  communication_ = mc_communication::CommunicationFactory::makeCommunicationSever(com_config);
+
+  mc_rtc::log::info("RobotInterfaceTemplate done");
+};
+
 InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("InterfaceTemplate remote start");
@@ -15,7 +28,7 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
   mc_rtc::Configuration com_config("../etc/communication.yaml");
   if(com_config.has("name"))
   {
-    communication_ = mc_communication::CommunicationFactory::makeCommunication(com_config("name"), com_config);
+    communication_ = mc_communication::CommunicationFactory::makeCommunicationClient(com_config);
   }
   else
   {
@@ -42,19 +55,6 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
   }
 
   mc_rtc::log::info("InterfaceTemplate done");
-};
-
-InterfaceTemplate::InterfaceTemplate(const std::string & name,
-                                     const mc_rtc::Configuration & config,
-                                     uint8_t buffer_size)
-: RobotInterface(name, config, (buffer_size == 0) ? 6 : buffer_size)
-{
-  mc_rtc::log::success("RobotInterfaceTemplate manager start");
-
-  mc_rtc::Configuration com_config(config("communication"));
-  communication_ = mc_communication::CommunicationFactory::makeCommunication(name, com_config);
-
-  mc_rtc::log::info("RobotInterfaceTemplate done");
 };
 
 } // namespace mc_interface_template

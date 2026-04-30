@@ -119,7 +119,15 @@ void RobotManager::init()
   {
     mc_rtc::log::info("manager init send config {}", robot_name);
 
-    // ToDo
+    auto builder = interface->communication().serialize(interface->config());
+    // interface->communication().sendMessage(builder.GetBufferPointer(), builder.GetSize());
+
+    // ---------------------------------------------------------------------------------------------
+
+    auto message_config = flatbuffers::GetRoot<mc_communication::MessageConfig>(builder.GetBufferPointer());
+    mc_rtc::Configuration config_receive{mc_rtc::Configuration::fromData(message_config->config()->str())};
+
+    mc_rtc::log::info(config_receive.dump(true, true));
   }
 
   mc_rtc::log::info("manager init done");

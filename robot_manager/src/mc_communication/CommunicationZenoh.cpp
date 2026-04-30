@@ -6,34 +6,32 @@
 namespace mc_communication
 {
 
-CommunicationZenoh::CommunicationZenoh(const mc_rtc::Configuration & com_config) : Communication(com_config)
+CommunicationSeverZenoh::CommunicationSeverZenoh(const mc_rtc::Configuration & com_config) : Communication(com_config)
 {
   mc_rtc::log::success("com Zenoh constructor start");
 
-  // Configure Zenoh transport based on protocol
-  auto zenoh_config = zenoh::Config::create_default();
-
-  mc_rtc::log::info("com Zenoh constructor 1");
-
-  configureTransport(com_config, zenoh_config);
+  zenoh::Config zenoh_config = configureTransport(com_config);
 
   // Open session with proper config
   session_ = std::make_unique<zenoh::Session>(std::move(zenoh_config));
 
   mc_rtc::log::info("com Zenoh constructor 2");
 
-  setupPubSub(com_config);
+  setupTransport(com_config);
 
-  mc_rtc::log::success("CommunicationZenoh initialized with protocol: {}", com_config("protocol"));
+  mc_rtc::log::success("CommunicationSeverZenoh initialized with protocol: {}", com_config("protocol"));
 }
 
-CommunicationZenoh::~CommunicationZenoh()
+CommunicationSeverZenoh::~CommunicationSeverZenoh()
 {
-  mc_rtc::log::info("CommunicationZenoh destructor called");
+  mc_rtc::log::info("CommunicationSeverZenoh destructor called");
 }
 
-void CommunicationZenoh::configureTransport(const mc_rtc::Configuration & com_config, zenoh::Config & zenoh_config)
+zenoh::Config CommunicationSeverZenoh::configureTransport(const mc_rtc::Configuration & com_config)
 {
+
+  auto zenoh_config = zenoh::Config::create_default();
+
   std::string protocol = com_config("protocol");
 
   if(protocol == "zenoh/shm")
@@ -41,60 +39,27 @@ void CommunicationZenoh::configureTransport(const mc_rtc::Configuration & com_co
     mc_rtc::log::info("com Zenoh configureShm");
     zenoh_config.insert_json5("transport/shared_memory/enabled", "true");
     zenoh_config.insert_json5("mode", "\"peer\"");
+
+    return zenoh_config;
   }
-  else if(protocol == "zenoh/tcp")
+
+  if(protocol == "zenoh/tcp")
   {
     // ToDo: configure zenoh configuration for tcp
+    return zenoh_config;
   }
-  else if(protocol == "zenoh/udp")
+
+  if(protocol == "zenoh/udp")
   {
     // ToDo: configure zenoh configuration for udp
+    return zenoh_config;
   }
-  else
-  {
-    mc_rtc::log::error_and_throw("Unsupported protocol: {}", protocol);
-  }
+
+  mc_rtc::log::error_and_throw("Unsupported protocol: {}", protocol);
 }
 
-void CommunicationZenoh::setupPubSub(const mc_rtc::Configuration & com_config)
+void CommunicationSeverZenoh::setupTransport(const mc_rtc::Configuration & com_config)
 {
-
-  // if(com_config.has("name"))
-  // {
-  //   mc_rtc::log::info("CommunicationZenoh constructor subscriber");
-
-  //   // create subscriber then wait for first message
-  //   std::string config_key = com_config("name");
-
-  //   auto data_handler = [](const zenoh::Sample & sample)
-  //   {
-  //     std::cout << ">> [Subscriber] Received "
-  //               << " ('" << sample.get_keyexpr().as_string_view() << "' : '" << sample.get_payload().as_string()
-  //               << "')";
-
-  //     auto attachment = sample.get_attachment();
-  //     if(attachment.has_value())
-  //     {
-  //       std::cout << "  (" << attachment->get().as_string() << ")";
-  //     }
-  //     std::cout << std::endl;
-  //   };
-
-  //   mc_rtc::log::info("CommunicationZenoh constructor subscriber 1");
-
-  //   config_sub_ = session_->declare_subscriber(zenoh::KeyExpr(config_key), data_handler, zenoh::closures::none);
-  //   mc_rtc::log::info("Created subsriber with key {}", config_sub_->get_keyexpr().as_string_view());
-  // }
-  // else
-  // {
-  //   mc_rtc::log::info("CommunicationZenoh constructor publisher");
-
-  //   // create publisher and subscriber
-  //   std::string config_key = "manager/" + name + "/config";
-  //   config_pub_ = session_->declare_publisher(zenoh::KeyExpr(config_key));
-  //   mc_rtc::log::info("Created publisher with key {}", config_pub_->get_keyexpr().as_string_view());
-  //   config_pub_->put("Simple from publisher.put!");
-  // }
 
   std::string robot_name;
 
@@ -116,23 +81,29 @@ void CommunicationZenoh::setupPubSub(const mc_rtc::Configuration & com_config)
   mc_rtc::log::info("Subscribers created");
 }
 
-bool CommunicationZenoh::sendMessage(const std::string & message)
+bool CommunicationSeverZenoh::sendMessage(const uint8_t * data, size_t size)
 {
+  // ToDo: sendmessage using zenoh
+
   // mc_rtc::log::info("Sending config message");
   // auto data = serialize(message);
   // config_pub_->put(zenoh::Bytes(data));
+
   return true;
 }
 
-bool CommunicationZenoh::receiveMessage(std::string & message)
+flatbuffers::FlatBufferBuilder CommunicationSeverZenoh::serialize(const mc_rtc::Configuration & config)
 {
-  // std::lock_guard<std::mutex> lock(mutex_);
-  // if(latest_config_)
-  // {
-  //   message = *latest_config_;
-  //   return true;
-  // }
-  return false;
+  flatbuffers::FlatBufferBuilder builder;
+
+  // First, lets serialize some weapons for the Monster: A 'sword' and an 'axe'.
+  auto config_json = builder.CreateString(config.dump());
+
+  // Use the `CreateWeapon` shortcut to create Weapons with all fields set.
+  auto message = CreateMessageConfig(builder, config_json);
+  builder.Finish(message);
+
+  return builder;
 }
 
 } // namespace mc_communication
