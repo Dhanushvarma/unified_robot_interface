@@ -1,0 +1,9 @@
+namespace mc_communication;
+
+table MessageState {
+    position:[double];
+    velocity:[double];
+    torque:[double];
+}
+
+root_type MessageState;

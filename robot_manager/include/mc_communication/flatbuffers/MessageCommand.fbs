@@ -1,0 +1,11 @@
+namespace mc_communication;
+
+table MessageCommand {
+    kp:double;
+    kd:double;
+    position:[double];
+    velocity:[double];
+    torque:[double];
+}
+
+root_type MessageCommand;

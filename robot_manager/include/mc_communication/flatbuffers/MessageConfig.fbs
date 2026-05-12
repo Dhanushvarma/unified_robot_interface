@@ -1,0 +1,8 @@
+namespace mc_communication;
+
+table MessageConfig {
+    // use Configuration::dump() to convert to JSON string
+    config: string;
+}
+
+root_type MessageConfig;

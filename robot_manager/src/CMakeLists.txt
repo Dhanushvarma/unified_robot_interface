@@ -1,6 +1,8 @@
 # Communication Interface
-set(COMMUNICATION_SRC mc_communication/CommunicationFactory.cpp
-                      mc_communication/CommunicationZenoh.cpp
+set(COMMUNICATION_SRC
+    mc_communication/Communication.cpp
+    mc_communication/CommunicationFactory.cpp
+    mc_communication/CommunicationZenoh.cpp
 )
 
 add_library(mc_communication SHARED ${COMMUNICATION_SRC})

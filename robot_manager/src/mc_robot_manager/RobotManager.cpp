@@ -1,3 +1,4 @@
+#include <mc_communication/CommunicationZenoh.h>
 #include <mc_rtc/logging.h>
 #include <mc_robot_manager/RobotManager.h>
 
@@ -108,8 +109,12 @@ void RobotManager::init()
     }
 
     mc_rtc::Configuration robot_config{robots_config(robot_name)};
-    std::unique_ptr<mc_robot::RobotInterface> interface = interface_factory_.makeInterface(robot_name, robot_config);
-    if(!interface) continue;
+    std::unique_ptr<mc_robot::RobotInterface> interface =
+        mc_robot::RobotInterfaceFactory::makeInterface(robot_name, robot_config);
+    if(!interface)
+    {
+      continue;
+    }
 
     interfaces_.try_emplace(robot_name, std::move(interface));
   }
@@ -119,15 +124,17 @@ void RobotManager::init()
   {
     mc_rtc::log::info("manager init send config {}", robot_name);
 
-    auto builder = interface->communication().serialize(interface->config());
-    // interface->communication().sendMessage(builder.GetBufferPointer(), builder.GetSize());
+    auto builder = mc_communication::Communication::serialize(interface->config());
 
-    // ---------------------------------------------------------------------------------------------
+    interface->communication().sendMessage(mc_communication::Communication::MessageType::CONFIG,
+                                           builder.GetBufferPointer(), builder.GetSize());
 
-    auto message_config = flatbuffers::GetRoot<mc_communication::MessageConfig>(builder.GetBufferPointer());
-    mc_rtc::Configuration config_receive{mc_rtc::Configuration::fromData(message_config->config()->str())};
+    // // ---------------------------------------------------------------------------------------------
 
-    mc_rtc::log::info(config_receive.dump(true, true));
+    // auto message_config = flatbuffers::GetRoot<mc_communication::MessageConfig>(builder.GetBufferPointer());
+    // mc_rtc::Configuration config_receive{mc_rtc::Configuration::fromData(message_config->config()->str())};
+
+    // mc_rtc::log::info(config_receive.dump(true, true));
   }
 
   mc_rtc::log::info("manager init done");

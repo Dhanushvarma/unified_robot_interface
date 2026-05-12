@@ -18,23 +18,25 @@ class CommunicationSeverZenoh : public Communication
 {
 public:
   CommunicationSeverZenoh();
-  CommunicationSeverZenoh(const mc_rtc::Configuration & com_config);
+  CommunicationSeverZenoh(const std::string & name, const mc_rtc::Configuration & com_config);
   ~CommunicationSeverZenoh() override;
 
-  bool sendMessage(const uint8_t * data, size_t size) override;
-  flatbuffers::FlatBufferBuilder serialize(const mc_rtc::Configuration & config) override;
+  CommunicationSeverZenoh(const CommunicationSeverZenoh &) = delete;
+  CommunicationSeverZenoh & operator=(const CommunicationSeverZenoh &) = delete;
+  CommunicationSeverZenoh(CommunicationSeverZenoh &&) = delete;
+  CommunicationSeverZenoh & operator=(CommunicationSeverZenoh &&) = delete;
 
-  bool receiveMessage(const uint8_t * data, size_t size) override
-  {
-    return false;
-  };
+  bool sendMessage(Communication::MessageType type, const uint8_t * data, size_t size) override;
+
+  bool receiveMessage(Communication::MessageType type) override;
 
 private:
-  zenoh::Config configureTransport(const mc_rtc::Configuration & com_config);
+  static zenoh::Config configureTransport(const mc_rtc::Configuration & com_config);
   void setupTransport(const mc_rtc::Configuration & com_config);
 
   std::unique_ptr<zenoh::Session> session_;
-  std::optional<zenoh::Querier> config_pub_;
+  std::optional<zenoh::Queryable<void>> config_queryable_;
+  std::vector<uint8_t> config_cache_;
   std::optional<zenoh::Subscriber<void>> state_sub_;
   std::optional<zenoh::Publisher> command_pub_;
 
@@ -49,29 +51,26 @@ class CommunicationClientZenoh : public Communication
 {
 public:
   CommunicationClientZenoh();
-  CommunicationClientZenoh(const mc_rtc::Configuration & com_config);
+  CommunicationClientZenoh(const std::string & name, const mc_rtc::Configuration & com_config);
   ~CommunicationClientZenoh() override;
 
-  bool sendMessage(const uint8_t * data, size_t size) override;
+  CommunicationClientZenoh(const CommunicationClientZenoh &) = delete;
+  CommunicationClientZenoh & operator=(const CommunicationClientZenoh &) = delete;
+  CommunicationClientZenoh(CommunicationClientZenoh &&) = delete;
+  CommunicationClientZenoh & operator=(CommunicationClientZenoh &&) = delete;
 
-  bool receiveMessage(const uint8_t * data, size_t size) override
-  {
-    return false;
-  };
+  bool sendMessage(Communication::MessageType type, const uint8_t * data, size_t size) override;
+
+  bool receiveMessage(Communication::MessageType type) override;
 
 private:
-  zenoh::Config configureTransport(const mc_rtc::Configuration & com_config);
+  static zenoh::Config configureTransport(const mc_rtc::Configuration & com_config);
   void setupTransport(const mc_rtc::Configuration & com_config);
 
   std::unique_ptr<zenoh::Session> session_;
+  std::optional<zenoh::Querier> config_querier_;
   std::optional<zenoh::Publisher> state_pub_;
   std::optional<zenoh::Subscriber<void>> command_sub_;
-
-  // Cached messages from subscribers
-  std::mutex mutex_;
-  std::optional<MessageConfig> latest_config_;
-  std::optional<MessageState> latest_state_;
-  std::optional<MessageCommand> latest_command_;
 };
 
 } // namespace mc_communication

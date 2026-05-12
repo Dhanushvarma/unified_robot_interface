@@ -2,5 +2,7 @@
 .vscode
 build
 
+compile_commands.json
+
 # FlatBuffers generated files
 *generated.h

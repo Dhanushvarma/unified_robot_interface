@@ -1,4 +1,4 @@
 name: local_robot
-protocol: shm
+protocol: zenoh/shm
 ip: /workspace/sandbox/mc_robot_manager/
 port: 100

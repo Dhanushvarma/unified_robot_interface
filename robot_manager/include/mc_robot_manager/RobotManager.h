@@ -49,8 +49,8 @@ private:
   std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
   mc_control::MCGlobalController::GlobalConfiguration gconfig_;
 
-  mc_communication::CommunicationFactory communication_factory_{};
-  mc_robot::RobotInterfaceFactory interface_factory_{};
+  // mc_communication::CommunicationFactory communication_factory_{};
+  // mc_robot::RobotInterfaceFactory interface_factory_{};
 
   std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterface>> interfaces_{};
 
