@@ -6,6 +6,8 @@
 #include <mc_control/mc_global_controller.h>
 
 #include <atomic>
+#include <condition_variable>
+#include <queue>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -21,20 +23,36 @@ class RobotManager
 {
 public:
   RobotManager();
-  // TODO: include gcontroller_ instead
-  RobotManager(mc_control::MCGlobalController::GlobalConfiguration & gconfig) : gconfig_(gconfig)
+
+  RobotManager(mc_control::MCGlobalController::GlobalConfiguration & gconfig, const std::atomic<bool> & interrupt);
+
+  ~RobotManager();
+
+  RobotManager(const RobotManager &) = delete;
+  RobotManager & operator=(const RobotManager &) = delete;
+  RobotManager(RobotManager &&) = delete;
+  RobotManager & operator=(RobotManager &&) = delete;
+
+  [[nodiscard]] mc_control::MCGlobalController & gcontroller()
   {
-    processGConfig(gconfig_);
-    // gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig);
+    return *gcontroller_;
+  }
 
-    init();
-  };
-
-  void processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig);
-
-  void init();
+  void notify()
+  {
+    cv_.notify_one();
+  }
 
 private:
+  void init(const std::atomic<bool> & interrupt);
+
+  std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
+
+  std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterface>> interfaces_{};
+
+  /* Process configuration */
+  void processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig);
+  mc_control::MCGlobalController::GlobalConfiguration gconfig_;
   struct DefaultConfig
   {
     std::string module{};
@@ -43,13 +61,30 @@ private:
     double time_step{0.001};
     std::string communication_protocol{"zenoh"};
   };
-
   DefaultConfig user_default_;
 
-  std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
-  mc_control::MCGlobalController::GlobalConfiguration gconfig_;
+  /* Start */
+  // Start with main thread
+  std::unique_ptr<std::thread> main_thread_;
+  std::mutex start_mutex_;
+  std::condition_variable start_cv_;
+  bool start_control_{false};
 
-  std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterface>> interfaces_{};
+  /* Multi-threading */
+  std::condition_variable cv_;
+  std::vector<std::thread> threads_;
+  void mainThread(size_t step_size, const std::atomic<bool> & interrupt);
+
+  /* Replace tools */
+  struct ReplaceRequest
+  {
+    std::string old_robot_name;
+    std::string new_robot_name;
+  };
+  mc_rtc::Slot<std::string, std::string> replace_slot_;
+  std::queue<ReplaceRequest> replace_queue_;
+  bool signal_received_ = false;
+  mutable std::mutex replace_mutex_;
 
   // TODO idea here is to have a thread for each communication we are lauching for each robot
   // Would be nice to consider the case where robot are sharing the same timestep and protocol

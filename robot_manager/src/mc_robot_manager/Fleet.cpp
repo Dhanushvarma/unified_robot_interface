@@ -18,9 +18,13 @@ void run(void * data, const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("fleet run start");
   std::unique_ptr<RobotManager> robot_manager{static_cast<RobotManager *>(data)};
+  mc_control::MCGlobalController & gcontroller{robot_manager->gcontroller()};
 
-  while(!interrupt)
+  while(gcontroller.running && !interrupt)
   {
+    robot_manager->notify();
+
+    sched_yield();
   }
 
   mc_rtc::log::info("fleet run done");
@@ -53,7 +57,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
 
   /* Initialize robot manager */
   mc_control::MCGlobalController::GlobalConfiguration gconfig(conf_file, nullptr);
-  auto robot_manager = std::make_unique<RobotManager>(gconfig);
+  auto robot_manager = std::make_unique<RobotManager>(gconfig, interrupt);
 
   mc_rtc::log::info("fleet init done");
 

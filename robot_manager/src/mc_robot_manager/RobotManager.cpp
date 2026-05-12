@@ -9,6 +9,121 @@
 namespace mc_fleet
 {
 
+RobotManager::RobotManager() : gconfig_(mc_rtc::Configuration{}) {};
+
+RobotManager::RobotManager(mc_control::MCGlobalController::GlobalConfiguration & gconfig,
+                           const std::atomic<bool> & interrupt)
+: gconfig_(gconfig)
+{
+  processGConfig(gconfig_);
+  gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig);
+
+  // TODO: will the signal for replacing robot be merge
+  // // Connect to the signal
+  // auto & mc_controller = gcontroller_->controller();
+  // replace_slot_ = mc_controller.replaceRobot.connect(
+  //     [&](const std::string & old_robot_name, const std::string & new_robot_name)
+  //     {
+  //       std::lock_guard<std::mutex> lock(replace_mutex_);
+  //       replace_queue_.push({old_robot_name, new_robot_name});
+  //       mc_rtc::log::info("[mc_rtde] Signal caught: Request switching from {} to {}", old_robot_name,
+  //       new_robot_name);
+  //     });
+
+  init(interrupt);
+};
+
+RobotManager::~RobotManager()
+{
+  gcontroller_->running = false;
+
+  cv_.notify_all();
+
+  {
+    std::lock_guard<std::mutex> lock(start_mutex_);
+    start_control_ = true;
+  }
+  start_cv_.notify_all();
+
+  if(main_thread_ && main_thread_->joinable())
+  {
+    main_thread_->join();
+  }
+
+  for(auto & t : threads_)
+  {
+    if(t.joinable())
+    {
+      t.join();
+    }
+  }
+
+  mc_rtc::log::info("RobotManager shutdown complete.");
+}
+
+void RobotManager::init(const std::atomic<bool> & interrupt)
+{
+  mc_rtc::log::success("manager init start");
+
+  mc_rtc::Configuration robots_config = gconfig_.config("Robots");
+  mc_rtc::log::info(robots_config.dump(true, true));
+
+  /* Set up robot interface and communication*/
+  for(auto & robot_name : robots_config.keys())
+  {
+    mc_rtc::log::info("manager init robot {}", robot_name);
+
+    if(interfaces_.count(robot_name) != 0)
+    {
+      mc_rtc::log::error("Skip already exists robot interface {}", robot_name);
+      continue;
+    }
+
+    mc_rtc::Configuration robot_config{robots_config(robot_name)};
+    std::unique_ptr<mc_robot::RobotInterface> interface =
+        mc_robot::RobotInterfaceFactory::makeInterface(robot_name, robot_config);
+    if(!interface)
+    {
+      continue;
+    }
+
+    interfaces_.try_emplace(robot_name, std::move(interface));
+  }
+
+  /* Send config to real robots */
+  for(auto & [robot_name, interface] : interfaces_)
+  {
+    mc_rtc::log::info("manager init send config {}", robot_name);
+
+    auto builder = mc_communication::Communication::serialize(interface->config());
+    interface->communication().sendMessage(mc_communication::Communication::MessageType::CONFIG,
+                                           builder.GetBufferPointer(), builder.GetSize());
+  }
+
+  // TODO: sync with real robots
+  size_t step_size = 100000;
+
+  /* Init threads */
+  gcontroller_->running = true;
+
+  for(auto & [robot_name, interface] : interfaces_)
+  {
+    // TODO: check if dt should be included in lambda
+    // double dt = robots_config(robot_name)("controller")("time_step");
+
+    auto * interface_ptr = interface.get();
+    threads_.emplace_back(
+        [&, this, interface_ptr]()
+        {
+          interface_ptr->controlThread(*gcontroller_, start_mutex_, start_cv_, start_control_, gcontroller_->running);
+        });
+  }
+
+  main_thread_ = std::make_unique<std::thread>(&RobotManager::mainThread, this, step_size, std::ref(interrupt));
+
+  mc_rtc::log::info("manager init done");
+}
+
 void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig)
 {
   mc_rtc::log::success("manager processGConfig start");
@@ -90,47 +205,50 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
   mc_rtc::log::info("manager processGConfig done");
 }
 
-void RobotManager::init()
+void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interrupt)
 {
-  mc_rtc::log::success("manager init start");
 
-  mc_rtc::Configuration robots_config = gconfig_.config("Robots");
-  mc_rtc::log::info(robots_config.dump(true, true));
+  // mc_rtc::log::info("[{}] Thread started with dt: {}s", name, dt);
 
-  /* Set up robot interface and communication*/
-  for(auto & robot_name : robots_config.keys())
+  std::mutex controller_mutex;
+  size_t step = step_size;
+
+  while(gcontroller_->running)
   {
-    mc_rtc::log::info("manager init robot {}", robot_name);
+    // Synchronize with hardware
+    std::unique_lock lock(controller_mutex);
+    cv_.wait(lock);
 
-    if(interfaces_.count(robot_name) != 0)
+    if(interrupt)
     {
-      mc_rtc::log::error("Skip already exists robot interface {}", robot_name);
-      continue;
+      std::cout << "controller_run_ interrupted" << std::endl;
+      gcontroller_->running = false;
+      return;
     }
 
-    mc_rtc::Configuration robot_config{robots_config(robot_name)};
-    std::unique_ptr<mc_robot::RobotInterface> interface =
-        mc_robot::RobotInterfaceFactory::makeInterface(robot_name, robot_config);
-    if(!interface)
+    for(auto & [robot_name, interface] : interfaces_)
     {
-      continue;
+      interface->updateSensors();
     }
 
-    interfaces_.try_emplace(robot_name, std::move(interface));
+    if(step % step_size == 0)
+    {
+      gcontroller_->run();
+      mc_rtc::log::info("main tick");
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(start_mutex_);
+      start_control_ = true;
+    }
+    start_cv_.notify_all();
+
+    for(auto & [robot_name, interface] : interfaces_)
+    {
+      interface->updateControl();
+    }
+    step++;
   }
-
-  /* Send config to real robots */
-  for(auto & [robot_name, interface] : interfaces_)
-  {
-    mc_rtc::log::info("manager init send config {}", robot_name);
-
-    auto builder = mc_communication::Communication::serialize(interface->config());
-
-    interface->communication().sendMessage(mc_communication::Communication::MessageType::CONFIG,
-                                           builder.GetBufferPointer(), builder.GetSize());
-  }
-
-  mc_rtc::log::info("manager init done");
 }
 
 } // namespace mc_fleet

@@ -1,10 +1,13 @@
 #pragma once
 
+#include <mc_control/mc_global_controller.h>
 #include <mc_rtc/Configuration.h>
 
 #include <mc_communication/Communication.h>
 #include <mc_communication/CommunicationFactory.h>
 #include <mc_robot_interface/RobotDriver.h>
+
+#include <condition_variable>
 
 namespace mc_robot
 {
@@ -12,7 +15,7 @@ namespace mc_robot
 class RobotInterface
 {
 public:
-  RobotInterface() {};
+  RobotInterface() = default;
 
   RobotInterface(std::string name, mc_rtc::Configuration config, uint8_t buffer_size)
   : name_(std::move(name)), config_(std::move(config)), dt_(config_("controller")("time_step")),
@@ -30,6 +33,16 @@ public:
 
   virtual void updateSensors() = 0;
   virtual void updateControl() = 0;
+
+  /**
+   * @brief Method in charge of robot sensors and commands update
+   *
+   */
+  void controlThread(mc_control::MCGlobalController & controller,
+                     std::mutex & startM,
+                     std::condition_variable & start_cv_,
+                     bool & start,
+                     bool & running) {};
 
   template<typename cm>
   void control();
@@ -54,11 +67,11 @@ public:
   {
     return config_;
   }
-  [[nodiscard]] const double dt() const
+  [[nodiscard]] double dt() const
   {
     return dt_;
   }
-  [[nodiscard]] const uint8_t buffer_size() const
+  [[nodiscard]] uint8_t bufferSize() const
   {
     return buffer_size_;
   }
@@ -71,7 +84,7 @@ public:
     return *communication_;
   }
 
-protected:
+private:
   mutable std::mutex update_sensor_mtx_{};
   mutable std::mutex update_control_mtx_{};
 
@@ -87,12 +100,6 @@ protected:
   // TODO: control mode ?
   std::unique_ptr<mc_rtc::RobotDriver> driver_{};
   std::unique_ptr<mc_communication::Communication> communication_{};
-
-  /**
-   * @brief Method in charge of robot sensors and commands update
-   *
-   */
-  void controlThread();
 };
 
 } // namespace mc_robot
