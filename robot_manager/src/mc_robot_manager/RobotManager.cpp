@@ -128,13 +128,6 @@ void RobotManager::init()
 
     interface->communication().sendMessage(mc_communication::Communication::MessageType::CONFIG,
                                            builder.GetBufferPointer(), builder.GetSize());
-
-    // // ---------------------------------------------------------------------------------------------
-
-    // auto message_config = flatbuffers::GetRoot<mc_communication::MessageConfig>(builder.GetBufferPointer());
-    // mc_rtc::Configuration config_receive{mc_rtc::Configuration::fromData(message_config->config()->str())};
-
-    // mc_rtc::log::info(config_receive.dump(true, true));
   }
 
   mc_rtc::log::info("manager init done");

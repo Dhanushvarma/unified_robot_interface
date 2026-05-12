@@ -2,13 +2,13 @@
 
 include(CMakeFindDependencyMacro)
 
-# Find dependencies that mc_fleet needs
-find_dependency(mc_rtc REQUIRED)
-find_dependency(zenohc REQUIRED)
-find_dependency(zenohcxx REQUIRED)
 find_dependency(Boost REQUIRED COMPONENTS program_options thread)
+find_dependency(Flatbuffers REQUIRED)
+find_dependency(mc_rtc REQUIRED)
+find_dependency(Threads REQUIRED)
 
-# Include the targets file
+find_dependency(zenoh-cpp REQUIRED)
+
 include("${CMAKE_CURRENT_LIST_DIR}/mc_fleetTargets.cmake")
 
 check_required_components(mc_fleet)

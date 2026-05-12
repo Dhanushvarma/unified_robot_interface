@@ -11,7 +11,9 @@ add_library(${PROJECT_NAME}::communication ALIAS mc_communication)
 add_dependencies(mc_communication generate_fbs)
 
 target_link_libraries(
-  mc_communication PUBLIC flatbuffers zenohcxx::zenohc mc_rtc::mc_control
+  mc_communication
+  PUBLIC flatbuffers mc_rtc::mc_control $<BUILD_INTERFACE:zenohcxx::zenohc>
+         $<INSTALL_INTERFACE:zenoh-cpp::zenoh-cpp>
 )
 
 target_include_directories(
