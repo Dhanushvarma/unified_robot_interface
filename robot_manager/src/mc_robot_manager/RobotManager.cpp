@@ -79,7 +79,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
     }
 
     mc_rtc::Configuration robot_config{robots_config(robot_name)};
-    std::unique_ptr<mc_robot::RobotInterface> interface =
+    std::unique_ptr<mc_robot::RobotInterfaceBase> interface =
         mc_robot::RobotInterfaceFactory::makeInterface(robot_name, robot_config);
     if(!interface)
     {
@@ -107,14 +107,12 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
     double cycle_s = interface->dt();
     auto cycle_ns = static_cast<size_t>(cycle_s * 1e9);
     auto controller_ns = static_cast<size_t>(controller_s * 1e9);
-    std::cout << "TEST" << std::endl;
     if(controller_ns < cycle_ns)
     {
       mc_rtc::log::error_and_throw(
           "[mc_fleet] mc_rtc cannot run faster than the robot's control frequency (RobotTimeStep= {}s, Timestep={}s)",
           cycle_s, controller_s);
     }
-    std::cout << "TEST" << std::endl;
 
     if(controller_ns % cycle_ns != 0)
     {
@@ -123,7 +121,6 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
           "(RobotTimeStep= {}s, Timestep={}s)",
           cycle_s, controller_s);
     }
-    std::cout << "TEST" << std::endl;
 
     size_t step_size = controller_ns / cycle_ns;
     size_t freq = std::ceil(1 / controller_s);

@@ -48,7 +48,7 @@ private:
 
   std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
 
-  std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterface>> interfaces_{};
+  std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
 
   /* Process configuration */
   void processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig);

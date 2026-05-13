@@ -8,21 +8,6 @@
 namespace mc_interface_template
 {
 
-/* From manager */
-InterfaceTemplate::InterfaceTemplate(const std::string & name,
-                                     const mc_rtc::Configuration & config,
-                                     uint8_t buffer_size)
-: RobotInterface(name, config, (buffer_size == 0) ? 6 : buffer_size)
-{
-  mc_rtc::log::success("RobotInterfaceTemplate manager start");
-
-  mc_rtc::Configuration com_config(config("communication"));
-  setCommunication(mc_communication::CommunicationFactory::makeCommunicationSever(name, com_config));
-
-  mc_rtc::log::info("RobotInterfaceTemplate done");
-};
-
-/* Local robot */
 InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("InterfaceTemplate remote start");
@@ -61,6 +46,14 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
     mc_rtc::log::info(communication().latestConfig().dump(true, true));
   }
   mc_rtc::log::info("InterfaceTemplate local done");
+};
+
+void InterfaceTemplate::updateSensors() {
+  // TODO: read from sensor and send states to manager
+};
+
+void InterfaceTemplate::updateControl() {
+  // TODO: receive commands from manager
 };
 
 } // namespace mc_interface_template

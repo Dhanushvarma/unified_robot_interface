@@ -12,20 +12,20 @@
 namespace mc_robot
 {
 
-class RobotInterface
+class RobotInterfaceBase
 {
 public:
-  RobotInterface() = default;
+  RobotInterfaceBase() = default;
 
-  RobotInterface(std::string name, mc_rtc::Configuration config, uint8_t buffer_size)
+  RobotInterfaceBase(std::string name, mc_rtc::Configuration config, uint8_t buffer_size)
   : name_(std::move(name)), config_(std::move(config)), dt_(config_("controller")("time_step")),
     buffer_size_(buffer_size) {};
 
-  virtual ~RobotInterface() = default;
-  RobotInterface(const RobotInterface &) = delete;
-  RobotInterface & operator=(const RobotInterface &) = delete;
-  RobotInterface(RobotInterface &&) = delete;
-  RobotInterface & operator=(RobotInterface &&) = delete;
+  virtual ~RobotInterfaceBase() = default;
+  RobotInterfaceBase(const RobotInterfaceBase &) = delete;
+  RobotInterfaceBase & operator=(const RobotInterfaceBase &) = delete;
+  RobotInterfaceBase(RobotInterfaceBase &&) = delete;
+  RobotInterfaceBase & operator=(RobotInterfaceBase &&) = delete;
 
   virtual void init() = 0;
   virtual void reset() = 0;
@@ -50,10 +50,6 @@ public:
   // TODO: use loadConfig instead of constructor to process
   void loadConfig(const mc_rtc::Configuration & config);
 
-  void setDriver(std::unique_ptr<mc_rtc::RobotDriver> driver)
-  {
-    driver_ = std::move(driver);
-  }
   void setCommunication(std::unique_ptr<mc_communication::Communication> communication)
   {
     communication_ = std::move(communication);
@@ -75,10 +71,7 @@ public:
   {
     return buffer_size_;
   }
-  [[nodiscard]] mc_rtc::RobotDriver & driver()
-  {
-    return *driver_;
-  }
+
   [[nodiscard]] mc_communication::Communication & communication()
   {
     return *communication_;
@@ -92,13 +85,11 @@ private:
   const mc_rtc::Configuration config_{};
   const double dt_{};
   const uint8_t buffer_size_{};
-  // const uint16_t port_{};
 
   std::vector<double> state_{};
   std::vector<double> command_{};
 
   // TODO: control mode ?
-  std::unique_ptr<mc_rtc::RobotDriver> driver_{};
   std::unique_ptr<mc_communication::Communication> communication_{};
 };
 

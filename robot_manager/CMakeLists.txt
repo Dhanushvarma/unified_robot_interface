@@ -66,7 +66,7 @@ add_custom_command(
 add_custom_target(generate_fbs DEPENDS "${OUTPUT_DIR}/Message_generated.h")
 
 # Add Subdirectories
-# include_directories(include)
+include_directories(include)
 add_subdirectory(src)
 
 # Optional Testing
