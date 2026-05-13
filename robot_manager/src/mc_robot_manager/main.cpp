@@ -4,15 +4,28 @@
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
+// Resolve redefinition conflict with pthread.h
+#define sched_param linux_sched_param // NOLINT(readability-identifier-naming)
+#include <linux/sched.h>
+#include <linux/sched/types.h>
+#undef sched_param
+
 #include <atomic>
 #include <cerrno>
 #include <csignal>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <sys/mman.h>
 #include <sys/types.h>
+#include <syscall.h>
 #include <unistd.h>
+
+int schedSetattr(pid_t pid, const struct sched_attr * attr, unsigned int flags)
+{
+  return static_cast<int>(syscall(__NR_sched_setattr, pid, attr, flags)); // NOLINT(cppcoreguidelines-pro-type-vararg)
+}
 
 namespace
 {
@@ -38,6 +51,7 @@ int main(int argc, char * argv[])
     {
       mc_rtc::log::info("Check /etc/security/limits.conf for memlock limits.");
     }
+    return -2;
   }
 
   uint64_t cycle_ns{1000UL * 1000UL}; // 1 ms default cycle
@@ -55,7 +69,21 @@ int main(int argc, char * argv[])
     return -2;
   }
 
+  /* Time reservation */
+  struct sched_attr attr = {};
+  memset(&attr, 0, sizeof(attr));
+  attr.size = sizeof(attr);
+  attr.sched_policy = SCHED_DEADLINE;
+  attr.sched_runtime = attr.sched_deadline = attr.sched_period = cycle_ns; // nanoseconds
+
   mc_rtc::log::info("Running thread at {}ms per cycle", double(cycle_ns) / 1e6);
+
+  /* Set scheduler policy for the main thread */
+  if(schedSetattr(0, &attr, 0) < 0)
+  {
+    mc_rtc::log::error("schedSetattr failed");
+    return -2;
+  }
 
   /* Run */
   mc_fleet::run(robot_manager, interrupt);

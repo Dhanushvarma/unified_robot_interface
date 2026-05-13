@@ -18,7 +18,6 @@ RobotManager::RobotManager(mc_control::MCGlobalController::GlobalConfiguration &
   processGConfig(gconfig_);
   gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig);
 
-  // TODO: will the signal for replacing robot be merge
   // // Connect to the signal
   // auto & mc_controller = gcontroller_->controller();
   // replace_slot_ = mc_controller.replaceRobot.connect(
@@ -101,7 +100,50 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   }
 
   // TODO: sync with real robots
-  size_t step_size = 100000;
+  double controller_s = gcontroller_->controller().timeStep;
+  size_t max_step_size{0};
+  for(auto & [robot_name, interface] : interfaces_)
+  {
+    double cycle_s = interface->dt();
+    auto cycle_ns = static_cast<size_t>(cycle_s * 1e9);
+    auto controller_ns = static_cast<size_t>(controller_s * 1e9);
+    std::cout << "TEST" << std::endl;
+    if(controller_ns < cycle_ns)
+    {
+      mc_rtc::log::error_and_throw(
+          "[mc_fleet] mc_rtc cannot run faster than the robot's control frequency (RobotTimeStep= {}s, Timestep={}s)",
+          cycle_s, controller_s);
+    }
+    std::cout << "TEST" << std::endl;
+
+    if(controller_ns % cycle_ns != 0)
+    {
+      mc_rtc::log::error_and_throw(
+          "[mc_fleet] mc_rtc timestep must be a multiple of the robot's control loop frequency "
+          "(RobotTimeStep= {}s, Timestep={}s)",
+          cycle_s, controller_s);
+    }
+    std::cout << "TEST" << std::endl;
+
+    size_t step_size = controller_ns / cycle_ns;
+    size_t freq = std::ceil(1 / controller_s);
+    size_t robot_freq = std::ceil(1 / cycle_s);
+    mc_rtc::log::info("[mc_fleet] mc_rtc running at {}Hz, robot running at {}Hz", freq, robot_freq);
+
+    if(max_step_size < step_size)
+    {
+      max_step_size = step_size;
+    }
+  }
+
+  mc_rtc::log::info("[mc_fleet] mc_rtc will compute commands every {} robot control step", max_step_size);
+
+  auto & robots = gcontroller_->controller().robots();
+  // Initialize all real robots
+  for(size_t i = gcontroller_->realRobots().size(); i < robots.size(); ++i)
+  {
+    gcontroller_->realRobots().robotCopy(robots.robot(i), robots.robot(i).name());
+  }
 
   /* Init threads */
   gcontroller_->running = true;
@@ -119,7 +161,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
         });
   }
 
-  main_thread_ = std::make_unique<std::thread>(&RobotManager::mainThread, this, step_size, std::ref(interrupt));
+  main_thread_ = std::make_unique<std::thread>(&RobotManager::mainThread, this, max_step_size, std::ref(interrupt));
 
   mc_rtc::log::info("manager init done");
 }
@@ -208,10 +250,8 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
 void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interrupt)
 {
 
-  // mc_rtc::log::info("[{}] Thread started with dt: {}s", name, dt);
-
   std::mutex controller_mutex;
-  size_t step = step_size;
+  size_t step = 0;
 
   while(gcontroller_->running)
   {

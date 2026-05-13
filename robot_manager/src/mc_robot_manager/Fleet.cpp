@@ -1,4 +1,3 @@
-#include <mc_robot_manager/Fleet.h>
 #include <mc_robot_manager/RobotManager.h>
 
 #include <mc_control/Configuration.h>
@@ -30,6 +29,25 @@ void run(void * data, const std::atomic<bool> & interrupt)
   mc_rtc::log::info("fleet run done");
 }
 
+// void run(void * data, const std::atomic<bool> & interrupt)
+// {
+//   auto * robot_manager = static_cast<RobotManager *>(data);
+
+//   // Use a high-resolution clock for 1ms precision
+//   auto next_cycle = std::chrono::steady_clock::now();
+//   // Assuming robot dt is 1ms
+//   auto interval = std::chrono::milliseconds(1);
+
+//   while(robot_manager->gcontroller().running && !interrupt)
+//   {
+//     robot_manager->notify();
+
+//     // Sleep until exactly the next millisecond
+//     next_cycle += interval;
+//     std::this_thread::sleep_until(next_cycle);
+//   }
+// }
+
 void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("fleet init start");
@@ -50,7 +68,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
   {
     std::cout << desc << "\n";
     std::cout << "see etc/mc_rtc.yaml for example configuration\n";
-    return nullptr;
+    std::exit(0);
   }
 
   mc_rtc::log::info("mc_fleet::init 2");

@@ -12,14 +12,13 @@ add_dependencies(mc_communication generate_fbs)
 
 target_link_libraries(
   mc_communication
-  PUBLIC flatbuffers mc_rtc::mc_control $<BUILD_INTERFACE:zenohcxx::zenohc>
-         $<INSTALL_INTERFACE:zenoh-cpp::zenoh-cpp>
+  PUBLIC flatbuffers mc_rtc::mc_control
+  PRIVATE zenohcxx::zenohc
 )
 
 target_include_directories(
-  mc_communication
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
-         $<INSTALL_INTERFACE:include>
+  mc_communication PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                          $<INSTALL_INTERFACE:include>
 )
 
 # Robot Interface
@@ -36,7 +35,7 @@ target_link_libraries(
 
 target_include_directories(
   mc_robot_interface
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<INSTALL_INTERFACE:include>
 )
 
@@ -53,9 +52,8 @@ target_link_libraries(
 )
 
 target_include_directories(
-  mc_robot_manager
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
-         $<INSTALL_INTERFACE:include>
+  mc_robot_manager PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                          $<INSTALL_INTERFACE:include>
 )
 
 # Install all libraries
@@ -78,7 +76,7 @@ add_executable(MCFleetControl mc_robot_manager/main.cpp)
 
 target_link_libraries(
   MCFleetControl PRIVATE mc_robot_manager mc_robot_interface mc_communication
-                         boost_program_options
+                         Boost::program_options
 )
 
 install(TARGETS MCFleetControl RUNTIME DESTINATION bin)
