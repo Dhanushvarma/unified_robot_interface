@@ -17,15 +17,14 @@ target_link_libraries(
 )
 
 target_include_directories(
-  mc_communication PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-                          $<INSTALL_INTERFACE:include>
+  mc_communication
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+         $<INSTALL_INTERFACE:include>
 )
 
 # Robot Interface
-set(INTERFACE_SRC
-    mc_robot_interface/RobotInterfaceFactory.cpp
-    mc_robot_interface/FMInterfaceTemplate.cpp
-    mc_robot_interface/InterfaceTemplate.cpp
+set(INTERFACE_SRC mc_robot_interface/RobotInterfaceFactory.cpp
+                  mc_robot_interface/FMInterfaceTemplate.cpp
 )
 
 add_library(mc_robot_interface SHARED ${INTERFACE_SRC})
@@ -37,7 +36,7 @@ target_link_libraries(
 
 target_include_directories(
   mc_robot_interface
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
          $<INSTALL_INTERFACE:include>
 )
 
@@ -54,8 +53,9 @@ target_link_libraries(
 )
 
 target_include_directories(
-  mc_robot_manager PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-                          $<INSTALL_INTERFACE:include>
+  mc_robot_manager
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+         $<INSTALL_INTERFACE:include>
 )
 
 # Install all libraries

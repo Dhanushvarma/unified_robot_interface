@@ -49,7 +49,6 @@ find_package(mc_rtc REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options thread)
 
 # Add Subdirectories
-include_directories(include)
 add_subdirectory(src)
 
 # Install the executable to the system binary directory

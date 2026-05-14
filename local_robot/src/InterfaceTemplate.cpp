@@ -1,5 +1,5 @@
 #include <mc_communication/CommunicationZenoh.h>
-#include <mc_robot_interface/InterfaceTemplate.h>
+#include <InterfaceTemplate.h>
 
 #include <mc_rtc/logging.h>
 
