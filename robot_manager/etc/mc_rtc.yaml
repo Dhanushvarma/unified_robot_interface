@@ -9,7 +9,7 @@ Default:
   module: default_module
   control_mode: position # velocity or torque [optional] default to POSITION
   driver: default_driver # [optional] default to driver defined in module
-  time_step: 0.005       # [optional] default to controller frequency (Hz)
+  time_step: 0.05       # [optional] default to controller frequency (Hz)
   communication_protocol: tcp  # [optional] default to tcp
 
 Robots:

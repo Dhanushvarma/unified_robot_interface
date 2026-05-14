@@ -48,8 +48,13 @@ struct CommunicationSeverZenoh::Impl
   std::optional<zenoh::Subscriber<void>> state_sub;
   std::optional<zenoh::Publisher> command_pub;
 
-  std::vector<uint8_t> config_cache;
   std::mutex mutex;
+
+  std::vector<uint8_t> config_cache;
+
+  std::vector<uint8_t> state_cache;
+  uint64_t state_seq = 0;
+  uint64_t state_seq_consumed = 0;
 };
 
 /* --- Sever -----------------------------------------------------------------*/
@@ -82,8 +87,21 @@ CommunicationSeverZenoh::CommunicationSeverZenoh(const std::string & name, const
   impl_->config_queryable = impl_->session->declare_queryable(
       config_key, std::move(on_query), []() {}, zenoh::Session::QueryableOptions{.complete = true});
 
-  // TODO
+  // TODO: state subscriber
   std::string state_key = name + "/state";
+  auto state_handler = [this](const zenoh::Sample & sample)
+  {
+    const auto & payload = sample.get_payload();
+    auto bytes = payload.as_vector();
+    std::lock_guard<std::mutex> lock(impl_->mutex);
+    impl_->state_cache.assign(bytes.begin(), bytes.end());
+    ++impl_->state_seq;
+  };
+
+  impl_->state_sub =
+      impl_->session->declare_subscriber(zenoh::KeyExpr(state_key), std::move(state_handler), zenoh::closures::none);
+
+  // TODO: command publisher
   std::string command_key = name + "/command";
 
   mc_rtc::log::success("CommunicationSeverZenoh initialized with protocol: {}", com_config("protocol"));
@@ -103,7 +121,6 @@ bool CommunicationSeverZenoh::sendMessage(Communication::MessageType type, const
       std::lock_guard<std::mutex> lock(impl_->mutex);
       impl_->config_cache.assign(data, data + size);
       return true;
-      break;
     }
     case MessageType::STATE:
     case MessageType::COMMAND:
@@ -121,6 +138,30 @@ bool CommunicationSeverZenoh::receiveMessage(Communication::MessageType type)
   {
     case MessageType::CONFIG:
     case MessageType::STATE:
+    {
+      std::vector<uint8_t> local;
+      {
+        std::lock_guard<std::mutex> lock(impl_->mutex);
+        if(impl_->state_seq == impl_->state_seq_consumed)
+        {
+          return false; // no new state since last call
+        }
+        impl_->state_seq_consumed = impl_->state_seq;
+        local = impl_->state_cache;
+      }
+
+      auto s = Communication::deserializeState(local.data(), local.size()); // adjust if you add size
+      if(!s)
+      {
+        mc_rtc::log::error("STATE payload failed to deserialize");
+        return false;
+      }
+
+      // Store it somewhere useful
+      this->updateLatestState(*s); // implement similar to updateLatestConfig
+      return true;
+    }
+
     case MessageType::COMMAND:
 
     default:
@@ -142,7 +183,7 @@ struct CommunicationClientZenoh::Impl
 CommunicationClientZenoh::CommunicationClientZenoh() = default;
 
 CommunicationClientZenoh::CommunicationClientZenoh(const std::string & name, const mc_rtc::Configuration & com_config)
-: Communication(name, com_config)
+: Communication(name, com_config), impl_(std::make_unique<Impl>())
 {
   mc_rtc::log::success("CommunicationClientZenoh constructor start");
 
@@ -157,8 +198,11 @@ CommunicationClientZenoh::CommunicationClientZenoh(const std::string & name, con
   std::string config_key = name + "/config";
   impl_->config_querier = impl_->session->declare_querier(config_key, zenoh::Session::QuerierOptions{});
 
-  // ToDo
+  // TODO: state publisher
   std::string state_key = name + "/state";
+  impl_->state_pub = impl_->session->declare_publisher(state_key);
+
+  // TODO: command subscriber
   std::string command_key = name + "/command";
   mc_rtc::log::success("CommunicationClientZenoh initialized with protocol: {}", com_config("protocol"));
 }
@@ -170,12 +214,37 @@ CommunicationClientZenoh::~CommunicationClientZenoh()
 
 bool CommunicationClientZenoh::sendMessage(Communication::MessageType type, const uint8_t * data, size_t size)
 {
+
+  if(data == nullptr || size == 0)
+  {
+    return false;
+  }
+
+  switch(type)
+  {
+    case MessageType::CONFIG:
+    case MessageType::STATE:
+    {
+      if(!impl_ || !impl_->state_pub)
+      {
+        return false;
+      }
+
+      std::vector<uint8_t> payload(data, data + size);
+      impl_->state_pub->put(zenoh::Bytes(std::move(payload)));
+      return true;
+    }
+    case MessageType::COMMAND:
+
+    default:
+      break;
+  }
+
   return false;
 }
 
 bool CommunicationClientZenoh::receiveMessage(Communication::MessageType type)
 {
-
   switch(type)
   {
     case MessageType::CONFIG:

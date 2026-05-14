@@ -13,6 +13,13 @@
 namespace mc_communication
 {
 
+struct State
+{
+  std::vector<double> position;
+  std::vector<double> velocity;
+  std::vector<double> torque;
+};
+
 class Communication
 {
 public:
@@ -36,6 +43,10 @@ public:
   virtual bool sendMessage(MessageType type, const uint8_t * data, size_t size) = 0;
   virtual bool receiveMessage(MessageType type) = 0;
 
+  // For serialize functions, it is posible to use overload or template,
+  // but deserialize is not so trivial.
+  // Therefore, name serializeConfig, serializeState, serializeCommand for the sake of being parallel.
+
   /**
    * @brief Serialize mc_rtc::Configuration to a FlatBufferBuilder
    *
@@ -44,18 +55,31 @@ public:
    */
   static flatbuffers::FlatBufferBuilder serialize(const mc_rtc::Configuration & config);
 
+  static flatbuffers::DetachedBuffer serializeState(const State & message_state);
+
+  static flatbuffers::FlatBufferBuilder serialize(...);
+
   /**
    * @brief Deserialize data and save it to the given MessageConfig
    *
    * @param data
    * @param config
    */
+  // TODO: return configuration instead of copy to existing one
   static void deserialize(const uint8_t * data, mc_rtc::Configuration & message_config);
+
+  static std::optional<State> deserializeState(const uint8_t * data, size_t size);
 
   mc_rtc::Configuration latestConfig() const
   {
     std::lock_guard<std::mutex> lock(mutex_);
     return latest_config_.has_value() ? *latest_config_ : mc_rtc::Configuration{};
+  }
+
+  State latestState() const
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return latest_state_.value();
   }
 
 protected:
@@ -78,14 +102,21 @@ protected:
     latest_config_ = config;
   }
 
+  void updateLatestState(const State & state)
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    latest_state_ = state;
+  }
+
 private:
   const std::string name_;
   const std::string ip_;
   const uint16_t port_;
 
+  // TODO: move this to interface ?
   mutable std::mutex mutex_;
   std::optional<mc_rtc::Configuration> latest_config_;
-  std::optional<MessageState> latest_state_;
+  std::optional<State> latest_state_;
   std::optional<MessageCommand> latest_command_;
 };
 

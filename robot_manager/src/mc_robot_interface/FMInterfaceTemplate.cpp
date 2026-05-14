@@ -21,8 +21,17 @@ FMInterfaceTemplate::FMInterfaceTemplate(const std::string & name,
   mc_rtc::log::info("FMInterfaceTemplate done");
 };
 
-void FMInterfaceTemplate::updateSensors() {
-  // TODO: receive states from real robots and sync it with gcontroller
+void FMInterfaceTemplate::updateSensors()
+{
+  if(communication().receiveMessage(mc_communication::Communication::MessageType::STATE))
+  {
+    auto latest_state = communication().latestState();
+    mc_rtc::log::success("Received state");
+  }
+  else
+  {
+    mc_rtc::log::error("Trouble receiving state");
+  }
 };
 
 void FMInterfaceTemplate::updateControl() {

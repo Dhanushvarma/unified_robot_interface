@@ -73,6 +73,7 @@ void run(void * data, const std::atomic<bool> & interrupt)
 
   while(!interrupt)
   {
+    interface_template->updateSensors();
   }
 
   mc_rtc::log::info("local run done");
@@ -101,7 +102,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
     return nullptr;
   }
 
-  if(vm.count("conf"))
+  if(vm.count("conf") != 0U)
   {
     mc_rtc::log::error("'conf' is not supported");
     return nullptr;

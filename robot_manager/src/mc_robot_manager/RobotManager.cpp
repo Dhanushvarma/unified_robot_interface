@@ -99,7 +99,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
                                            builder.GetBufferPointer(), builder.GetSize());
   }
 
-  // TODO: sync with real robots
+  /* Check timestep compatifibility between mc_rtc and robot */
   double controller_s = gcontroller_->controller().timeStep;
   size_t max_step_size{0};
   for(auto & [robot_name, interface] : interfaces_)
@@ -136,7 +136,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   mc_rtc::log::info("[mc_fleet] mc_rtc will compute commands every {} robot control step", max_step_size);
 
   auto & robots = gcontroller_->controller().robots();
-  // Initialize all real robots
+  /* Initialize all real robots */
   for(size_t i = gcontroller_->realRobots().size(); i < robots.size(); ++i)
   {
     gcontroller_->realRobots().robotCopy(robots.robot(i), robots.robot(i).name());
@@ -147,9 +147,6 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 
   for(auto & [robot_name, interface] : interfaces_)
   {
-    // TODO: check if dt should be included in lambda
-    // double dt = robots_config(robot_name)("controller")("time_step");
-
     auto * interface_ptr = interface.get();
     threads_.emplace_back(
         [&, this, interface_ptr]()

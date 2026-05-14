@@ -3,6 +3,7 @@
 
 #include <mc_rtc/logging.h>
 
+#include <random>
 #include <thread>
 
 namespace mc_interface_template
@@ -48,9 +49,38 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
   mc_rtc::log::info("InterfaceTemplate local done");
 };
 
-void InterfaceTemplate::updateSensors() {
-  // TODO: read from sensor and send states to manager
-};
+void InterfaceTemplate::updateSensors()
+{
+  static std::mt19937 rng{std::random_device{}()};
+  static std::uniform_real_distribution<double> dist(-1.0, 1.0);
+
+  mc_communication::State state;
+
+  constexpr size_t dof = 6; // example: 6 joints
+
+  state.position.resize(dof);
+  state.velocity.resize(dof);
+  state.torque.resize(dof);
+
+  for(size_t i = 0; i < dof; ++i)
+  {
+    state.position[i] = dist(rng);
+    state.velocity[i] = dist(rng);
+    state.torque[i] = dist(rng);
+  }
+
+  // Serialize to FlatBuffers
+  auto buffer = mc_communication::Communication::serializeState(state);
+
+  // Send to robot manager
+  bool sent =
+      communication().sendMessage(mc_communication::Communication::MessageType::STATE, buffer.data(), buffer.size());
+
+  if(!sent)
+  {
+    mc_rtc::log::warning("Failed to send STATE to robot manager");
+  }
+}
 
 void InterfaceTemplate::updateControl() {
   // TODO: receive commands from manager
