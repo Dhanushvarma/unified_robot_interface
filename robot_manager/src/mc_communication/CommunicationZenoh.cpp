@@ -150,7 +150,7 @@ bool CommunicationSeverZenoh::receiveMessage(Communication::MessageType type)
         local = impl_->state_cache;
       }
 
-      auto s = Communication::deserializeState(local.data(), local.size()); // adjust if you add size
+      auto s = Communication::deserializeState(local.data(), local.size());
       if(!s)
       {
         mc_rtc::log::error("STATE payload failed to deserialize");
@@ -260,12 +260,15 @@ bool CommunicationClientZenoh::receiveMessage(Communication::MessageType type)
         if(reply.is_ok())
         {
           const auto & sample = reply.get_ok();
-          const auto & payload = sample.get_payload();
+          const auto & data = sample.get_payload().as_vector();
 
-          mc_rtc::Configuration received_config;
-          Communication::deserialize(payload.as_vector().data(), received_config);
-
-          this->updateLatestConfig(received_config);
+          auto c = Communication::deserializeConfig(data.data(), data.size());
+          if(!c)
+          {
+            mc_rtc::log::error("Failed to deserialize configuration message");
+            return false;
+          }
+          this->updateLatestConfig(*c);
 
           return true;
         }

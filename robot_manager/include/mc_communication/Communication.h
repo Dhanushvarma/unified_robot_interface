@@ -48,12 +48,12 @@ public:
   // Therefore, name serializeConfig, serializeState, serializeCommand for the sake of being parallel.
 
   /**
-   * @brief Serialize mc_rtc::Configuration to a FlatBufferBuilder
+   * @brief Serialize mc_rtc::Configuration to a buffer
    *
    * @param config
-   * @return flatbuffers::FlatBufferBuilder
+   * @return flatbuffers::DetachedBuffer
    */
-  static flatbuffers::FlatBufferBuilder serialize(const mc_rtc::Configuration & config);
+  static flatbuffers::DetachedBuffer serializeConfig(const mc_rtc::Configuration & config);
 
   static flatbuffers::DetachedBuffer serializeState(const State & message_state);
 
@@ -65,8 +65,7 @@ public:
    * @param data
    * @param config
    */
-  // TODO: return configuration instead of copy to existing one
-  static void deserialize(const uint8_t * data, mc_rtc::Configuration & message_config);
+  static std::optional<mc_rtc::Configuration> deserializeConfig(const uint8_t * data, size_t size);
 
   static std::optional<State> deserializeState(const uint8_t * data, size_t size);
 

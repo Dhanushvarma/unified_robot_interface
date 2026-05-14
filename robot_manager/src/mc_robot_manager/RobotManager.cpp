@@ -94,9 +94,9 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   {
     mc_rtc::log::info("manager init send config {}", robot_name);
 
-    auto builder = mc_communication::Communication::serialize(interface->config());
-    interface->communication().sendMessage(mc_communication::Communication::MessageType::CONFIG,
-                                           builder.GetBufferPointer(), builder.GetSize());
+    auto buffer = mc_communication::Communication::serializeConfig(interface->config());
+    interface->communication().sendMessage(mc_communication::Communication::MessageType::CONFIG, buffer.data(),
+                                           buffer.size());
   }
 
   /* Check timestep compatifibility between mc_rtc and robot */

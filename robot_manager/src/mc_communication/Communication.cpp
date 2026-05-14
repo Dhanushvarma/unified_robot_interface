@@ -10,7 +10,7 @@ Communication::Communication()
 Communication::Communication(std::string name, const mc_rtc::Configuration & com_config)
 : name_(std::move(name)), ip_(com_config("ip")), port_(com_config("port")) {};
 
-flatbuffers::FlatBufferBuilder Communication::serialize(const mc_rtc::Configuration & config)
+flatbuffers::DetachedBuffer Communication::serializeConfig(const mc_rtc::Configuration & config)
 {
   flatbuffers::FlatBufferBuilder builder;
 
@@ -19,7 +19,7 @@ flatbuffers::FlatBufferBuilder Communication::serialize(const mc_rtc::Configurat
   auto message = CreateMessageConfig(builder, config_json);
   builder.Finish(message);
 
-  return builder;
+  return builder.Release();
 }
 
 flatbuffers::DetachedBuffer Communication::serializeState(const State & message_state)
@@ -36,14 +36,21 @@ flatbuffers::DetachedBuffer Communication::serializeState(const State & message_
   return builder.Release();
 }
 
-void Communication::deserialize(const uint8_t * data, mc_rtc::Configuration & message_config)
+std::optional<mc_rtc::Configuration> Communication::deserializeConfig(const uint8_t * data, size_t size)
 {
-  const auto * message = flatbuffers::GetRoot<MessageConfig>(data);
+  flatbuffers::Verifier verifier(data, size);
+  if(!verifier.VerifyBuffer<MessageState>())
+  {
+    return std::nullopt;
+  }
 
+  const auto * message = flatbuffers::GetRoot<MessageConfig>(data);
   if(message != nullptr && message->config() != nullptr)
   {
-    message_config = mc_rtc::Configuration::fromData(message->config()->c_str());
+    return mc_rtc::Configuration::fromData(message->config()->c_str());
   }
+
+  return nullptr;
 }
 
 std::optional<State> Communication::deserializeState(const uint8_t * data, size_t size)
