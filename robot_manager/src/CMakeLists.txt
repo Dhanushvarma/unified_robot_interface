@@ -81,4 +81,20 @@ target_link_libraries(
                          Boost::program_options
 )
 
-install(TARGETS MCFleetControl RUNTIME DESTINATION bin)
+set(PROGRAM_NAME MCFleetControl)
+
+set(JOB_POOL_OPTION)
+if(${CMAKE_VERSION} VERSION_GREATER "3.14")
+  set(JOB_POOL_OPTION JOB_POOL console)
+endif()
+add_custom_target(
+  setcap_${PROGRAM_NAME} ALL
+  COMMAND ${SUDO} -S ${SETCAP} cap_sys_nice+eip $<TARGET_FILE:${PROGRAM_NAME}>
+  DEPENDS ${PROGRAM_NAME} ${JOB_POOL_OPTION}
+)
+
+install(TARGETS ${PROGRAM_NAME} DESTINATION bin)
+install(
+  CODE
+  "execute_process(COMMAND ${SUDO} -S ${SETCAP} cap_sys_nice+eip ${CMAKE_INSTALL_PREFIX}/bin/${PROGRAM_NAME})"
+)
