@@ -103,6 +103,7 @@ CommunicationSeverZenoh::CommunicationSeverZenoh(const std::string & name, const
 
   // TODO: command publisher
   std::string command_key = name + "/command";
+  impl_->command_pub = impl_->session->declare_publisher(command_key);
 
   mc_rtc::log::success("CommunicationSeverZenoh initialized with protocol: {}", com_config("protocol"));
 }
@@ -114,6 +115,11 @@ CommunicationSeverZenoh::~CommunicationSeverZenoh()
 
 bool CommunicationSeverZenoh::sendMessage(Communication::MessageType type, const uint8_t * data, size_t size)
 {
+  if(data == nullptr || size == 0)
+  {
+    return false;
+  }
+
   switch(type)
   {
     case MessageType::CONFIG:
@@ -122,8 +128,18 @@ bool CommunicationSeverZenoh::sendMessage(Communication::MessageType type, const
       impl_->config_cache.assign(data, data + size);
       return true;
     }
-    case MessageType::STATE:
+
     case MessageType::COMMAND:
+    {
+      if(!impl_ || !impl_->command_pub)
+      {
+        return false;
+      }
+
+      std::vector<uint8_t> payload(data, data + size);
+      impl_->command_pub->put(zenoh::Bytes(std::move(payload)));
+      return true;
+    }
 
     default:
       break;
@@ -136,7 +152,6 @@ bool CommunicationSeverZenoh::receiveMessage(Communication::MessageType type)
 {
   switch(type)
   {
-    case MessageType::CONFIG:
     case MessageType::STATE:
     {
       std::vector<uint8_t> local;
@@ -162,11 +177,10 @@ bool CommunicationSeverZenoh::receiveMessage(Communication::MessageType type)
       return true;
     }
 
-    case MessageType::COMMAND:
-
     default:
       break;
   }
+
   return false;
 }
 
@@ -178,6 +192,12 @@ struct CommunicationClientZenoh::Impl
   std::optional<zenoh::Querier> config_querier;
   std::optional<zenoh::Publisher> state_pub;
   std::optional<zenoh::Subscriber<void>> command_sub;
+
+  std::mutex mutex;
+
+  std::vector<uint8_t> command_cache;
+  uint64_t command_seq = 0;
+  uint64_t command_seq_consumed = 0;
 };
 
 CommunicationClientZenoh::CommunicationClientZenoh() = default;
@@ -204,6 +224,19 @@ CommunicationClientZenoh::CommunicationClientZenoh(const std::string & name, con
 
   // TODO: command subscriber
   std::string command_key = name + "/command";
+
+  auto command_handler = [this](const zenoh::Sample & sample)
+  {
+    const auto & payload = sample.get_payload();
+    auto bytes = payload.as_vector();
+    std::lock_guard<std::mutex> lock(impl_->mutex);
+    impl_->command_cache.assign(bytes.begin(), bytes.end());
+    ++impl_->command_seq;
+  };
+
+  impl_->command_sub =
+      impl_->session->declare_subscriber(command_key, std::move(command_handler), zenoh::closures::none);
+
   mc_rtc::log::success("CommunicationClientZenoh initialized with protocol: {}", com_config("protocol"));
 }
 
@@ -214,7 +247,6 @@ CommunicationClientZenoh::~CommunicationClientZenoh()
 
 bool CommunicationClientZenoh::sendMessage(Communication::MessageType type, const uint8_t * data, size_t size)
 {
-
   if(data == nullptr || size == 0)
   {
     return false;
@@ -222,7 +254,6 @@ bool CommunicationClientZenoh::sendMessage(Communication::MessageType type, cons
 
   switch(type)
   {
-    case MessageType::CONFIG:
     case MessageType::STATE:
     {
       if(!impl_ || !impl_->state_pub)
@@ -234,7 +265,6 @@ bool CommunicationClientZenoh::sendMessage(Communication::MessageType type, cons
       impl_->state_pub->put(zenoh::Bytes(std::move(payload)));
       return true;
     }
-    case MessageType::COMMAND:
 
     default:
       break;
@@ -278,8 +308,30 @@ bool CommunicationClientZenoh::receiveMessage(Communication::MessageType type)
       return false;
     }
 
-    case MessageType::STATE:
     case MessageType::COMMAND:
+    {
+      std::vector<uint8_t> local;
+      {
+        std::lock_guard<std::mutex> lock(impl_->mutex);
+        if(impl_->command_seq == impl_->command_seq_consumed)
+        {
+          return false;
+        }
+        impl_->command_seq_consumed = impl_->command_seq;
+        local = impl_->command_cache;
+      }
+
+      auto c = Communication::deserializeCommand(local.data(), local.size());
+      if(!c)
+      {
+        mc_rtc::log::error("command payload failed to deserialize");
+        return false;
+      }
+
+      // Store it somewhere useful
+      this->updateLatestCommand(*c); // implement similar to updateLatestConfig
+      return true;
+    }
 
     default:
       break;

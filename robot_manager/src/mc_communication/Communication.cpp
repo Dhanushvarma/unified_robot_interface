@@ -36,10 +36,24 @@ flatbuffers::DetachedBuffer Communication::serializeState(const State & message_
   return builder.Release();
 }
 
+flatbuffers::DetachedBuffer Communication::serializeCommand(const Command & message_command)
+{
+  flatbuffers::FlatBufferBuilder builder;
+
+  auto position = builder.CreateVector(message_command.position);
+  auto velocity = builder.CreateVector(message_command.velocity);
+  auto torque = builder.CreateVector(message_command.torque);
+
+  auto message = CreateMessageCommand(builder, message_command.kp, message_command.kd, position, velocity, torque);
+  builder.Finish(message);
+
+  return builder.Release();
+}
+
 std::optional<mc_rtc::Configuration> Communication::deserializeConfig(const uint8_t * data, size_t size)
 {
   flatbuffers::Verifier verifier(data, size);
-  if(!verifier.VerifyBuffer<MessageState>())
+  if(!verifier.VerifyBuffer<MessageConfig>())
   {
     return std::nullopt;
   }
@@ -61,24 +75,53 @@ std::optional<State> Communication::deserializeState(const uint8_t * data, size_
     return std::nullopt;
   }
 
-  const auto * msg = flatbuffers::GetRoot<MessageState>(data);
+  const auto * message = flatbuffers::GetRoot<MessageState>(data);
 
   State state;
 
-  if(const auto * p = msg->position())
+  if(const auto * p = message->position())
   {
     state.position.assign(p->begin(), p->end());
   }
-  if(const auto * v = msg->velocity())
+  if(const auto * v = message->velocity())
   {
     state.velocity.assign(v->begin(), v->end());
   }
-  if(const auto * t = msg->torque())
+  if(const auto * t = message->torque())
   {
     state.torque.assign(t->begin(), t->end());
   }
 
   return state;
+}
+
+std::optional<Command> Communication::deserializeCommand(const uint8_t * data, size_t size)
+{
+  flatbuffers::Verifier verifier(data, size);
+  if(!verifier.VerifyBuffer<MessageCommand>())
+  {
+    return std::nullopt;
+  }
+
+  const auto * message = flatbuffers::GetRoot<MessageCommand>(data);
+
+  Command command;
+  command.kp = message->kp();
+  command.kd = message->kd();
+  if(const auto * p = message->position())
+  {
+    command.position.assign(p->begin(), p->end());
+  }
+  if(const auto * v = message->velocity())
+  {
+    command.velocity.assign(v->begin(), v->end());
+  }
+  if(const auto * t = message->torque())
+  {
+    command.torque.assign(t->begin(), t->end());
+  }
+
+  return command;
 }
 
 } // namespace mc_communication

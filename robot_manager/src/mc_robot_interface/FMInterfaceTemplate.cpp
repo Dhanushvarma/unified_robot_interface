@@ -3,6 +3,7 @@
 
 #include <mc_rtc/logging.h>
 
+#include <random>
 #include <thread>
 
 namespace mc_interface_template
@@ -34,8 +35,44 @@ void FMInterfaceTemplate::updateSensors()
   }
 };
 
-void FMInterfaceTemplate::updateControl() {
-  // TODO: send command to local robot
-};
+void FMInterfaceTemplate::updateControl()
+{
+  static std::mt19937 rng{std::random_device{}()};
+  static std::uniform_real_distribution<double> dist(-1.0, 1.0);
+
+  mc_communication::Command command;
+
+  constexpr size_t dof = 6;
+
+  command.kp = dist(rng);
+  command.kd = dist(rng);
+
+  command.position.resize(dof);
+  command.velocity.resize(dof);
+  command.torque.resize(dof);
+
+  for(size_t i = 0; i < dof; ++i)
+  {
+    command.position[i] = dist(rng);
+    command.velocity[i] = dist(rng);
+    command.torque[i] = dist(rng);
+  }
+
+  // Serialize to FlatBuffers
+  auto buffer = mc_communication::Communication::serializeCommand(command);
+
+  // Send to robot manager
+  bool sent =
+      communication().sendMessage(mc_communication::Communication::MessageType::COMMAND, buffer.data(), buffer.size());
+
+  if(sent)
+  {
+    mc_rtc::log::success("Sent command");
+  }
+  else
+  {
+    mc_rtc::log::warning("Failed to send COMMAND to robot {}", name());
+  }
+}
 
 } // namespace mc_interface_template

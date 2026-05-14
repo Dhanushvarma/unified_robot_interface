@@ -76,14 +76,27 @@ void InterfaceTemplate::updateSensors()
   bool sent =
       communication().sendMessage(mc_communication::Communication::MessageType::STATE, buffer.data(), buffer.size());
 
-  if(!sent)
+  if(sent)
+  {
+    mc_rtc::log::success("Sent state");
+  }
+  else
   {
     mc_rtc::log::warning("Failed to send STATE to robot manager");
   }
 }
 
-void InterfaceTemplate::updateControl() {
-  // TODO: receive commands from manager
+void InterfaceTemplate::updateControl()
+{
+  if(communication().receiveMessage(mc_communication::Communication::MessageType::COMMAND))
+  {
+    auto latest_command = communication().latestCommand();
+    mc_rtc::log::success("Received command");
+  }
+  else
+  {
+    mc_rtc::log::error("Trouble receiving command");
+  }
 };
 
 } // namespace mc_interface_template

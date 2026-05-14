@@ -74,6 +74,7 @@ void run(void * data, const std::atomic<bool> & interrupt)
   while(!interrupt)
   {
     interface_template->updateSensors();
+    interface_template->updateControl();
   }
 
   mc_rtc::log::info("local run done");

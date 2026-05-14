@@ -20,6 +20,15 @@ struct State
   std::vector<double> torque;
 };
 
+struct Command
+{
+  double kp;
+  double kd;
+  std::vector<double> position;
+  std::vector<double> velocity;
+  std::vector<double> torque;
+};
+
 class Communication
 {
 public:
@@ -54,20 +63,19 @@ public:
    * @return flatbuffers::DetachedBuffer
    */
   static flatbuffers::DetachedBuffer serializeConfig(const mc_rtc::Configuration & config);
-
   static flatbuffers::DetachedBuffer serializeState(const State & message_state);
-
-  static flatbuffers::FlatBufferBuilder serialize(...);
+  static flatbuffers::DetachedBuffer serializeCommand(const Command & message_command);
 
   /**
-   * @brief Deserialize data and save it to the given MessageConfig
+   * @brief Deserialize data and return configuration
    *
    * @param data
-   * @param config
+   * @param size
+   * @return std::optional<mc_rtc::Configuration>
    */
   static std::optional<mc_rtc::Configuration> deserializeConfig(const uint8_t * data, size_t size);
-
   static std::optional<State> deserializeState(const uint8_t * data, size_t size);
+  static std::optional<Command> deserializeCommand(const uint8_t * data, size_t size);
 
   mc_rtc::Configuration latestConfig() const
   {
@@ -79,6 +87,12 @@ public:
   {
     std::lock_guard<std::mutex> lock(mutex_);
     return latest_state_.value();
+  }
+
+  Command latestCommand() const
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return latest_command_.value();
   }
 
 protected:
@@ -107,6 +121,12 @@ protected:
     latest_state_ = state;
   }
 
+  void updateLatestCommand(const Command & command)
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    latest_command_ = command;
+  }
+
 private:
   const std::string name_;
   const std::string ip_;
@@ -116,7 +136,7 @@ private:
   mutable std::mutex mutex_;
   std::optional<mc_rtc::Configuration> latest_config_;
   std::optional<State> latest_state_;
-  std::optional<MessageCommand> latest_command_;
+  std::optional<Command> latest_command_;
 };
 
 } // namespace mc_communication
