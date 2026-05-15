@@ -67,8 +67,6 @@ CommunicationSeverZenoh::CommunicationSeverZenoh(const std::string & name, const
   mc_rtc::log::success("com Zenoh constructor start");
 
   zenoh::Config zenoh_config = configureTransport(com_config);
-
-  // Open session with proper config
   impl_->session = std::make_unique<zenoh::Session>(std::move(zenoh_config));
 
   mc_rtc::log::info("com Zenoh constructor 2");
@@ -159,7 +157,7 @@ bool CommunicationSeverZenoh::receiveMessage(Communication::MessageType type)
         std::lock_guard<std::mutex> lock(impl_->mutex);
         if(impl_->state_seq == impl_->state_seq_consumed)
         {
-          return false; // no new state since last call
+          return false;
         }
         impl_->state_seq_consumed = impl_->state_seq;
         local = impl_->state_cache;
@@ -172,8 +170,7 @@ bool CommunicationSeverZenoh::receiveMessage(Communication::MessageType type)
         return false;
       }
 
-      // Store it somewhere useful
-      this->updateLatestState(*s); // implement similar to updateLatestConfig
+      this->updateLatestState(*s);
       return true;
     }
 
@@ -329,7 +326,7 @@ bool CommunicationClientZenoh::receiveMessage(Communication::MessageType type)
       }
 
       // Store it somewhere useful
-      this->updateLatestCommand(*c); // implement similar to updateLatestConfig
+      this->updateLatestCommand(*c);
       return true;
     }
 

@@ -56,7 +56,7 @@ CommunicationShm::~CommunicationShm()
   {
     if(shmctl(id, IPC_RMID, nullptr) == -1)
     {
-      perror("shmctl failed"); // This will tell you exactly WHY it failed
+      perror("shmctl failed");
     }
     else
     {

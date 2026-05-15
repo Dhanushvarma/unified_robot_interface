@@ -56,7 +56,7 @@ void InterfaceTemplate::updateSensors()
 
   mc_communication::State state;
 
-  constexpr size_t dof = 6; // example: 6 joints
+  constexpr size_t dof = 6;
 
   state.position.resize(dof);
   state.velocity.resize(dof);
@@ -69,10 +69,8 @@ void InterfaceTemplate::updateSensors()
     state.torque[i] = dist(rng);
   }
 
-  // Serialize to FlatBuffers
   auto buffer = mc_communication::Communication::serializeState(state);
 
-  // Send to robot manager
   bool sent =
       communication().sendMessage(mc_communication::Communication::MessageType::STATE, buffer.data(), buffer.size());
 
@@ -91,7 +89,7 @@ void InterfaceTemplate::updateControl()
   if(communication().receiveMessage(mc_communication::Communication::MessageType::COMMAND))
   {
     auto latest_command = communication().latestCommand();
-    mc_rtc::log::success("Received command");
+    mc_rtc::log::success("Received state {}", communication().latestCommand().kp);
   }
   else
   {

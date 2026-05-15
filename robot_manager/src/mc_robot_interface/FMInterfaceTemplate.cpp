@@ -67,7 +67,7 @@ void FMInterfaceTemplate::updateControl()
 
   if(sent)
   {
-    mc_rtc::log::success("Sent command");
+    mc_rtc::log::success("Sent command {}", command.kp);
   }
   else
   {

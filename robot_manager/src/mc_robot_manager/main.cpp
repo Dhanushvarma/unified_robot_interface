@@ -1,9 +1,6 @@
 #include <mc_rtc/logging.h>
 #include <mc_robot_manager/RobotManager.h>
 
-#include <boost/program_options.hpp>
-namespace po = boost::program_options;
-
 // Resolve redefinition conflict with pthread.h
 #define sched_param linux_sched_param // NOLINT(readability-identifier-naming)
 #include <linux/sched.h>
@@ -14,9 +11,7 @@ namespace po = boost::program_options;
 #include <cerrno>
 #include <csignal>
 #include <cstdint>
-#include <cstdio>
 #include <cstdlib>
-#include <string>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <syscall.h>

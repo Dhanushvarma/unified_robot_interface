@@ -64,7 +64,6 @@ private:
   DefaultConfig user_default_;
 
   /* Start */
-  // Start with main thread
   std::unique_ptr<std::thread> main_thread_;
   std::mutex start_mutex_;
   std::condition_variable start_cv_;
