@@ -16,7 +16,7 @@ namespace mc_fleet
 void run(void * data, const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("fleet run start");
-  std::unique_ptr<RobotManager> robot_manager{static_cast<RobotManager *>(data)};
+  auto * robot_manager = static_cast<RobotManager *>(data);
   mc_control::MCGlobalController & gcontroller{robot_manager->gcontroller()};
 
   while(gcontroller.running && !interrupt)
