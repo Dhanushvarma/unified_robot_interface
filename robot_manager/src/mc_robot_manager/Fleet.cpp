@@ -29,7 +29,7 @@ void run(void * data, const std::atomic<bool> & interrupt)
   for(const auto & [name, interface] : robot_manager->interfaces())
   {
     std::string fn = name + "_log.json";
-    interface->communication().dumpLog(fn);
+    interface->dumpLog(fn);
   }
 
   mc_rtc::log::info("fleet run done");

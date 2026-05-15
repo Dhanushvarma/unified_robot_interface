@@ -44,6 +44,9 @@ public:
                      bool & start,
                      bool & running) {};
 
+  // TODO: delete logging
+  void dumpLog(const std::string & filename) const;
+
   template<typename cm>
   void control();
 
@@ -59,7 +62,7 @@ public:
   {
     return name_;
   }
-  [[nodiscard]] const mc_rtc::Configuration & config() const
+  [[nodiscard]] mc_rtc::Configuration & config()
   {
     return config_;
   }
@@ -72,9 +75,47 @@ public:
     return buffer_size_;
   }
 
+  [[nodiscard]] mc_communication::State & state()
+  {
+    return state_;
+  }
+
+  [[nodiscard]] mc_communication::Command & command()
+  {
+    return command_;
+  }
+
+  // TODO: delete logging
+  [[nodiscard]] std::vector<mc_communication::State> & states()
+  {
+    return states_;
+  }
+
+  [[nodiscard]] std::vector<mc_communication::Command> & commands()
+  {
+    return commands_;
+  }
+
   [[nodiscard]] mc_communication::Communication & communication()
   {
     return *communication_;
+  }
+
+  void setConfig(const mc_rtc::Configuration & config)
+  {
+    config_ = config;
+  }
+
+  void setState(const mc_communication::State & state)
+  {
+    state_ = state;
+    states_.push_back(state);
+  }
+
+  void setCommand(const mc_communication::Command & command)
+  {
+    command_ = command;
+    commands_.push_back(command);
   }
 
 private:
@@ -82,15 +123,146 @@ private:
   mutable std::mutex update_control_mtx_{};
 
   const std::string name_{};
-  const mc_rtc::Configuration config_{};
+  mc_rtc::Configuration config_{};
   const double dt_{};
   const uint8_t buffer_size_{};
 
-  std::vector<double> state_{};
-  std::vector<double> command_{};
+  mutable std::mutex mutex_;
+  mc_communication::State state_{};
+  mc_communication::Command command_{};
+
+  // TODO: delete logging
+  std::vector<mc_communication::State> states_;
+  std::vector<mc_communication::Command> commands_;
 
   // TODO: control mode ?
   std::unique_ptr<mc_communication::Communication> communication_{};
 };
+
+// TODO: delete logging
+inline void RobotInterfaceBase::dumpLog(const std::string & filename) const
+{
+  std::ofstream file(filename);
+  if(!file.is_open())
+  {
+    mc_rtc::log::error("Failed to open log file: {}", filename);
+    return;
+  }
+
+  file << "{\n";
+
+  // ── States ──
+  file << "  \"states\": [\n";
+  for(size_t i = 0; i < states_.size(); ++i)
+  {
+    const auto & s = states_[i];
+    file << "    {\n";
+    file << "      \"index\": " << i << ",\n";
+
+    file << "      \"position\": [";
+    for(size_t j = 0; j < s.position.size(); ++j)
+    {
+      file << s.position[j];
+      if(j + 1 < s.position.size())
+      {
+        file << ", ";
+      }
+    }
+    file << "],\n";
+
+    file << "      \"velocity\": [";
+    for(size_t j = 0; j < s.velocity.size(); ++j)
+    {
+      file << s.velocity[j];
+      if(j + 1 < s.velocity.size())
+      {
+        file << ", ";
+      }
+    }
+    file << "],\n";
+
+    file << "      \"torque\": [";
+    for(size_t j = 0; j < s.torque.size(); ++j)
+    {
+      file << s.torque[j];
+      if(j + 1 < s.torque.size())
+      {
+        file << ", ";
+      }
+    }
+    file << "]\n";
+
+    file << "    }";
+    if(i + 1 < states_.size())
+    {
+      file << ",";
+    }
+    file << "\n";
+  }
+  file << "  ],\n";
+
+  // ── Commands ──
+  file << "  \"commands\": [\n";
+  for(size_t i = 0; i < commands_.size(); ++i)
+  {
+    const auto & c = commands_[i];
+    file << "    {\n";
+    file << "      \"index\": " << i << ",\n";
+    file << "      \"kp\": " << c.kp << ",\n";
+    file << "      \"kd\": " << c.kd << ",\n";
+
+    file << "      \"position\": [";
+    for(size_t j = 0; j < c.position.size(); ++j)
+    {
+      file << c.position[j];
+      if(j + 1 < c.position.size())
+      {
+        file << ", ";
+      }
+    }
+    file << "],\n";
+
+    file << "      \"velocity\": [";
+    for(size_t j = 0; j < c.velocity.size(); ++j)
+    {
+      file << c.velocity[j];
+      if(j + 1 < c.velocity.size())
+      {
+        file << ", ";
+      }
+    }
+    file << "],\n";
+
+    file << "      \"torque\": [";
+    for(size_t j = 0; j < c.torque.size(); ++j)
+    {
+      file << c.torque[j];
+      if(j + 1 < c.torque.size())
+      {
+        file << ", ";
+      }
+    }
+    file << "]\n";
+
+    file << "    }";
+    if(i + 1 < commands_.size())
+    {
+      file << ",";
+    }
+    file << "\n";
+  }
+  file << "  ],\n";
+
+  // ── Summary ──
+  file << "  \"summary\": {\n";
+  file << "    \"total_states_sent\": " << states_.size() << ",\n";
+  file << "    \"total_commands_received\": " << commands_.size() << "\n";
+  file << "  }\n";
+
+  file << "}\n";
+  file.close();
+
+  mc_rtc::log::success("Log saved to {} ({} states, {} commands)", filename, states_.size(), commands_.size());
+}
 
 } // namespace mc_robot

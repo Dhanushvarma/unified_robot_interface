@@ -46,7 +46,8 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
   if(!communication().latestConfig().empty())
   {
     mc_rtc::log::success("HERE IS CONFIG");
-    mc_rtc::log::info(communication().latestConfig().dump(true, true));
+    setConfig(communication().latestConfig());
+    mc_rtc::log::info(config().dump(true, true));
   }
   mc_rtc::log::info("InterfaceTemplate local done");
 };
@@ -56,9 +57,9 @@ void InterfaceTemplate::updateSensors()
   static std::mt19937 rng{std::random_device{}()};
   static std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
-  mc_communication::State state;
-
   constexpr size_t dof = 6;
+
+  mc_communication::State state;
 
   state.position.resize(dof);
   state.velocity.resize(dof);
@@ -71,13 +72,12 @@ void InterfaceTemplate::updateSensors()
     state.torque[i] = dist(rng);
   }
 
+  setState(state);
+
   auto buffer = mc_communication::Communication::serializeState(state);
 
   bool sent =
       communication().sendMessage(mc_communication::Communication::MessageType::STATE, buffer.data(), buffer.size());
-
-  // TODO: delete logging
-  communication().states().push_back(state);
 
   if(sent)
   {
@@ -93,12 +93,9 @@ void InterfaceTemplate::updateControl()
 {
   if(communication().receiveMessage(mc_communication::Communication::MessageType::COMMAND))
   {
-    auto latest_command = communication().latestCommand();
+    setCommand(communication().latestCommand());
 
-    // TODO: delete logging
-    communication().commands().push_back(latest_command);
-
-    mc_rtc::log::success("Received state {}", latest_command.kp);
+    mc_rtc::log::success("Received state");
   }
   else
   {

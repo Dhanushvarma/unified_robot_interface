@@ -109,7 +109,7 @@ void run(void * data, const std::atomic<bool> & interrupt)
   }
 
   // TODO: delete logging
-  interface_template->communication().dumpLog("mc_local_log.json");
+  interface_template->dumpLog("mc_local_log.json");
 
   mc_rtc::log::info("local run done");
 }

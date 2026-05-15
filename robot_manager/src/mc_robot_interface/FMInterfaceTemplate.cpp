@@ -26,10 +26,7 @@ void FMInterfaceTemplate::updateSensors()
 {
   if(communication().receiveMessage(mc_communication::Communication::MessageType::STATE))
   {
-    auto latest_state = communication().latestState();
-
-    // TODO: delete logging
-    communication().states().push_back(latest_state);
+    setState(communication().latestState());
 
     mc_rtc::log::success("Received state");
   }
@@ -44,9 +41,9 @@ void FMInterfaceTemplate::updateControl()
   static std::mt19937 rng{std::random_device{}()};
   static std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
-  mc_communication::Command command;
-
   constexpr size_t dof = 6;
+
+  mc_communication::Command command;
 
   command.kp = dist(rng);
   command.kd = dist(rng);
@@ -62,15 +59,14 @@ void FMInterfaceTemplate::updateControl()
     command.torque[i] = dist(rng);
   }
 
+  setCommand(command);
+
   // Serialize to FlatBuffers
   auto buffer = mc_communication::Communication::serializeCommand(command);
 
   // Send to robot manager
   bool sent =
       communication().sendMessage(mc_communication::Communication::MessageType::COMMAND, buffer.data(), buffer.size());
-
-  // TODO: delete logging
-  communication().commands().push_back(command);
 
   if(sent)
   {
