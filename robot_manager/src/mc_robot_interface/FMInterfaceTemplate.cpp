@@ -27,6 +27,10 @@ void FMInterfaceTemplate::updateSensors()
   if(communication().receiveMessage(mc_communication::Communication::MessageType::STATE))
   {
     auto latest_state = communication().latestState();
+
+    // TODO: delete logging
+    communication().states().push_back(latest_state);
+
     mc_rtc::log::success("Received state");
   }
   else
@@ -64,6 +68,9 @@ void FMInterfaceTemplate::updateControl()
   // Send to robot manager
   bool sent =
       communication().sendMessage(mc_communication::Communication::MessageType::COMMAND, buffer.data(), buffer.size());
+
+  // TODO: delete logging
+  communication().commands().push_back(command);
 
   if(sent)
   {

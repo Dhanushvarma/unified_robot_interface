@@ -3,6 +3,7 @@
 build
 
 compile_commands.json
+*log.json
 
 # FlatBuffers generated files
 *generated.h

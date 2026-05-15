@@ -52,6 +52,9 @@ public:
   virtual bool sendMessage(MessageType type, const uint8_t * data, size_t size) = 0;
   virtual bool receiveMessage(MessageType type) = 0;
 
+  // TODO: delete logging
+  void dumpLog(const std::string & filename) const;
+
   // For serialize functions, it is posible to use overload or template,
   // but deserialize is not so trivial.
   // Therefore, name serializeConfig, serializeState, serializeCommand for the sake of being parallel.
@@ -93,6 +96,17 @@ public:
   {
     std::lock_guard<std::mutex> lock(mutex_);
     return latest_command_.value();
+  }
+
+  // TODO: delete logging
+  std::vector<State> & states()
+  {
+    return states_;
+  }
+
+  std::vector<Command> & commands()
+  {
+    return commands_;
   }
 
 protected:
@@ -137,6 +151,10 @@ private:
   std::optional<mc_rtc::Configuration> latest_config_;
   std::optional<State> latest_state_;
   std::optional<Command> latest_command_;
+
+  // TODO: delete logging
+  std::vector<mc_communication::State> states_;
+  std::vector<mc_communication::Command> commands_;
 };
 
 } // namespace mc_communication

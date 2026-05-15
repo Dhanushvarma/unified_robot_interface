@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
 
-# Project Name
 set(PROJECT_NAME robot_manager_project)
 set(PROJECT_VERSION 1.0.0)
 project(
@@ -12,6 +11,12 @@ project(
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(MC_FLEET_ENABLE_INSTALL "Enable install/export" ON)
+
+option(BUILD_TESTING "Build tests" OFF)
+if(BUILD_TESTING)
+  enable_testing()
+endif()
+
 find_package(zenoh-c QUIET)
 if(NOT zenoh-c_FOUND)
   include(FetchContent)

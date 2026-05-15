@@ -21,6 +21,13 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+# Optional Testing
+option(BUILD_TESTING "Build tests" OFF)
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+  enable_testing()
+endif()
+
 # Dependencies
 find_package(Boost REQUIRED COMPONENTS program_options thread)
 find_package(Flatbuffers REQUIRED)
@@ -34,27 +41,27 @@ else()
   message("-- sudo command: ${SUDO}")
 endif()
 
-find_package(zenoh-c QUIET)
-if(NOT zenoh-c_FOUND)
-  include(FetchContent)
-  FetchContent_Declare(
-    zenoh-c
-    GIT_REPOSITORY https://github.com/eclipse-zenoh/zenoh-c.git
-    GIT_TAG main
-  )
-  FetchContent_MakeAvailable(zenoh-c)
-endif()
+# find_package(zenoh-c QUIET)
+# if(NOT zenoh-c_FOUND)
+#   include(FetchContent)
+#   FetchContent_Declare(
+#     zenoh-c
+#     GIT_REPOSITORY https://github.com/eclipse-zenoh/zenoh-c.git
+#     GIT_TAG main
+#   )
+#   FetchContent_MakeAvailable(zenoh-c)
+# endif()
 
-find_package(zenoh-cpp QUIET)
-if(NOT zenoh-cpp_FOUND)
-  include(FetchContent)
-  FetchContent_Declare(
-    zenoh-cpp
-    GIT_REPOSITORY https://github.com/eclipse-zenoh/zenoh-cpp.git
-    GIT_TAG main
-  )
-  FetchContent_MakeAvailable(zenoh-cpp)
-endif()
+# find_package(zenoh-cpp QUIET)
+# if(NOT zenoh-cpp_FOUND)
+#   include(FetchContent)
+#   FetchContent_Declare(
+#     zenoh-cpp
+#     GIT_REPOSITORY https://github.com/eclipse-zenoh/zenoh-cpp.git
+#     GIT_TAG main
+#   )
+#   FetchContent_MakeAvailable(zenoh-cpp)
+# endif()
 
 # Flatbuffers
 find_program(FLATC_EXECUTABLE NAMES flatc REQUIRED)
@@ -74,13 +81,6 @@ add_custom_target(generate_fbs DEPENDS "${OUTPUT_DIR}/Message_generated.h")
 
 # Add Subdirectories
 add_subdirectory(src)
-
-# Optional Testing
-option(BUILD_TESTING "Build tests" OFF)
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-  enable_testing()
-endif()
 
 install(DIRECTORY include/ DESTINATION include)
 

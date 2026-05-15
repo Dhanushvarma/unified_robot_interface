@@ -80,7 +80,7 @@ int main(int argc, char * argv[])
   if(schedSetattr(0, &attr, 0) < 0)
   {
     mc_rtc::log::error("schedSetattr failed");
-    return -2;
+    // return -2;
   }
 
   /* Run */

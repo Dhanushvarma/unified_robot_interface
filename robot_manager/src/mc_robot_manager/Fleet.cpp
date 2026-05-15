@@ -22,8 +22,14 @@ void run(void * data, const std::atomic<bool> & interrupt)
   while(gcontroller.running && !interrupt)
   {
     robot_manager->notify();
-
     sched_yield();
+  }
+
+  // TODO: delete logging
+  for(const auto & [name, interface] : robot_manager->interfaces())
+  {
+    std::string fn = name + "_log.json";
+    interface->communication().dumpLog(fn);
   }
 
   mc_rtc::log::info("fleet run done");

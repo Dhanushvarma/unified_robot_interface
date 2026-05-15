@@ -85,7 +85,7 @@ int main(int argc, char * argv[])
   if(schedSetattr(0, &attr, 0) < 0)
   {
     mc_rtc::log::error("schedSetattr failed");
-    return -2;
+    // return -2;
   }
 
   /* Run */
@@ -107,6 +107,9 @@ void run(void * data, const std::atomic<bool> & interrupt)
     interface_template->updateSensors();
     interface_template->updateControl();
   }
+
+  // TODO: delete logging
+  interface_template->communication().dumpLog("mc_local_log.json");
 
   mc_rtc::log::info("local run done");
 }

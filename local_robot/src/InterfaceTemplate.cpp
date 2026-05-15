@@ -3,6 +3,7 @@
 
 #include <mc_rtc/logging.h>
 
+#include <fstream>
 #include <random>
 #include <thread>
 
@@ -13,7 +14,8 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("InterfaceTemplate remote start");
 
-  mc_rtc::Configuration com_config("local_robot/etc/communication.yaml");
+  mc_rtc::Configuration com_config(
+      "/home/vscode/workspace/sandbox/mc_robot_manager/local_robot/etc/communication.yaml");
   if(com_config.has("name"))
   {
     setCommunication(mc_communication::CommunicationFactory::makeCommunicationClient(com_config));
@@ -74,6 +76,9 @@ void InterfaceTemplate::updateSensors()
   bool sent =
       communication().sendMessage(mc_communication::Communication::MessageType::STATE, buffer.data(), buffer.size());
 
+  // TODO: delete logging
+  communication().states().push_back(state);
+
   if(sent)
   {
     mc_rtc::log::success("Sent state");
@@ -89,7 +94,11 @@ void InterfaceTemplate::updateControl()
   if(communication().receiveMessage(mc_communication::Communication::MessageType::COMMAND))
   {
     auto latest_command = communication().latestCommand();
-    mc_rtc::log::success("Received state {}", communication().latestCommand().kp);
+
+    // TODO: delete logging
+    communication().commands().push_back(latest_command);
+
+    mc_rtc::log::success("Received state {}", latest_command.kp);
   }
   else
   {
