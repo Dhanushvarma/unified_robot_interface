@@ -22,6 +22,11 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Dependencies
+find_package(mc_rtc REQUIRED)
+find_package(Boost REQUIRED COMPONENTS program_options thread)
+find_program(SETCAP setcap)
+find_program(SUDO sudo)
+
 find_package(zenoh-c QUIET)
 if(NOT zenoh-c_FOUND)
   include(FetchContent)
@@ -43,10 +48,6 @@ if(NOT zenoh-cpp_FOUND)
   )
   FetchContent_MakeAvailable(zenoh-cpp)
 endif()
-
-# find_package(mc_fleet REQUIRED)
-find_package(mc_rtc REQUIRED)
-find_package(Boost REQUIRED COMPONENTS program_options thread)
 
 # Add Subdirectories
 add_subdirectory(src)
