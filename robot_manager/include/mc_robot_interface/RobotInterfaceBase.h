@@ -50,9 +50,6 @@ public:
   template<typename cm>
   void control();
 
-  // TODO: use loadConfig instead of constructor to process
-  void loadConfig(const mc_rtc::Configuration & config);
-
   void setCommunication(std::unique_ptr<mc_communication::Communication> communication)
   {
     communication_ = std::move(communication);
