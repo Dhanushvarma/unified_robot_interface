@@ -3,6 +3,7 @@
 #include <mc_control/Configuration.h>
 #include <mc_control/mc_global_controller.h>
 #include <mc_rtc/logging.h>
+// #include "zenoh.hxx"
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
@@ -39,12 +40,14 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
 {
   mc_rtc::log::success("fleet init start");
 
-  std::string conf_file;
+  std::string mc_config_path;
+  std::string com_config_path;
   po::options_description desc("MCFleetControl options");
   // clang-format off
-   desc.add_options()
+  desc.add_options()
     ("help,h", "Display help message")
-    ("conf,f", po::value<std::string>(&conf_file), "Configuration file");
+    ("config,f", po::value<std::string>(&mc_config_path), "Path to mc_rtc configuration file")
+    ("zenoh_config,z", po::value<std::string>(&com_config_path), "Path to zenoh configuration file");
   // clang-format on
 
   po::variables_map vm;
@@ -61,8 +64,15 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
   mc_rtc::log::info("mc_fleet::init 2");
 
   /* Initialize robot manager */
-  mc_control::MCGlobalController::GlobalConfiguration gconfig(conf_file, nullptr);
-  auto robot_manager = std::make_unique<RobotManager>(gconfig, interrupt);
+  std::unique_ptr<RobotManager> robot_manager;
+  if(vm.count("zenoh_config") != 0U)
+  {
+    robot_manager = std::make_unique<RobotManager>(mc_config_path, com_config_path, interrupt);
+  }
+  else
+  {
+    robot_manager = std::make_unique<RobotManager>(mc_config_path, interrupt);
+  }
 
   mc_rtc::log::info("fleet init done");
 

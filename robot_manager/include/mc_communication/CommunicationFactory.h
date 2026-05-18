@@ -11,8 +11,10 @@ struct CommunicationFactory
 {
   void checkCompatibility();
   static std::unique_ptr<Communication> makeCommunicationSever(const std::string & name,
-                                                               const mc_rtc::Configuration & config);
-  static std::unique_ptr<Communication> makeCommunicationClient(const mc_rtc::Configuration & config);
+                                                               const mc_rtc::Configuration & mc_config,
+                                                               const std::string & com_config_path = "");
+  static std::unique_ptr<Communication> makeCommunicationClient(const mc_rtc::Configuration & mc_config,
+                                                                const std::string & com_config_path = "");
 };
 
 } // namespace mc_communication

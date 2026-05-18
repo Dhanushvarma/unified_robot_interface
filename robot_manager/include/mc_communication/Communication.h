@@ -41,7 +41,7 @@ public:
 
   Communication();
 
-  Communication(std::string name, const mc_rtc::Configuration & com_config);
+  Communication(std::string name, const mc_rtc::Configuration & mc_config);
 
   virtual ~Communication() = default;
   Communication(const Communication &) = delete;

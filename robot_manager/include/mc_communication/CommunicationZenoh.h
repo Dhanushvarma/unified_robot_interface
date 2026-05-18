@@ -18,7 +18,9 @@ class CommunicationSeverZenoh : public Communication
 {
 public:
   CommunicationSeverZenoh();
-  CommunicationSeverZenoh(const std::string & name, const mc_rtc::Configuration & com_config);
+  CommunicationSeverZenoh(const std::string & name,
+                          const mc_rtc::Configuration & mc_config,
+                          const std::string & com_config_path = "");
   ~CommunicationSeverZenoh() override;
 
   CommunicationSeverZenoh(const CommunicationSeverZenoh &) = delete;
@@ -38,7 +40,9 @@ class CommunicationClientZenoh : public Communication
 {
 public:
   CommunicationClientZenoh();
-  CommunicationClientZenoh(const std::string & name, const mc_rtc::Configuration & com_config);
+  CommunicationClientZenoh(const std::string & name,
+                           const mc_rtc::Configuration & mc_config,
+                           const std::string & com_config_path = "");
   ~CommunicationClientZenoh() override;
 
   CommunicationClientZenoh(const CommunicationClientZenoh &) = delete;

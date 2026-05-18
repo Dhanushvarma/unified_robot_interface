@@ -13,11 +13,29 @@ namespace mc_communication
 
 /* ---- Shared helpers -------------------------------------------------------*/
 
-static zenoh::Config configureTransport(const mc_rtc::Configuration & com_config)
+static zenoh::Config configureTransport(const mc_rtc::Configuration & mc_config, const std::string & com_config_path)
 {
-  auto zenoh_config = zenoh::Config::create_default();
-  std::string protocol = com_config("protocol");
+  std::string protocol = mc_config("protocol");
 
+  if(!com_config_path.empty())
+  {
+    auto zenoh_config = zenoh::Config::from_file(com_config_path);
+    if(protocol == "zenoh/shm")
+    {
+      if(zenoh_config.get("transport/shared_memory/enabled") != "true")
+      {
+        mc_rtc::log::error_and_throw(
+            "Using zenoh/shm but transport/shared_memory is not enabled\n"
+            "Consider adding 'enabled: true' to zenoh configuration section 'transport/shared_memory'\n"
+            "For more defails, check https://github.com/eclipse-zenoh/zenoh/blob/main/DEFAULT_CONFIG.json5");
+      }
+    }
+    return zenoh_config;
+  }
+
+  auto zenoh_config = zenoh::Config::create_default();
+
+  // TODO: include a more robust default zenoh config
   if(protocol == "zenoh/shm")
   {
     zenoh_config.insert_json5("transport/shared_memory/enabled", "true");
@@ -61,12 +79,14 @@ struct CommunicationSeverZenoh::Impl
 
 CommunicationSeverZenoh::CommunicationSeverZenoh() = default;
 
-CommunicationSeverZenoh::CommunicationSeverZenoh(const std::string & name, const mc_rtc::Configuration & com_config)
-: Communication(name, com_config), impl_(std::make_unique<Impl>())
+CommunicationSeverZenoh::CommunicationSeverZenoh(const std::string & name,
+                                                 const mc_rtc::Configuration & mc_config,
+                                                 const std::string & com_config_path)
+: Communication(name, mc_config), impl_(std::make_unique<Impl>())
 {
   mc_rtc::log::success("com Zenoh constructor start");
 
-  zenoh::Config zenoh_config = configureTransport(com_config);
+  zenoh::Config zenoh_config = configureTransport(mc_config, com_config_path);
   impl_->session = std::make_unique<zenoh::Session>(std::move(zenoh_config));
 
   mc_rtc::log::info("com Zenoh constructor 2");
@@ -103,7 +123,7 @@ CommunicationSeverZenoh::CommunicationSeverZenoh(const std::string & name, const
   std::string command_key = name + "/command";
   impl_->command_pub = impl_->session->declare_publisher(command_key);
 
-  mc_rtc::log::success("CommunicationSeverZenoh initialized with protocol: {}", com_config("protocol"));
+  mc_rtc::log::success("CommunicationSeverZenoh initialized with protocol: {}", mc_config("protocol"));
 }
 
 CommunicationSeverZenoh::~CommunicationSeverZenoh()
@@ -199,12 +219,14 @@ struct CommunicationClientZenoh::Impl
 
 CommunicationClientZenoh::CommunicationClientZenoh() = default;
 
-CommunicationClientZenoh::CommunicationClientZenoh(const std::string & name, const mc_rtc::Configuration & com_config)
-: Communication(name, com_config), impl_(std::make_unique<Impl>())
+CommunicationClientZenoh::CommunicationClientZenoh(const std::string & name,
+                                                   const mc_rtc::Configuration & mc_config,
+                                                   const std::string & com_config_path)
+: Communication(name, mc_config), impl_(std::make_unique<Impl>())
 {
   mc_rtc::log::success("CommunicationClientZenoh constructor start");
 
-  zenoh::Config zenoh_config = configureTransport(com_config);
+  zenoh::Config zenoh_config = configureTransport(mc_config, com_config_path);
   impl_->session = std::make_unique<zenoh::Session>(std::move(zenoh_config));
 
   mc_rtc::log::info("CommunicationClientZenoh constructor 1");
@@ -234,7 +256,7 @@ CommunicationClientZenoh::CommunicationClientZenoh(const std::string & name, con
   impl_->command_sub =
       impl_->session->declare_subscriber(command_key, std::move(command_handler), zenoh::closures::none);
 
-  mc_rtc::log::success("CommunicationClientZenoh initialized with protocol: {}", com_config("protocol"));
+  mc_rtc::log::success("CommunicationClientZenoh initialized with protocol: {}", mc_config("protocol"));
 }
 
 CommunicationClientZenoh::~CommunicationClientZenoh()

@@ -9,10 +9,11 @@ namespace mc_communication
 {
 
 std::unique_ptr<Communication> CommunicationFactory::makeCommunicationSever(const std::string & name,
-                                                                            const mc_rtc::Configuration & com_config)
+                                                                            const mc_rtc::Configuration & mc_config,
+                                                                            const std::string & com_config_path)
 {
   mc_rtc::log::success("communication makeCommunicationSever start");
-  const std::string protocol = com_config("protocol");
+  const std::string protocol = mc_config("protocol");
 
   mc_rtc::log::info("communication makeCommunicationSever 1");
 
@@ -20,17 +21,18 @@ std::unique_ptr<Communication> CommunicationFactory::makeCommunicationSever(cons
 
   if(std::regex_search(protocol, zenoh))
   {
-    return std::make_unique<CommunicationSeverZenoh>(name, com_config);
+    return std::make_unique<CommunicationSeverZenoh>(name, mc_config, com_config_path);
   }
 
   mc_rtc::log::error("Communication protocol {} is not supported", protocol);
   return nullptr;
 }
 
-std::unique_ptr<Communication> CommunicationFactory::makeCommunicationClient(const mc_rtc::Configuration & com_config)
+std::unique_ptr<Communication> CommunicationFactory::makeCommunicationClient(const mc_rtc::Configuration & mc_config,
+                                                                             const std::string & com_config_path)
 {
   mc_rtc::log::success("communication makeCommunicationClient start");
-  const std::string protocol = com_config("protocol");
+  const std::string protocol = mc_config("protocol");
 
   mc_rtc::log::info("communication makeCommunicationClient 1");
 
@@ -38,7 +40,7 @@ std::unique_ptr<Communication> CommunicationFactory::makeCommunicationClient(con
 
   if(std::regex_search(protocol, zenoh))
   {
-    return std::make_unique<CommunicationClientZenoh>(com_config("name"), com_config);
+    return std::make_unique<CommunicationClientZenoh>(mc_config("name"), mc_config, com_config_path);
   }
 
   mc_rtc::log::error("Communication protocol {} is not supported", protocol);

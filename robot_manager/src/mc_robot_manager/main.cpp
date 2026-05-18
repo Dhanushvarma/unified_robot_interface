@@ -25,6 +25,7 @@ int schedSetattr(pid_t pid, const struct sched_attr * attr, unsigned int flags)
 namespace
 {
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+// Use atomic to precent cached reading
 std::atomic<bool> interrupt{false};
 } // namespace
 

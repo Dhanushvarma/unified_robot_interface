@@ -7,8 +7,8 @@ Communication::Communication()
 : Communication(mc_rtc::Configuration("../etc/communication.yaml")("name"),
                 mc_rtc::Configuration("../etc/communication.yaml")) {};
 
-Communication::Communication(std::string name, const mc_rtc::Configuration & com_config)
-: name_(std::move(name)), ip_(com_config("ip")), port_(com_config("port")) {};
+Communication::Communication(std::string name, const mc_rtc::Configuration & mc_config)
+: name_(std::move(name)), ip_(mc_config("ip")), port_(mc_config("port")) {};
 
 flatbuffers::DetachedBuffer Communication::serializeConfig(const mc_rtc::Configuration & config)
 {
