@@ -71,7 +71,7 @@ CommunicationSeverZenoh::CommunicationSeverZenoh(const std::string & name, const
 
   mc_rtc::log::info("com Zenoh constructor 2");
 
-  /* Setup config queryable*/
+  /* Setup config queryable */
   std::string config_key = name + "/config";
   auto on_query = [this](const zenoh::Query & query)
   {
@@ -85,7 +85,7 @@ CommunicationSeverZenoh::CommunicationSeverZenoh(const std::string & name, const
   impl_->config_queryable = impl_->session->declare_queryable(
       config_key, std::move(on_query), []() {}, zenoh::Session::QueryableOptions{.complete = true});
 
-  // TODO: state subscriber
+  /* Setup state subscriber */
   std::string state_key = name + "/state";
   auto state_handler = [this](const zenoh::Sample & sample)
   {
@@ -99,7 +99,7 @@ CommunicationSeverZenoh::CommunicationSeverZenoh(const std::string & name, const
   impl_->state_sub =
       impl_->session->declare_subscriber(zenoh::KeyExpr(state_key), std::move(state_handler), zenoh::closures::none);
 
-  // TODO: command publisher
+  /* Setup command publisher */
   std::string command_key = name + "/command";
   impl_->command_pub = impl_->session->declare_publisher(command_key);
 
@@ -211,15 +211,15 @@ CommunicationClientZenoh::CommunicationClientZenoh(const std::string & name, con
 
   mc_rtc::log::info("Setting up Zenoh communication for robot: {}", name);
 
-  /* Setup config querier*/
+  /* Setup config querier */
   std::string config_key = name + "/config";
   impl_->config_querier = impl_->session->declare_querier(config_key, zenoh::Session::QuerierOptions{});
 
-  // TODO: state publisher
+  /* Setup state publisher */
   std::string state_key = name + "/state";
   impl_->state_pub = impl_->session->declare_publisher(state_key);
 
-  // TODO: command subscriber
+  /* Setup command subscriber */
   std::string command_key = name + "/command";
 
   auto command_handler = [this](const zenoh::Sample & sample)

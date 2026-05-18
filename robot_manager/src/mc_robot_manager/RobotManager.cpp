@@ -136,6 +136,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   mc_rtc::log::info("[mc_fleet] mc_rtc will compute commands every {} robot control step", max_step_size);
 
   auto & robots = gcontroller_->controller().robots();
+
   /* Initialize all real robots */
   for(size_t i = gcontroller_->realRobots().size(); i < robots.size(); ++i)
   {
@@ -243,7 +244,6 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
 
 void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interrupt)
 {
-
   std::mutex controller_mutex;
   size_t step = 0;
 
