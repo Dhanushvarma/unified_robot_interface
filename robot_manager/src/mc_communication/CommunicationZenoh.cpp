@@ -15,7 +15,7 @@ namespace mc_communication
 
 static zenoh::Config configureTransport(const mc_rtc::Configuration & mc_config,
                                         const std::string & com_config_path,
-                                        const bool & is_sever)
+                                        const bool & is_server)
 {
   mc_rtc::log::success("configureTransport start");
   std::string protocol = mc_config("protocol");
@@ -72,7 +72,7 @@ static zenoh::Config configureTransport(const mc_rtc::Configuration & mc_config,
 
     zenoh_config.insert_json5("scouting/multicast/enabled", "false");
 
-    if(is_sever)
+    if(is_server)
     {
       zenoh_config.insert_json5("listen/endpoints", "[\"" + endpoint + "\"]");
       return zenoh_config;
@@ -88,7 +88,7 @@ static zenoh::Config configureTransport(const mc_rtc::Configuration & mc_config,
 
     zenoh_config.insert_json5("scouting/multicast/enabled", "false");
 
-    if(is_sever)
+    if(is_server)
     {
       zenoh_config.insert_json5("listen/endpoints", "[\"" + endpoint + "\"]");
       return zenoh_config;
@@ -103,7 +103,7 @@ static zenoh::Config configureTransport(const mc_rtc::Configuration & mc_config,
 
 /* ---- Server Impl ----------------------------------------------------------*/
 
-struct CommunicationSeverZenoh::Impl
+struct CommunicationServerZenoh::Impl
 {
   std::unique_ptr<zenoh::Session> session;
   std::optional<zenoh::Queryable<void>> config_queryable;
@@ -119,13 +119,13 @@ struct CommunicationSeverZenoh::Impl
   uint64_t state_seq_consumed = 0;
 };
 
-/* --- Sever -----------------------------------------------------------------*/
+/* --- Server --------------------------------------------------------------- */
 
-CommunicationSeverZenoh::CommunicationSeverZenoh() = default;
+CommunicationServerZenoh::CommunicationServerZenoh() = default;
 
-CommunicationSeverZenoh::CommunicationSeverZenoh(const std::string & name,
-                                                 const mc_rtc::Configuration & mc_config,
-                                                 const std::string & com_config_path)
+CommunicationServerZenoh::CommunicationServerZenoh(const std::string & name,
+                                                   const mc_rtc::Configuration & mc_config,
+                                                   const std::string & com_config_path)
 : Communication(name, mc_config), impl_(std::make_unique<Impl>())
 {
   mc_rtc::log::success("com Zenoh constructor start");
@@ -170,15 +170,15 @@ CommunicationSeverZenoh::CommunicationSeverZenoh(const std::string & name,
   std::string command_key = name + "/command";
   impl_->command_pub = impl_->session->declare_publisher(command_key);
 
-  mc_rtc::log::success("CommunicationSeverZenoh initialized with protocol: {}", mc_config("protocol"));
+  mc_rtc::log::success("CommunicationServerZenoh initialized with protocol: {}", mc_config("protocol"));
 }
 
-CommunicationSeverZenoh::~CommunicationSeverZenoh()
+CommunicationServerZenoh::~CommunicationServerZenoh()
 {
-  mc_rtc::log::info("CommunicationSeverZenoh destructor called");
+  mc_rtc::log::info("CommunicationServerZenoh destructor called");
 }
 
-bool CommunicationSeverZenoh::sendMessage(Communication::MessageType type, const uint8_t * data, size_t size)
+bool CommunicationServerZenoh::sendMessage(Communication::MessageType type, const uint8_t * data, size_t size)
 {
   if(data == nullptr || size == 0)
   {
@@ -213,7 +213,7 @@ bool CommunicationSeverZenoh::sendMessage(Communication::MessageType type, const
   return false;
 }
 
-bool CommunicationSeverZenoh::receiveMessage(Communication::MessageType type)
+bool CommunicationServerZenoh::receiveMessage(Communication::MessageType type)
 {
   switch(type)
   {

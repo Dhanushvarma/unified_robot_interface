@@ -8,20 +8,20 @@
 namespace mc_communication
 {
 
-std::unique_ptr<Communication> CommunicationFactory::makeCommunicationSever(const std::string & name,
-                                                                            const mc_rtc::Configuration & mc_config,
-                                                                            const std::string & com_config_path)
+std::unique_ptr<Communication> CommunicationFactory::makeCommunicationServer(const std::string & name,
+                                                                             const mc_rtc::Configuration & mc_config,
+                                                                             const std::string & com_config_path)
 {
-  mc_rtc::log::success("communication makeCommunicationSever start");
+  mc_rtc::log::success("communication makeCommunicationServer start");
   const std::string protocol = mc_config("protocol");
 
-  mc_rtc::log::info("communication makeCommunicationSever 1");
+  mc_rtc::log::info("communication makeCommunicationServer 1");
 
   std::regex zenoh("zenoh");
 
   if(std::regex_search(protocol, zenoh))
   {
-    return std::make_unique<CommunicationSeverZenoh>(name, mc_config, com_config_path);
+    return std::make_unique<CommunicationServerZenoh>(name, mc_config, com_config_path);
   }
 
   mc_rtc::log::error("Communication protocol {} is not supported", protocol);

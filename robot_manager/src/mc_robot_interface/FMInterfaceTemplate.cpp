@@ -17,7 +17,7 @@ FMInterfaceTemplate::FMInterfaceTemplate(const std::string & name,
   mc_rtc::log::success("FMInterfaceTemplate manager start");
 
   mc_rtc::Configuration com_config(config("communication"));
-  setCommunication(mc_communication::CommunicationFactory::makeCommunicationSever(name, com_config));
+  setCommunication(mc_communication::CommunicationFactory::makeCommunicationServer(name, com_config));
 
   mc_rtc::log::info("FMInterfaceTemplate done");
 };

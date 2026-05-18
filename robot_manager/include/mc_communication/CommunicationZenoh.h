@@ -14,19 +14,19 @@
 namespace mc_communication
 {
 
-class CommunicationSeverZenoh : public Communication
+class CommunicationServerZenoh : public Communication
 {
 public:
-  CommunicationSeverZenoh();
-  CommunicationSeverZenoh(const std::string & name,
-                          const mc_rtc::Configuration & mc_config,
-                          const std::string & com_config_path = "");
-  ~CommunicationSeverZenoh() override;
+  CommunicationServerZenoh();
+  CommunicationServerZenoh(const std::string & name,
+                           const mc_rtc::Configuration & mc_config,
+                           const std::string & com_config_path = "");
+  ~CommunicationServerZenoh() override;
 
-  CommunicationSeverZenoh(const CommunicationSeverZenoh &) = delete;
-  CommunicationSeverZenoh & operator=(const CommunicationSeverZenoh &) = delete;
-  CommunicationSeverZenoh(CommunicationSeverZenoh &&) = delete;
-  CommunicationSeverZenoh & operator=(CommunicationSeverZenoh &&) = delete;
+  CommunicationServerZenoh(const CommunicationServerZenoh &) = delete;
+  CommunicationServerZenoh & operator=(const CommunicationServerZenoh &) = delete;
+  CommunicationServerZenoh(CommunicationServerZenoh &&) = delete;
+  CommunicationServerZenoh & operator=(CommunicationServerZenoh &&) = delete;
 
   bool sendMessage(Communication::MessageType type, const uint8_t * data, size_t size) override;
   bool receiveMessage(Communication::MessageType type) override;
