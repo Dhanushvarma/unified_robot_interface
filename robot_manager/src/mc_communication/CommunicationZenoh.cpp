@@ -11,14 +11,19 @@
 namespace mc_communication
 {
 
-/* ---- Shared helpers -------------------------------------------------------*/
+/* ---- Shared helpers ------------------------------------------------------ */
 
-static zenoh::Config configureTransport(const mc_rtc::Configuration & mc_config, const std::string & com_config_path)
+static zenoh::Config configureTransport(const mc_rtc::Configuration & mc_config,
+                                        const std::string & com_config_path,
+                                        const bool & is_sever)
 {
+  mc_rtc::log::success("configureTransport start");
   std::string protocol = mc_config("protocol");
 
+  /* User defined configuration */
   if(!com_config_path.empty())
   {
+    mc_rtc::log::info("Loading user Zenoh configuration: {}", com_config_path);
     auto zenoh_config = zenoh::Config::from_file(com_config_path);
     if(protocol == "zenoh/shm")
     {
@@ -33,24 +38,63 @@ static zenoh::Config configureTransport(const mc_rtc::Configuration & mc_config,
     return zenoh_config;
   }
 
-  auto zenoh_config = zenoh::Config::create_default();
+  mc_rtc::log::success("configureTransport 1");
 
-  // TODO: include a more robust default zenoh config
+  /* Default configuration */
+  auto zenoh_config = zenoh::Config::create_default();
+  zenoh_config.insert_json5("mode", "\"peer\"");
+
   if(protocol == "zenoh/shm")
   {
     zenoh_config.insert_json5("transport/shared_memory/enabled", "true");
-    zenoh_config.insert_json5("mode", "\"peer\"");
     return zenoh_config;
   }
+
+  if(!mc_config.has("ip"))
+  {
+    mc_rtc::log::error_and_throw("[mc_communication] ip is required for {} communication", protocol);
+  }
+  if(!mc_config.has("port"))
+  {
+    mc_rtc::log::error_and_throw("[mc_communication] port is required for {} communication", protocol);
+  }
+  std::string ip = mc_config("ip");
+  std::string port = std::to_string(int(mc_config("port")));
+  std::string endpoint = protocol.substr(protocol.find('/') + 1) + "/" + ip + ":" + port;
+
+  mc_rtc::log::success("configureTransport 2");
+
+  // TODO: tcp and udp are identical. If no other changes are required, consider merging them.
+  // TODO: test
   if(protocol == "zenoh/tcp")
   {
-    // TODO: configure zenoh configuration for tcp
+    mc_rtc::log::success("configureTransport tcp");
+
+    zenoh_config.insert_json5("scouting/multicast/enabled", "false");
+
+    if(is_sever)
+    {
+      zenoh_config.insert_json5("listen/endpoints", "[\"" + endpoint + "\"]");
+      return zenoh_config;
+    }
+
+    zenoh_config.insert_json5("connect/endpoints", "[\"" + endpoint + "\"]");
     return zenoh_config;
   }
 
   if(protocol == "zenoh/udp")
   {
-    // TODO: configure zenoh configuration for udp
+    mc_rtc::log::success("configureTransport udp");
+
+    zenoh_config.insert_json5("scouting/multicast/enabled", "false");
+
+    if(is_sever)
+    {
+      zenoh_config.insert_json5("listen/endpoints", "[\"" + endpoint + "\"]");
+      return zenoh_config;
+    }
+
+    zenoh_config.insert_json5("connect/endpoints", "[\"" + endpoint + "\"]");
     return zenoh_config;
   }
 
@@ -86,7 +130,10 @@ CommunicationSeverZenoh::CommunicationSeverZenoh(const std::string & name,
 {
   mc_rtc::log::success("com Zenoh constructor start");
 
-  zenoh::Config zenoh_config = configureTransport(mc_config, com_config_path);
+  zenoh::Config zenoh_config = configureTransport(mc_config, com_config_path, true);
+
+  mc_rtc::log::success("com Zenoh constructor 1");
+
   impl_->session = std::make_unique<zenoh::Session>(std::move(zenoh_config));
 
   mc_rtc::log::info("com Zenoh constructor 2");
@@ -226,7 +273,7 @@ CommunicationClientZenoh::CommunicationClientZenoh(const std::string & name,
 {
   mc_rtc::log::success("CommunicationClientZenoh constructor start");
 
-  zenoh::Config zenoh_config = configureTransport(mc_config, com_config_path);
+  zenoh::Config zenoh_config = configureTransport(mc_config, com_config_path, true);
   impl_->session = std::make_unique<zenoh::Session>(std::move(zenoh_config));
 
   mc_rtc::log::info("CommunicationClientZenoh constructor 1");
