@@ -3,6 +3,7 @@
 
 #include <mc_rtc/logging.h>
 
+#include <filesystem>
 #include <fstream>
 #include <random>
 #include <thread>
@@ -10,12 +11,35 @@
 namespace mc_interface_template
 {
 
+// Helper function to find config file
+static std::string findConfigFile()
+{
+  // Try installed location first
+  const char * install_prefix = CMAKE_INSTALL_PREFIX;
+  std::filesystem::path installed_config = std::string(install_prefix) + "/etc/communication.yaml";
+
+  if(std::filesystem::exists(installed_config))
+  {
+    return installed_config.string();
+  }
+
+  // Fall back to source tree
+  std::filesystem::path source_config = std::string(PROJECT_SOURCE_DIR) + "/etc/communication.yaml";
+  if(std::filesystem::exists(source_config))
+  {
+    return source_config.string();
+  }
+
+  // If neither exists, return source path anyway (will error with helpful message)
+  return source_config.string();
+}
+
 InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("InterfaceTemplate remote start");
 
-  mc_rtc::Configuration com_config(
-      "/home/vscode/workspace/sandbox/mc_robot_manager/local_robot/etc/communication.yaml");
+  std::string config_path = findConfigFile();
+  mc_rtc::Configuration com_config(config_path);
   if(com_config.has("name"))
   {
     setCommunication(mc_communication::CommunicationFactory::makeCommunicationClient(com_config));
