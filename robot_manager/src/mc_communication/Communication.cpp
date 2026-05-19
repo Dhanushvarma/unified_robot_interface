@@ -8,7 +8,14 @@ Communication::Communication()
                 mc_rtc::Configuration("../etc/communication.yaml")) {};
 
 Communication::Communication(std::string name, const mc_rtc::Configuration & mc_config)
-: name_(std::move(name)), ip_(mc_config("ip")), port_(mc_config("port")) {};
+: name_(std::move(name)), ip_(mc_config.has("ip") ? static_cast<std::string>(mc_config("ip")) : ""),
+  port_(mc_config.has("port") ? static_cast<std::uint16_t>(mc_config("port")) : 0)
+{
+  if(static_cast<std::string>(mc_config("protocol")) != "zenoh/shm")
+  {
+    mc_rtc::log::error_and_throw("ip and port are required for {} protocol", mc_config("protocol"));
+  }
+}
 
 flatbuffers::DetachedBuffer Communication::serializeConfig(const mc_rtc::Configuration & config)
 {

@@ -236,9 +236,9 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
       }
     }
 
-    if(robot_config.has("communication"))
+    if(robot_config.has("communication") && com_config_path_.empty())
     {
-      if(!robot_config("communication").has("protocol") && com_config_path_.empty())
+      if(!robot_config("communication").has("protocol"))
       {
         robot_config("communication").add("protocol", user_default_.communication_protocol);
       }
