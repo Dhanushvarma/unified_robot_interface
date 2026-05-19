@@ -6,6 +6,11 @@ target_include_directories(
   ${PROGRAM_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )
 
+target_compile_definitions(
+  ${PROGRAM_NAME} PRIVATE CMAKE_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}"
+                          PROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+)
+
 target_link_libraries(
   ${PROGRAM_NAME} PRIVATE Boost::program_options mc_fleet::robot_interface
 )

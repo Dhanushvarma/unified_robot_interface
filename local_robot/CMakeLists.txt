@@ -22,32 +22,11 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Dependencies
+find_package(mc_fleet REQUIRED)
 find_package(mc_rtc REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options thread)
 find_program(SETCAP setcap)
 find_program(SUDO sudo)
-
-# find_package(zenoh-c QUIET)
-# if(NOT zenoh-c_FOUND)
-#   include(FetchContent)
-#   FetchContent_Declare(
-#     zenoh-c
-#     GIT_REPOSITORY https://github.com/eclipse-zenoh/zenoh-c.git
-#     GIT_TAG main
-#   )
-#   FetchContent_MakeAvailable(zenoh-c)
-# endif()
-
-# find_package(zenoh-cpp QUIET)
-# if(NOT zenoh-cpp_FOUND)
-#   include(FetchContent)
-#   FetchContent_Declare(
-#     zenoh-cpp
-#     GIT_REPOSITORY https://github.com/eclipse-zenoh/zenoh-cpp.git
-#     GIT_TAG main
-#   )
-#   FetchContent_MakeAvailable(zenoh-cpp)
-# endif()
 
 # Add Subdirectories
 add_subdirectory(src)

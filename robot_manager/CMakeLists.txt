@@ -41,27 +41,27 @@ else()
   message("-- sudo command: ${SUDO}")
 endif()
 
-# find_package(zenoh-c QUIET)
-# if(NOT zenoh-c_FOUND)
-#   include(FetchContent)
-#   FetchContent_Declare(
-#     zenoh-c
-#     GIT_REPOSITORY https://github.com/eclipse-zenoh/zenoh-c.git
-#     GIT_TAG main
-#   )
-#   FetchContent_MakeAvailable(zenoh-c)
-# endif()
+find_package(zenoh-c QUIET)
+if(NOT zenoh-c_FOUND)
+  include(FetchContent)
+  FetchContent_Declare(
+    zenoh-c
+    GIT_REPOSITORY https://github.com/eclipse-zenoh/zenoh-c.git
+    GIT_TAG main
+  )
+  FetchContent_MakeAvailable(zenoh-c)
+endif()
 
-# find_package(zenoh-cpp QUIET)
-# if(NOT zenoh-cpp_FOUND)
-#   include(FetchContent)
-#   FetchContent_Declare(
-#     zenoh-cpp
-#     GIT_REPOSITORY https://github.com/eclipse-zenoh/zenoh-cpp.git
-#     GIT_TAG main
-#   )
-#   FetchContent_MakeAvailable(zenoh-cpp)
-# endif()
+find_package(zenoh-cpp QUIET)
+if(NOT zenoh-cpp_FOUND)
+  include(FetchContent)
+  FetchContent_Declare(
+    zenoh-cpp
+    GIT_REPOSITORY https://github.com/eclipse-zenoh/zenoh-cpp.git
+    GIT_TAG main
+  )
+  FetchContent_MakeAvailable(zenoh-cpp)
+endif()
 
 # Flatbuffers
 find_program(FLATC_EXECUTABLE NAMES flatc REQUIRED)
