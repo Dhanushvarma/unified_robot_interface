@@ -20,9 +20,11 @@ TEST(CommunicationTest, ReliableMessageDeliveryAllMessages)
 {
   mc_rtc::Configuration config(fs::path(TEST_CONFIG_DIR) / "test.yaml");
 
-  auto client = CommunicationFactory::makeCommunication("client", config("Robots")("robot1_zenoh")("communication"));
+  auto client =
+      CommunicationFactory::makeCommunication("client", config("Robots")("robot1_zenoh")("network_interface"));
 
-  auto server = CommunicationFactory::makeCommunication("server", config("Robots")("robot2_zenoh")("communication"));
+  auto server =
+      CommunicationFactory::makeCommunication("server", config("Robots")("robot2_zenoh")("network_interface"));
 
   ASSERT_TRUE(client);
   ASSERT_TRUE(server);

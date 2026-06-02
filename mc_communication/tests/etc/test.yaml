@@ -2,7 +2,7 @@ Robots:
   robot1:
     module: jvrc1
     # ... other parameters
-    communication:
+    network_interface:
       protocol: tcp
       ip: 192.168.1.2
       port: 45000
@@ -12,15 +12,21 @@ Robots:
     init_pos:
       translation: [0.0, 1.5, 0.0]
 
-    communication:
+    network_interface:
       protocol: udp
       backend: flatbuffer
       ip: 192.168.0.1
       port: 100
 
+    robot_interface:
+      driver: RTDE
+      ip: 127.0.0.1
+      port: 3000
+      control_mode: position # position, velocity, torque
+
   robot1_zenoh:
     module: jvrc1
-    communication:
+    network_interface:
       protocol: zenoh/shm
       configuration: "/home/tduvinage/devel/sandbox/mc_rtc_interface/mc_communication/tests/zenoh/client.json5"
       backend: flatbuffer
@@ -29,7 +35,7 @@ Robots:
 
   robot2_zenoh:
     module: jvrc1
-    communication:
+    network_interface:
       protocol: zenoh/shm
       configuration: "/home/tduvinage/devel/sandbox/mc_rtc_interface/mc_communication/tests/zenoh/client.json5"
       backend: flatbuffer
@@ -38,7 +44,7 @@ Robots:
 
   robot1_shm:
     module: jvrc1
-    communication:
+    network_interface:
       protocol: shm
       backend: protobuf
       ip: 192.168.0.1
@@ -46,9 +52,8 @@ Robots:
 
   robot2_shm:
     module: jvrc1
-    communication:
+    network_interface:
       protocol: shm
       backend: flatbuffer
       ip: 192.168.0.1
       port: 100
-

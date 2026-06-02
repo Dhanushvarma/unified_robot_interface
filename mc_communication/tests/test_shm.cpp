@@ -20,9 +20,9 @@ TEST(CommunicationTest, SharedMemoryLatestMessage)
 {
   mc_rtc::Configuration config(fs::path(TEST_CONFIG_DIR) / "test.yaml");
 
-  auto client = CommunicationFactory::makeCommunication("client", config("Robots")("robot1_shm")("communication"));
+  auto client = CommunicationFactory::makeCommunication("client", config("Robots")("robot1_shm")("network_interface"));
 
-  auto server = CommunicationFactory::makeCommunication("server", config("Robots")("robot2_shm")("communication"));
+  auto server = CommunicationFactory::makeCommunication("server", config("Robots")("robot2_shm")("network_interface"));
 
   ASSERT_TRUE(client);
   ASSERT_TRUE(server);
