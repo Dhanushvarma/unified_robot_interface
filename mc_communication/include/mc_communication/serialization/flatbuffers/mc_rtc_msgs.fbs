@@ -1,0 +1,33 @@
+namespace mc_communication_msgs;
+
+table MessageConfig {
+    config:string;
+}
+
+table MessageState {
+    position:[double];
+    velocity:[double];
+    torque:[double];
+}
+
+table MessageCommand {
+    kp:double;
+    kd:double;
+    position:[double];
+    velocity:[double];
+    torque:[double];
+}
+
+union Payload {
+    MessageConfig,
+    MessageState,
+    MessageCommand
+}
+
+table MessageEnvelope {
+    topic:string;
+    timestamp:uint64;
+    payload:Payload;
+}
+
+root_type MessageEnvelope;

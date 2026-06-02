@@ -1,4 +1,5 @@
 #include <mc_communication/CommunicationZenoh.h>
+#include <mc_communication/serialization/FlatBufferSerializer.h>
 #include <mc_robot_interface/FMInterfaceTemplate.h>
 
 #include <mc_rtc/logging.h>
@@ -17,17 +18,18 @@ FMInterfaceTemplate::FMInterfaceTemplate(const std::string & name,
   mc_rtc::log::success("FMInterfaceTemplate manager start");
 
   mc_rtc::Configuration com_config(config("communication"));
-  setCommunication(mc_communication::CommunicationFactory::makeCommunicationSever(name, com_config));
+  setCommunication(mc_communication::CommunicationFactory::makeCommunicationServer(name, com_config));
 
   mc_rtc::log::info("FMInterfaceTemplate done");
 };
 
 void FMInterfaceTemplate::updateSensors()
 {
-  if(communication().receiveMessage(mc_communication::Communication::MessageType::STATE))
-  {
-    auto latest_state = communication().latestState();
-    mc_rtc::log::success("Received state");
+  if(auto latest_state = communication().receive()){
+    if(!latest_state->empty())
+    {
+      mc_rtc::log::success("Received state");
+    }
   }
   else
   {
@@ -59,11 +61,10 @@ void FMInterfaceTemplate::updateControl()
   }
 
   // Serialize to FlatBuffers
-  auto buffer = mc_communication::Communication::serializeCommand(command);
+  auto buffer = communication().encode(command);
 
   // Send to robot manager
-  bool sent =
-      communication().sendMessage(mc_communication::Communication::MessageType::COMMAND, buffer.data(), buffer.size());
+  bool sent = communication().send(buffer);
 
   if(sent)
   {

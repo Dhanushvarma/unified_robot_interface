@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.22)
 
 # Project Name
 set(PROJECT_NAME mc_fleet)
@@ -11,19 +11,11 @@ project(
 
 set(CXX_DISABLE_WERROR 1)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+# set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# RPATH settings
-set(CMAKE_SKIP_BUILD_RPATH FALSE)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Dependencies
 find_package(Boost REQUIRED COMPONENTS program_options thread)
-find_package(Flatbuffers REQUIRED)
 find_package(mc_rtc REQUIRED)
 find_package(Threads REQUIRED)
 find_program(SETCAP setcap)
@@ -33,44 +25,6 @@ if(NOT SUDO)
 else()
   message("-- sudo command: ${SUDO}")
 endif()
-
-find_package(zenoh-c QUIET)
-if(NOT zenoh-c_FOUND)
-  include(FetchContent)
-  FetchContent_Declare(
-    zenoh-c
-    GIT_REPOSITORY https://github.com/eclipse-zenoh/zenoh-c.git
-    GIT_TAG main
-  )
-  FetchContent_MakeAvailable(zenoh-c)
-endif()
-
-find_package(zenoh-cpp QUIET)
-if(NOT zenoh-cpp_FOUND)
-  include(FetchContent)
-  FetchContent_Declare(
-    zenoh-cpp
-    GIT_REPOSITORY https://github.com/eclipse-zenoh/zenoh-cpp.git
-    GIT_TAG main
-  )
-  FetchContent_MakeAvailable(zenoh-cpp)
-endif()
-
-# Flatbuffers
-find_program(FLATC_EXECUTABLE NAMES flatc REQUIRED)
-set(SCHEMA_FILE
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/mc_communication/flatbuffers/Message.fbs"
-)
-set(OUTPUT_DIR
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/mc_communication/flatbuffers"
-)
-add_custom_command(
-  OUTPUT "${OUTPUT_DIR}/Message_generated.h"
-  COMMAND ${FLATC_EXECUTABLE} --cpp -o "${OUTPUT_DIR}" "${SCHEMA_FILE}"
-  DEPENDS "${SCHEMA_FILE}"
-  VERBATIM
-)
-add_custom_target(generate_fbs DEPENDS "${OUTPUT_DIR}/Message_generated.h")
 
 # Add Subdirectories
 add_subdirectory(src)

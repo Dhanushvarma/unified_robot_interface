@@ -1,27 +1,3 @@
-# Communication Interface
-set(COMMUNICATION_SRC
-    mc_communication/Communication.cpp
-    mc_communication/CommunicationFactory.cpp
-    mc_communication/CommunicationZenoh.cpp
-)
-
-add_library(mc_communication SHARED ${COMMUNICATION_SRC})
-add_library(${PROJECT_NAME}::communication ALIAS mc_communication)
-
-add_dependencies(mc_communication generate_fbs)
-
-target_link_libraries(
-  mc_communication
-  PUBLIC flatbuffers mc_rtc::mc_control
-  PRIVATE zenohcxx::zenohc
-)
-
-target_include_directories(
-  mc_communication
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
-         $<INSTALL_INTERFACE:include>
-)
-
 # Robot Interface
 set(INTERFACE_SRC mc_robot_interface/RobotInterfaceFactory.cpp
                   mc_robot_interface/FMInterfaceTemplate.cpp
@@ -60,7 +36,7 @@ target_include_directories(
 
 # Install all libraries
 install(
-  TARGETS mc_communication mc_robot_interface mc_robot_manager
+  TARGETS mc_serializer mc_communication mc_robot_interface mc_robot_manager
   EXPORT "${PROJECT_NAME}Targets"
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib

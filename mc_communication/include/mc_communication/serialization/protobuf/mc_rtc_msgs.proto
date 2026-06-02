@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package mc_communication_msgs_proto;
+
+message MessageConfig {
+  string config = 1;
+}
+
+message MessageState {
+  repeated double position = 1;
+  repeated double velocity = 2;
+  repeated double torque = 3;
+}
+
+message MessageCommand {
+  double kp = 1;
+  double kd = 2;
+
+  repeated double position = 3;
+  repeated double velocity = 4;
+  repeated double torque = 5;
+}
+
+message MessageEnvelope {
+  string topic = 1;
+  uint64 timestamp = 2;
+
+  oneof payload {
+    MessageConfig config = 3;
+    MessageState state = 4;
+    MessageCommand command = 5;
+  }
+}

@@ -94,9 +94,8 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   {
     mc_rtc::log::info("manager init send config {}", robot_name);
 
-    auto buffer = mc_communication::Communication::serializeConfig(interface->config());
-    interface->communication().sendMessage(mc_communication::Communication::MessageType::CONFIG, buffer.data(),
-                                           buffer.size());
+    auto buffer = interface->communication().serializer()->serialize(interface->config().dump());
+    interface->communication().send(buffer);
   }
 
   /* Check timestep compatifibility between mc_rtc and robot */
@@ -268,7 +267,7 @@ void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interr
     if(step % step_size == 0)
     {
       gcontroller_->run();
-      mc_rtc::log::info("main tick");
+      // mc_rtc::log::info("main tick");
     }
 
     {
