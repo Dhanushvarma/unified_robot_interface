@@ -44,7 +44,8 @@ add_serializer(
   mc-flatbuffers serialization/FlatBufferSerializer.cpp
   ../include/mc_communication/serialization/FlatbufferSerializer.h
 )
-target_link_libraries(mc-flatbuffers PRIVATE mc_rtc_flatbuffers)
+
+target_link_libraries(mc-flatbuffers PUBLIC mc_rtc_flatbuffers)
 
 if(TARGET proto-mc-rtc)
   add_serializer(
@@ -52,6 +53,8 @@ if(TARGET proto-mc-rtc)
     ../include/mc_communication/serialization/ProtobufSerializer.h
   )
   target_link_libraries(mc-protobuf PRIVATE proto-mc-rtc)
+
+  message(ERROR "im here")
 endif()
 
 ###  Communication Interface

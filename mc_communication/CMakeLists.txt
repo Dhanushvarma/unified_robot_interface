@@ -15,8 +15,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 enable_testing()
 
-option(BUILD_TESTING "Build tests" OFF)
-option(WITH_PROTOBUF "Build Protobuf message" OFF)
+option(BUILD_TESTING "Build tests" ON)
+option(WITH_PROTOBUF "Build Protobuf message" ON)
 
 # Dependencies
 find_package(FlatBuffers REQUIRED)
@@ -28,26 +28,39 @@ find_package(protobuf QUIET)
 
 # Flatbuffers
 flatbuffers_generate_headers(
-  TARGET mc_rtc_flatbuffers
-  INCLUDE_PREFIX mc_communication/serialization/flatbuffers
-
+  TARGET
+  mc_rtc_flatbuffers
+  INCLUDE_PREFIX
+  mc_communication/serialization/flatbuffers
   SCHEMAS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/mc_communication/serialization/flatbuffers/mc_rtc_msgs.fbs"
 )
+target_link_libraries(mc_rtc_flatbuffers INTERFACE flatbuffers::flatbuffers)
 
 # Protobuf
 if(${protobuf_FOUND} AND WITH_PROTOBUF)
-  add_library(proto-mc-rtc OBJECT "${CMAKE_CURRENT_SOURCE_DIR}/include/mc_communication/serialization/protobuf/mc_rtc_msgs.proto")
+  add_library(
+    proto-mc-rtc OBJECT
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/mc_communication/serialization/protobuf/mc_rtc_msgs.proto"
+  )
 
   target_link_libraries(proto-mc-rtc PUBLIC protobuf::libprotobuf)
   set_target_properties(proto-mc-rtc PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-  target_include_directories(proto-mc-rtc PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/serialization/protobuf>")
+  target_include_directories(
+    proto-mc-rtc
+    PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/serialization/protobuf>"
+  )
 
-  protobuf_generate+(
-    TARGET proto-mc-rtc
-    IMPORT_DIRS "${CMAKE_CURRENT_LIST_DIR}/include/mc_communication/serialization/protobuf"
-    PROTOC_OUT_DIR "${CMAKE_CURRENT_LIST_DIR}/include/mc_communication/serialization/protobuf")
+  protobuf_generate(
+    TARGET
+    proto-mc-rtc
+    IMPORT_DIRS
+    "${CMAKE_CURRENT_LIST_DIR}/include/mc_communication/serialization/protobuf"
+    PROTOC_OUT_DIR
+    "${CMAKE_CURRENT_LIST_DIR}/include/mc_communication/serialization/protobuf"
+  )
 
   install(
     TARGETS proto-mc-rtc
@@ -58,7 +71,10 @@ if(${protobuf_FOUND} AND WITH_PROTOBUF)
   )
 
 else()
-  message(WARNING "Protobuf message will not be generated, WITH_PROTOBUF : ${WITH_PROTOBUF}")
+  message(
+    WARNING
+      "Protobuf message will not be generated, WITH_PROTOBUF : ${WITH_PROTOBUF}"
+  )
 endif()
 
 # Add Subdirectories
