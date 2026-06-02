@@ -13,7 +13,7 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("InterfaceTemplate remote start");
 
-  mc_rtc::Configuration com_config("local_robot/etc/communication.yaml");
+  mc_rtc::Configuration com_config("/home/tduvinage/devel/sandbox/mc_rtc_interface/local_robot/etc/communication.yaml");
   if(com_config.has("name"))
   {
     setCommunication(mc_communication::CommunicationFactory::makeCommunicationClient(com_config));
@@ -23,13 +23,13 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
     mc_rtc::log::error_and_throw("Missing name of robot");
   }
 
-  bool got_config = false;
+  mc_communication::ByteBuffer config_;
 
-  while(!got_config && !interrupt)
+  while(!config_.empty() && !interrupt)
   {
     mc_rtc::log::info("[mc_communication] Waiting for config from robot manager");
-    got_config = communication().receiveMessage(mc_communication::Communication::MessageType::CONFIG);
-    if(!got_config)
+    config_ = communication().receive().value();
+    if(config_.empty())
     {
       std::this_thread::sleep_for(std::chrono::seconds(2));
     }
@@ -41,11 +41,9 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
     return;
   }
 
-  if(!communication().latestConfig().empty())
-  {
-    mc_rtc::log::success("HERE IS CONFIG");
-    mc_rtc::log::info(communication().latestConfig().dump(true, true));
-  }
+  mc_rtc::log::success("HERE IS CONFIG");
+  mc_rtc::log::info(config_);
+
   mc_rtc::log::info("InterfaceTemplate local done");
 };
 
@@ -70,11 +68,10 @@ void InterfaceTemplate::updateSensors()
   }
 
   // Serialize to FlatBuffers
-  auto buffer = mc_communication::Communication::serializeState(state);
+  auto buffer = communication().encode(state);
 
   // Send to robot manager
-  bool sent =
-      communication().sendMessage(mc_communication::Communication::MessageType::STATE, buffer.data(), buffer.size());
+  bool sent = communication().send(buffer);
 
   if(sent)
   {
@@ -88,10 +85,12 @@ void InterfaceTemplate::updateSensors()
 
 void InterfaceTemplate::updateControl()
 {
-  if(communication().receiveMessage(mc_communication::Communication::MessageType::COMMAND))
+  if(auto latest_command = communication().receive())
   {
-    auto latest_command = communication().latestCommand();
-    mc_rtc::log::success("Received command");
+    if(!latest_command->empty())
+    {
+      mc_rtc::log::success("Received command");
+    }
   }
   else
   {

@@ -25,7 +25,8 @@ FMInterfaceTemplate::FMInterfaceTemplate(const std::string & name,
 
 void FMInterfaceTemplate::updateSensors()
 {
-  if(auto latest_state = communication().receive()){
+  if(auto latest_state = communication().receive())
+  {
     if(!latest_state->empty())
     {
       mc_rtc::log::success("Received state");
