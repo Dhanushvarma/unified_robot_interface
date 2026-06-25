@@ -3,11 +3,36 @@
 
 #include <mc_rtc/logging.h>
 
+#include <filesystem>
+#include <fstream>
 #include <random>
 #include <thread>
 
 namespace mc_interface_template
 {
+
+// Helper function to find config file
+static std::string findConfigFile()
+{
+  // Try installed location first
+  const char * install_prefix = CMAKE_INSTALL_PREFIX;
+  std::filesystem::path installed_config = std::string(install_prefix) + "/etc/communication.yaml";
+
+  if(std::filesystem::exists(installed_config))
+  {
+    return installed_config.string();
+  }
+
+  // Fall back to source tree
+  std::filesystem::path source_config = std::string(PROJECT_SOURCE_DIR) + "/etc/communication.yaml";
+  if(std::filesystem::exists(source_config))
+  {
+    return source_config.string();
+  }
+
+  // If neither exists, return source path anyway (will error with helpful message)
+  return source_config.string();
+}
 
 InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
 {
@@ -52,9 +77,9 @@ void InterfaceTemplate::updateSensors()
   static std::mt19937 rng{std::random_device{}()};
   static std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
-  mc_communication::State state;
+  constexpr size_t dof = 6;
 
-  constexpr size_t dof = 6; // example: 6 joints
+  mc_communication::State state;
 
   state.position.resize(dof);
   state.velocity.resize(dof);

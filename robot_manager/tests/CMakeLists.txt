@@ -1,4 +1,6 @@
-find_package(GTest)
+cmake_minimum_required(VERSION 3.14)
+find_package(GTest CONFIG)
+
 if(NOT GTest_FOUND)
   include(FetchContent)
   FetchContent_Declare(
@@ -12,13 +14,14 @@ if(NOT GTest_FOUND)
   )
   FetchContent_MakeAvailable(googletest)
 endif()
-
-add_executable(test_init test_init.cpp)
-
-target_link_libraries(
-  test_init PRIVATE mc_robot_manager mc_robot_interface mc_communication
-                    mc_rtc::mc_control gtest_main
-)
-
 include(GoogleTest)
-gtest_discover_tests(test_init)
+
+add_executable(test_serialization test_serialization.cpp)
+target_link_libraries(
+  test_serialization PRIVATE mc_communication GTest::gtest_main
+)
+gtest_discover_tests(test_serialization)
+
+# add_executable(test_e2e test_e2e.cpp)
+# target_link_libraries(test_e2e PRIVATE GTest::gtest_main)
+# gtest_discover_tests(test_e2e)

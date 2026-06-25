@@ -11,12 +11,14 @@ namespace mc_fleet
 
 RobotManager::RobotManager() : gconfig_(mc_rtc::Configuration{}) {};
 
-RobotManager::RobotManager(mc_control::MCGlobalController::GlobalConfiguration & gconfig,
+RobotManager::RobotManager(const std::string & mc_config_path,
+                           std::string com_config_path,
                            const std::atomic<bool> & interrupt)
-: gconfig_(gconfig)
+: gconfig_(mc_control::MCGlobalController::GlobalConfiguration(mc_config_path)),
+  com_config_path_(std::move(com_config_path))
 {
   processGConfig(gconfig_);
-  gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig);
+  gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig_);
 
   // // Connect to the signal
   // auto & mc_controller = gcontroller_->controller();
@@ -31,6 +33,11 @@ RobotManager::RobotManager(mc_control::MCGlobalController::GlobalConfiguration &
 
   init(interrupt);
 };
+
+RobotManager::RobotManager(const std::string & mc_config_path, const std::atomic<bool> & interrupt)
+: RobotManager(mc_config_path, std::string{}, interrupt)
+{
+}
 
 RobotManager::~RobotManager()
 {
@@ -135,6 +142,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   mc_rtc::log::info("[mc_fleet] mc_rtc will compute commands every {} robot control step", max_step_size);
 
   auto & robots = gcontroller_->controller().robots();
+
   /* Initialize all real robots */
   for(size_t i = gcontroller_->realRobots().size(); i < robots.size(); ++i)
   {
@@ -178,7 +186,10 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
     user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
     user_default_.driver = dc("driver", std::string(user_default_.driver));
     user_default_.time_step = dc("time_step", double(user_default_.time_step));
-    user_default_.communication_protocol = dc("communication", std::string(user_default_.communication_protocol));
+    if(com_config_path_.empty())
+    {
+      user_default_.communication_protocol = dc("communication", std::string(user_default_.communication_protocol));
+    }
   }
 
   mc_rtc::log::info("manager processGConfig 2");
@@ -224,7 +235,7 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
       }
     }
 
-    if(robot_config.has("communication"))
+    if(robot_config.has("communication") && com_config_path_.empty())
     {
       if(!robot_config("communication").has("protocol"))
       {
@@ -242,7 +253,6 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
 
 void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interrupt)
 {
-
   std::mutex controller_mutex;
   size_t step = 0;
 

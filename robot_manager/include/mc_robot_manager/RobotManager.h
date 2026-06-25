@@ -24,7 +24,9 @@ class RobotManager
 public:
   RobotManager();
 
-  RobotManager(mc_control::MCGlobalController::GlobalConfiguration & gconfig, const std::atomic<bool> & interrupt);
+  RobotManager(const std::string & mc_config_path, std::string com_config_path, const std::atomic<bool> & interrupt);
+
+  RobotManager(const std::string & mc_config_path, const std::atomic<bool> & interrupt);
 
   ~RobotManager();
 
@@ -38,6 +40,11 @@ public:
     return *gcontroller_;
   }
 
+  [[nodiscard]] const auto & interfaces()
+  {
+    return interfaces_;
+  }
+
   void notify()
   {
     cv_.notify_one();
@@ -49,6 +56,7 @@ private:
   std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
 
   std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
+  const std::string com_config_path_;
 
   /* Process configuration */
   void processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig);
@@ -64,7 +72,6 @@ private:
   DefaultConfig user_default_;
 
   /* Start */
-  // Start with main thread
   std::unique_ptr<std::thread> main_thread_;
   std::mutex start_mutex_;
   std::condition_variable start_cv_;

@@ -5,8 +5,14 @@
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
+// Resolve redefinition conflict with pthread.h
+#define sched_param linux_sched_param // NOLINT(readability-identifier-naming)
+#include <linux/sched.h>
+#include <linux/sched/types.h>
+#undef sched_param
+
 #include <atomic>
-// #include <cerrno>
+#include <cerrno>
 #include <csignal>
 #include <cstdint>
 #include <cstdio>
@@ -14,7 +20,13 @@ namespace po = boost::program_options;
 #include <iostream>
 #include <sys/mman.h>
 #include <sys/types.h>
+#include <syscall.h>
 #include <unistd.h>
+
+int schedSetattr(pid_t pid, const struct sched_attr * attr, unsigned int flags)
+{
+  return static_cast<int>(syscall(__NR_sched_setattr, pid, attr, flags)); // NOLINT(cppcoreguidelines-pro-type-vararg)
+}
 
 namespace
 {
@@ -50,15 +62,34 @@ int main(int argc, char * argv[])
   }
 
   /* Initialize callback (non real-time yet) */
-  void * data = mc_interface_template::init(argc, argv, cycle_ns, interrupt);
-  if(data == nullptr)
+  void * raw = mc_interface_template::init(argc, argv, cycle_ns, interrupt);
+  if(raw == nullptr)
   {
     mc_rtc::log::error("[mc_local] Initialization failed");
     return -2;
   }
 
+  std::unique_ptr<mc_interface_template::InterfaceTemplate> data // Automatically free data if schedSetattr fails
+      {static_cast<mc_interface_template::InterfaceTemplate *>(raw)};
+
+  /* Time reservation */
+  struct sched_attr attr = {};
+  memset(&attr, 0, sizeof(attr));
+  attr.size = sizeof(attr);
+  attr.sched_policy = SCHED_DEADLINE;
+  attr.sched_runtime = attr.sched_deadline = attr.sched_period = cycle_ns; // nanoseconds
+
+  mc_rtc::log::info("Running thread at {}ms per cycle", double(cycle_ns) / 1e6);
+
+  /* Set scheduler policy for the main thread */
+  if(schedSetattr(0, &attr, 0) < 0)
+  {
+    mc_rtc::log::error("schedSetattr failed");
+    // return -2;
+  }
+
   /* Run */
-  mc_interface_template::run(data, interrupt);
+  mc_interface_template::run(data.get(), interrupt);
 
   return 0;
 }
@@ -69,13 +100,16 @@ namespace mc_interface_template
 void run(void * data, const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("local run start");
-  std::unique_ptr<InterfaceTemplate> interface_template{static_cast<InterfaceTemplate *>(data)};
+  auto * interface_template = static_cast<InterfaceTemplate *>(data);
 
   while(!interrupt)
   {
     interface_template->updateSensors();
     interface_template->updateControl();
   }
+
+  // TODO: delete logging
+  interface_template->dumpLog("mc_local_log.json");
 
   mc_rtc::log::info("local run done");
 }

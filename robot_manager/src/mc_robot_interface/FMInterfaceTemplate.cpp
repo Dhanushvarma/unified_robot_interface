@@ -43,9 +43,9 @@ void FMInterfaceTemplate::updateControl()
   static std::mt19937 rng{std::random_device{}()};
   static std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
-  mc_communication::Command command;
-
   constexpr size_t dof = 6;
+
+  mc_communication::Command command;
 
   command.kp = dist(rng);
   command.kd = dist(rng);
@@ -61,6 +61,8 @@ void FMInterfaceTemplate::updateControl()
     command.torque[i] = dist(rng);
   }
 
+  setCommand(command);
+
   // Serialize to FlatBuffers
   auto buffer = communication().encode(command);
 
@@ -69,7 +71,7 @@ void FMInterfaceTemplate::updateControl()
 
   if(sent)
   {
-    mc_rtc::log::success("Sent command");
+    mc_rtc::log::success("Sent command {}", command.kp);
   }
   else
   {

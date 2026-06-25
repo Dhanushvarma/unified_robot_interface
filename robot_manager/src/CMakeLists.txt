@@ -50,14 +50,12 @@ install(
 )
 
 # Executable
-add_executable(MCFleetControl mc_robot_manager/main.cpp)
+add_executable(${PROGRAM_NAME} mc_robot_manager/main.cpp)
 
 target_link_libraries(
-  MCFleetControl PRIVATE mc_robot_manager mc_robot_interface mc_communication
-                         Boost::program_options
+  ${PROGRAM_NAME} PRIVATE mc_robot_manager mc_robot_interface mc_communication
+                          Boost::program_options
 )
-
-set(PROGRAM_NAME MCFleetControl)
 
 set(JOB_POOL_OPTION)
 if(${CMAKE_VERSION} VERSION_GREATER "3.14")

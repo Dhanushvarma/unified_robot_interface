@@ -29,13 +29,6 @@ endif()
 # Add Subdirectories
 add_subdirectory(src)
 
-# Optional Testing
-option(BUILD_TESTING "Build tests" OFF)
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-  enable_testing()
-endif()
-
 install(DIRECTORY include/ DESTINATION include)
 
 message(STATUS "")
