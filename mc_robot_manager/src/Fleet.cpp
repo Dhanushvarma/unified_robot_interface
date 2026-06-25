@@ -27,11 +27,11 @@ void run(void * data, const std::atomic<bool> & interrupt)
   }
 
   // TODO: delete logging
-  for(const auto & [name, interface] : robot_manager->interfaces())
-  {
-    std::string fn = name + "_log.json";
-    interface->dumpLog(fn);
-  }
+  // for(const auto & [name, interface] : robot_manager->interfaces())
+  // {
+  //   std::string fn = name + "_log.json";
+  //   interface->dumpLog(fn);
+  // }
 
   mc_rtc::log::info("fleet run done");
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <mc_communication/CommunicationFactory.h>
-#include <mc_robot_interface/RobotInterfaceFactory.h>
+// #include <mc_communication/CommunicationFactory.h>
+// #include <mc_robot_interface/RobotInterfaceFactory.h>
 
 #include <mc_control/mc_global_controller.h>
 
@@ -40,10 +40,10 @@ public:
     return *gcontroller_;
   }
 
-  [[nodiscard]] const auto & interfaces()
-  {
-    return interfaces_;
-  }
+  // [[nodiscard]] const auto & interfaces()
+  // {
+  //   return interfaces_;
+  // }
 
   void notify()
   {
@@ -55,7 +55,7 @@ private:
 
   std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
 
-  std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
+  // std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
   const std::string com_config_path_;
 
   /* Process configuration */
@@ -67,7 +67,7 @@ private:
     std::string control_mode{"position"};
     std::string driver{};
     double time_step{0.001};
-    std::string communication_protocol{"zenoh"};
+    // std::string communication_protocol{"zenoh"};
   };
   DefaultConfig user_default_;
 
