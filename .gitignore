@@ -5,5 +5,6 @@ build
 compile_commands.json
 *log.json
 
-# FlatBuffers generated files
+# FlatBuffers/Protobuf generated files
 *generated.h
+*.pb.*
