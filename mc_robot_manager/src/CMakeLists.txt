@@ -5,7 +5,9 @@ set(ROBOT_MANAGER_SRC Fleet.cpp RobotManager.cpp)
 add_library(mc_robot_manager SHARED ${ROBOT_MANAGER_SRC})
 add_library(${PROJECT_NAME}::robot_manager ALIAS mc_robot_manager)
 
-target_link_libraries(mc_robot_manager PUBLIC mc_rtc::mc_control)
+target_link_libraries(
+  mc_robot_manager PUBLIC mc_rtc::mc_control mc_communication::mc_communication
+)
 
 target_include_directories(
   mc_robot_manager
@@ -21,11 +23,11 @@ install(
   ARCHIVE DESTINATION lib
 )
 
-install(
-  EXPORT "${PROJECT_NAME}Targets" FILE "${PROJECT_NAME}Targets.cmake" NAMESPACE
-                                  ${PROJECT_NAME}::
-  DESTINATION lib/cmake/${PROJECT_NAME}
-)
+# install(
+#   EXPORT "${PROJECT_NAME}Targets" FILE "${PROJECT_NAME}Targets.cmake" NAMESPACE
+#                                   ${PROJECT_NAME}::
+#   DESTINATION lib/cmake/${PROJECT_NAME}
+# )
 
 # Executable
 add_executable(${PROGRAM_NAME} main.cpp)

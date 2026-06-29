@@ -23,6 +23,14 @@ macro(add_protocol NAME)
   )
 
   target_link_libraries(mc_communication PUBLIC ${NAME})
+
+  install(
+    TARGETS ${NAME}
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+
 endmacro()
 
 ### Serialization
@@ -35,6 +43,13 @@ macro(add_serializer NAME)
   )
 
   target_link_libraries(mc_serializer INTERFACE ${NAME})
+
+  install(
+    TARGETS ${NAME}
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
 endmacro()
 
 add_library(mc_serializer INTERFACE)
@@ -103,3 +118,10 @@ add_protocol(zenoh)
 target_link_libraries(zenoh PUBLIC zenohcxx::zenohc)
 
 # add_protocol(shm)
+
+install(
+  TARGETS mc_communication mc_communication_interface
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+)

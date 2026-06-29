@@ -1,9 +1,9 @@
 #pragma once
 
-// #include <mc_communication/CommunicationFactory.h>
-// #include <mc_robot_interface/RobotInterfaceFactory.h>
+#include <mc_communication/Communication.h>
 
 #include <mc_control/mc_global_controller.h>
+#include <zenoh.hxx>
 
 #include <atomic>
 #include <condition_variable>
@@ -38,10 +38,10 @@ public:
     return *gcontroller_;
   }
 
-  // [[nodiscard]] const auto & interfaces()
-  // {
-  //   return interfaces_;
-  // }
+  [[nodiscard]] const auto & interfaces()
+  {
+    return interfaces_;
+  }
 
   void notify()
   {
@@ -53,7 +53,9 @@ private:
 
   std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
 
-  // std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
+  void startZenohRouter();
+  std::unordered_map<std::string, std::unique_ptr<mc_communication::Communication>> interfaces_{};
+  std::unique_ptr<zenoh::Session> zenoh_router_;
 
   /* Process configuration */
   void processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig);

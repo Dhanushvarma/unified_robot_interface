@@ -1,6 +1,7 @@
-// #include <mc_communication/CommunicationZenoh.h>
-#include <mc_rtc/logging.h>
+#include <mc_communication/CommunicationFactory.h>
 #include <mc_robot_manager/RobotManager.h>
+
+#include <mc_rtc/logging.h>
 
 #include <cstdlib>
 #include <sys/ipc.h>
@@ -15,6 +16,8 @@ RobotManager::RobotManager(const std::string & mc_config_path, const std::atomic
 : gconfig_(mc_control::MCGlobalController::GlobalConfiguration(mc_config_path))
 {
   processGConfig(gconfig_);
+  mc_rtc::log::info(gconfig_.config("Robots").dump(true, true));
+
   gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig_);
 
   // // Connect to the signal
@@ -63,29 +66,30 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("manager init start");
 
+  startZenohRouter();
+
   mc_rtc::Configuration robots_config = gconfig_.config("Robots");
-  mc_rtc::log::info(robots_config.dump(true, true));
 
   /* Set up robot interface and communication*/
   for(auto & robot_name : robots_config.keys())
   {
     mc_rtc::log::info("manager init robot {}", robot_name);
 
-    // if(interfaces_.count(robot_name) != 0)
-    // {
-    //   mc_rtc::log::error("Skip already exists robot interface {}", robot_name);
-    //   continue;
-    // }
+    if(interfaces_.count(robot_name) != 0)
+    {
+      mc_rtc::log::error("Skip already exists robot interface {}", robot_name);
+      continue;
+    }
 
     mc_rtc::Configuration robot_config{robots_config(robot_name)};
-    // std::unique_ptr<mc_robot::RobotInterfaceBase> interface =
-    //     mc_robot::RobotInterfaceFactory::makeInterface(robot_name, robot_config);
-    // if(!interface)
-    // {
-    //   continue;
-    // }
+    auto server =
+        mc_communication::CommunicationFactory::makeCommunication("server", robot_config("network_interface"));
+    if(!server)
+    {
+      continue;
+    }
 
-    // interfaces_.try_emplace(robot_name, std::move(interface));
+    interfaces_.try_emplace(robot_name, std::move(server));
   }
 
   /* Send config to real robots */
@@ -158,6 +162,23 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   main_thread_ = std::make_unique<std::thread>(&RobotManager::mainThread, this, max_step_size, std::ref(interrupt));
 
   mc_rtc::log::info("manager init done");
+}
+
+void RobotManager::startZenohRouter()
+{
+  if(zenoh_router_) return;
+
+  mc_rtc::log::info("[mc_fleet] Starting embedded Zenoh router");
+
+  zenoh::Config config =
+      zenoh::Config::from_file("/home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/router.json5");
+
+  zenoh_router_ = std::make_unique<zenoh::Session>(zenoh::Session::open(std::move(config)));
+
+  // Let the router fully start before clients try to connect
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  mc_rtc::log::success("[mc_fleet] Embedded Zenoh router started");
 }
 
 void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig)
