@@ -122,7 +122,8 @@ private:
   const std::string name_{};
   mc_rtc::Configuration config_{};
   const double dt_{};
-  const uint8_t buffer_size_{};
+
+  std::unique_ptr<mc_communication::Communication> communication_{};
 
   mutable std::mutex mutex_;
   mc_communication::State state_{};
@@ -133,7 +134,6 @@ private:
   std::vector<mc_communication::Command> commands_;
 
   // TODO: control mode ?
-  std::unique_ptr<mc_communication::Communication> communication_{};
 };
 
 // TODO: delete logging
