@@ -46,8 +46,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
   // clang-format off
   desc.add_options()
     ("help,h", "Display help message")
-    ("config,f", po::value<std::string>(&mc_config_path), "Path to mc_rtc configuration file")
-    ("zenoh_config,z", po::value<std::string>(&com_config_path), "Path to zenoh configuration file");
+    ("config,f", po::value<std::string>(&mc_config_path), "Path to mc_rtc configuration file");
   // clang-format on
 
   po::variables_map vm;
@@ -65,14 +64,7 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
 
   /* Initialize robot manager */
   std::unique_ptr<RobotManager> robot_manager;
-  if(vm.count("zenoh_config") != 0U)
-  {
-    robot_manager = std::make_unique<RobotManager>(mc_config_path, com_config_path, interrupt);
-  }
-  else
-  {
-    robot_manager = std::make_unique<RobotManager>(mc_config_path, interrupt);
-  }
+  robot_manager = std::make_unique<RobotManager>(mc_config_path, interrupt);
 
   mc_rtc::log::info("fleet init done");
 

@@ -11,11 +11,8 @@ namespace mc_fleet
 
 RobotManager::RobotManager() : gconfig_(mc_rtc::Configuration{}) {};
 
-RobotManager::RobotManager(const std::string & mc_config_path,
-                           std::string com_config_path,
-                           const std::atomic<bool> & interrupt)
-: gconfig_(mc_control::MCGlobalController::GlobalConfiguration(mc_config_path)),
-  com_config_path_(std::move(com_config_path))
+RobotManager::RobotManager(const std::string & mc_config_path, const std::atomic<bool> & interrupt)
+: gconfig_(mc_control::MCGlobalController::GlobalConfiguration(mc_config_path))
 {
   processGConfig(gconfig_);
   gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig_);
@@ -33,11 +30,6 @@ RobotManager::RobotManager(const std::string & mc_config_path,
 
   init(interrupt);
 };
-
-RobotManager::RobotManager(const std::string & mc_config_path, const std::atomic<bool> & interrupt)
-: RobotManager(mc_config_path, std::string{}, interrupt)
-{
-}
 
 RobotManager::~RobotManager()
 {
@@ -180,17 +172,15 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
 
   mc_rtc::log::info("manager processGConfig 1");
 
+  // Extract default value
   if(gconfig.config.has("Default"))
   {
     mc_rtc::Configuration dc = gconfig.config("Default");
     user_default_.module = dc("module", std::string(user_default_.module));
-    user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
+    user_default_.network_protocol = dc("network_protocol", std::string(user_default_.network_protocol));
     user_default_.driver = dc("driver", std::string(user_default_.driver));
     user_default_.time_step = dc("time_step", double(user_default_.time_step));
-    // if(com_config_path_.empty())
-    // {
-    //   user_default_.communication_protocol = dc("communication", std::string(user_default_.communication_protocol));
-    // }
+    user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
   }
 
   mc_rtc::log::info("manager processGConfig 2");
@@ -200,6 +190,7 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
   {
     mc_rtc::Configuration robot_config{gconfig.config("Robots")(robot_name)};
 
+    // Copy config setting from a previous robot
     if(robot_config.has("base"))
     {
       mc_rtc::Configuration base_config{};
@@ -213,40 +204,43 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
       robot_config.add("module", user_default_.module);
     }
 
-    if(!robot_config.has("controller"))
+    if(robot_config.has("network_interface"))
     {
-      robot_config.add("controller");
-      robot_config("controller").add("mode", user_default_.control_mode);
-      robot_config("controller").add("driver", user_default_.driver);
-      robot_config("controller").add("time_step", user_default_.time_step);
+      mc_rtc::Configuration ni = robot_config("network_interface");
+      if(!ni.has("protocol"))
+      {
+        ni.add("protocol", user_default_.network_protocol);
+      }
+      // TODO: add defaults values (here or in mc_communication)
     }
     else
     {
-      if(!robot_config("controller").has("mode"))
-      {
-        robot_config("controller").add("mode", user_default_.control_mode);
-      }
-      if(!robot_config("controller").has("driver"))
-      {
-        robot_config("controller").add("driver", user_default_.driver);
-      }
-      if(!robot_config("controller").has("time_step"))
-      {
-        robot_config("controller").add("time_step", user_default_.time_step);
-      }
+      mc_rtc::log::error_and_throw("No `network_interface` in the configuration of robot {}", robot_name);
     }
 
-    // if(robot_config.has("communication") && com_config_path_.empty())
-    // {
-    //   if(!robot_config("communication").has("protocol"))
-    //   {
-    //     // robot_config("communication").add("protocol", user_default_.communication_protocol);
-    //   }
-    // }
-    // else
-    // {
-    //   mc_rtc::log::error_and_throw("No `communication` section in the configuration of robot {}", robot_name);
-    // }
+    if(!robot_config.has("robot_interface"))
+    {
+      robot_config.add("robot_interface");
+      robot_config("robot_interface").add("driver", user_default_.driver);
+      robot_config("robot_interface").add("time_step", user_default_.time_step);
+      robot_config("robot_interface").add("control_mode", user_default_.control_mode);
+    }
+    else
+    {
+      mc_rtc::Configuration ri = robot_config("robot_interface");
+      if(!ri.has("control_mode"))
+      {
+        ri.add("control_mode", user_default_.control_mode);
+      }
+      if(!ri.has("driver"))
+      {
+        ri.add("driver", user_default_.driver);
+      }
+      if(!ri.has("time_step"))
+      {
+        ri.add("time_step", user_default_.time_step);
+      }
+    }
   }
 
   mc_rtc::log::info("manager processGConfig done");

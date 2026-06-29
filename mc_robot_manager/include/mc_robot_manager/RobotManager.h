@@ -24,8 +24,6 @@ class RobotManager
 public:
   RobotManager();
 
-  RobotManager(const std::string & mc_config_path, std::string com_config_path, const std::atomic<bool> & interrupt);
-
   RobotManager(const std::string & mc_config_path, const std::atomic<bool> & interrupt);
 
   ~RobotManager();
@@ -56,7 +54,6 @@ private:
   std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
 
   // std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
-  const std::string com_config_path_;
 
   /* Process configuration */
   void processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig);
@@ -64,10 +61,10 @@ private:
   struct DefaultConfig
   {
     std::string module{};
-    std::string control_mode{"position"};
     std::string driver{};
     double time_step{0.001};
-    // std::string communication_protocol{"zenoh"};
+    std::string control_mode{"position"};
+    std::string network_protocol{"zenoh/shm"};
   };
   DefaultConfig user_default_;
 
