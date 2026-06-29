@@ -278,7 +278,7 @@ void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interr
     if(step % step_size == 0)
     {
       gcontroller_->run();
-      // mc_rtc::log::info("main tick");
+      mc_rtc::log::info("main tick");
     }
 
     {

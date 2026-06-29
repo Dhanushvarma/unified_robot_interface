@@ -52,9 +52,9 @@ if(TARGET proto-mc-rtc)
     mc-protobuf serialization/ProtobufSerializer.cpp
     ../include/mc_communication/serialization/ProtobufSerializer.h
   )
-  target_link_libraries(mc-protobuf PRIVATE proto-mc-rtc)
+  target_link_libraries(mc-protobuf PUBLIC proto-mc-rtc)
 
-  message(ERROR "im here")
+  message(STATUS "mc_communication: Protobuf serializer enabled")
 endif()
 
 ###  Communication Interface

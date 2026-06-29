@@ -28,7 +28,7 @@ Robots:
     module: jvrc1
     network_interface:
       protocol: zenoh/shm
-      configuration: "/home/tduvinage/devel/sandbox/mc_rtc_interface/mc_communication/tests/zenoh/client.json5"
+      configuration: "/home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/client.json5"
       backend: flatbuffer
       ip: 192.168.0.1
       port: 100
@@ -37,7 +37,7 @@ Robots:
     module: jvrc1
     network_interface:
       protocol: zenoh/shm
-      configuration: "/home/tduvinage/devel/sandbox/mc_rtc_interface/mc_communication/tests/zenoh/client.json5"
+      configuration: "/home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/client.json5"
       backend: flatbuffer
       ip: 192.168.0.1
       port: 100
