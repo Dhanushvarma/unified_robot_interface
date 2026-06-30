@@ -7,6 +7,7 @@ add_library(${PROJECT_NAME}::robot_manager ALIAS mc_robot_manager)
 
 target_link_libraries(
   mc_robot_manager PUBLIC mc_rtc::mc_control mc_communication::mc_communication
+                          mc_robot_interface::mc_robot_interface
 )
 
 target_include_directories(

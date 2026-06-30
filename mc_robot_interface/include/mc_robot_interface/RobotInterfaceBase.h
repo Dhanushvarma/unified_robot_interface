@@ -17,9 +17,8 @@ class RobotInterfaceBase
 public:
   RobotInterfaceBase() = default;
 
-  RobotInterfaceBase(std::string name, mc_rtc::Configuration config, uint8_t buffer_size)
-  : name_(std::move(name)), config_(std::move(config)), dt_(config_("controller")("time_step")),
-    buffer_size_(buffer_size) {};
+  RobotInterfaceBase(std::string name, mc_rtc::Configuration config)
+  : name_(std::move(name)), config_(std::move(config)), dt_(config_("robot_interface")("time_step")) {};
 
   virtual ~RobotInterfaceBase() = default;
   RobotInterfaceBase(const RobotInterfaceBase &) = delete;
@@ -67,15 +66,6 @@ public:
   {
     return dt_;
   }
-  [[nodiscard]] uint8_t bufferSize() const
-  {
-    return buffer_size_;
-  }
-
-  [[nodiscard]] mc_communication::State & state()
-  {
-    return state_;
-  }
 
   [[nodiscard]] mc_communication::Command & command()
   {
@@ -105,7 +95,6 @@ public:
 
   void setState(const mc_communication::State & state)
   {
-    state_ = state;
     states_.push_back(state);
   }
 
@@ -126,7 +115,6 @@ private:
   std::unique_ptr<mc_communication::Communication> communication_{};
 
   mutable std::mutex mutex_;
-  mc_communication::State state_{};
   mc_communication::Command command_{};
 
   // TODO: delete logging

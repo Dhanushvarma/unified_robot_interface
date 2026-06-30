@@ -1,4 +1,5 @@
 #include <mc_communication/CommunicationFactory.h>
+#include <mc_robot_interface/RobotInterfaceFactory.h>
 #include <mc_robot_manager/RobotManager.h>
 
 #include <mc_rtc/logging.h>
@@ -66,9 +67,13 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("manager init start");
 
-  startZenohRouter();
-
   mc_rtc::Configuration robots_config = gconfig_.config("Robots");
+
+  // Start Zenoh Router if neccessary
+  if(robots_config.dump().find("zenoh") != std::string::npos)
+  {
+    startZenohRouter();
+  }
 
   /* Set up robot interface and communication*/
   for(auto & robot_name : robots_config.keys())
@@ -82,16 +87,18 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
     }
 
     mc_rtc::Configuration robot_config{robots_config(robot_name)};
-    auto server =
-        mc_communication::CommunicationFactory::makeCommunication("server", robot_config("network_interface"));
-    if(!server)
+
+    std::unique_ptr<mc_robot::RobotInterfaceBase> interface =
+        mc_robot::RobotInterfaceFactory::makeInterface(robot_name, robot_config);
+    if(!interface)
     {
       continue;
     }
 
-    interfaces_.try_emplace(robot_name, std::move(server));
+    interfaces_.try_emplace(robot_name, std::move(interface));
   }
 
+  // TODO
   /* Send config to real robots */
   // for(auto & [robot_name, interface] : interfaces_)
   // {
@@ -104,36 +111,36 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   /* Check timestep compatifibility between mc_rtc and robot */
   double controller_s = gcontroller_->controller().timeStep;
   size_t max_step_size{0};
-  // for(auto & [robot_name, interface] : interfaces_)
-  // {
-  //   double cycle_s = interface->dt();
-  //   auto cycle_ns = static_cast<size_t>(cycle_s * 1e9);
-  //   auto controller_ns = static_cast<size_t>(controller_s * 1e9);
-  //   if(controller_ns < cycle_ns)
-  //   {
-  //     mc_rtc::log::error_and_throw(
-  //         "[mc_fleet] mc_rtc cannot run faster than the robot's control frequency (RobotTimeStep= {}s,
-  //         Timestep={}s)", cycle_s, controller_s);
-  //   }
+  for(auto & [robot_name, interface] : interfaces_)
+  {
+    double cycle_s = interface->dt();
+    auto cycle_ns = static_cast<size_t>(cycle_s * 1e9);
+    auto controller_ns = static_cast<size_t>(controller_s * 1e9);
+    if(controller_ns < cycle_ns)
+    {
+      mc_rtc::log::error_and_throw(
+          "[mc_fleet] mc_rtc cannot run faster than the robot's control frequency (RobotTimeStep= {}s, Timestep={}s)",
+          cycle_s, controller_s);
+    }
 
-  //   if(controller_ns % cycle_ns != 0)
-  //   {
-  //     mc_rtc::log::error_and_throw(
-  //         "[mc_fleet] mc_rtc timestep must be a multiple of the robot's control loop frequency "
-  //         "(RobotTimeStep= {}s, Timestep={}s)",
-  //         cycle_s, controller_s);
-  //   }
+    if(controller_ns % cycle_ns != 0)
+    {
+      mc_rtc::log::error_and_throw(
+          "[mc_fleet] mc_rtc timestep must be a multiple of the robot's control loop frequency "
+          "(RobotTimeStep= {}s, Timestep={}s)",
+          cycle_s, controller_s);
+    }
 
-  //   size_t step_size = controller_ns / cycle_ns;
-  //   size_t freq = std::ceil(1 / controller_s);
-  //   size_t robot_freq = std::ceil(1 / cycle_s);
-  //   mc_rtc::log::info("[mc_fleet] mc_rtc running at {}Hz, robot running at {}Hz", freq, robot_freq);
+    size_t step_size = controller_ns / cycle_ns;
+    size_t freq = std::ceil(1 / controller_s);
+    size_t robot_freq = std::ceil(1 / cycle_s);
+    mc_rtc::log::info("[mc_fleet] mc_rtc running at {}Hz, robot running at {}Hz", freq, robot_freq);
 
-  //   if(max_step_size < step_size)
-  //   {
-  //     max_step_size = step_size;
-  //   }
-  // }
+    if(max_step_size < step_size)
+    {
+      max_step_size = step_size;
+    }
+  }
 
   mc_rtc::log::info("[mc_fleet] mc_rtc will compute commands every {} robot control step", max_step_size);
 
@@ -148,16 +155,15 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   /* Init threads */
   gcontroller_->running = true;
 
-  // for(auto & [robot_name, interface] : interfaces_)
-  // {
-  //   auto * interface_ptr = interface.get();
-  //   threads_.emplace_back(
-  //       [&, this, interface_ptr]()
-  //       {
-  //         interface_ptr->controlThread(*gcontroller_, start_mutex_, start_cv_, start_control_,
-  //         gcontroller_->running);
-  //       });
-  // }
+  for(auto & [robot_name, interface] : interfaces_)
+  {
+    auto * interface_ptr = interface.get();
+    threads_.emplace_back(
+        [&, this, interface_ptr]()
+        {
+          interface_ptr->controlThread(*gcontroller_, start_mutex_, start_cv_, start_control_, gcontroller_->running);
+        });
+  }
 
   main_thread_ = std::make_unique<std::thread>(&RobotManager::mainThread, this, max_step_size, std::ref(interrupt));
 
@@ -168,7 +174,7 @@ void RobotManager::startZenohRouter()
 {
   if(zenoh_router_) return;
 
-  mc_rtc::log::info("[mc_fleet] Starting embedded Zenoh router");
+  mc_rtc::log::info("[mc_fleet] startZenohRouter start");
 
   zenoh::Config config =
       zenoh::Config::from_file("/home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/router.json5");
@@ -178,7 +184,7 @@ void RobotManager::startZenohRouter()
   // Let the router fully start before clients try to connect
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-  mc_rtc::log::success("[mc_fleet] Embedded Zenoh router started");
+  mc_rtc::log::success("[mc_fleet] startZenohRouter done");
 }
 
 void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig)

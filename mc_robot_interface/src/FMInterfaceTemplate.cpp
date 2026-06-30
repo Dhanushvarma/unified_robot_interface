@@ -1,42 +1,42 @@
-#include <mc_communication/CommunicationZenoh.h>
-#include <mc_communication/serialization/FlatBufferSerializer.h>
 #include <mc_robot_interface/FMInterfaceTemplate.h>
 
 #include <mc_rtc/logging.h>
 
 #include <random>
-#include <thread>
 
 namespace mc_interface_template
 {
 
-FMInterfaceTemplate::FMInterfaceTemplate(const std::string & name,
-                                         const mc_rtc::Configuration & config,
-                                         uint8_t buffer_size)
-: RobotInterfaceBase(name, config, (buffer_size == 0) ? 6 : buffer_size)
+FMInterfaceTemplate::FMInterfaceTemplate(const std::string & name, const mc_rtc::Configuration & config)
+: RobotInterfaceBase(name, config)
 {
   mc_rtc::log::success("FMInterfaceTemplate manager start");
 
-  mc_rtc::Configuration com_config(config("communication"));
-  setCommunication(mc_communication::CommunicationFactory::makeCommunicationServer(name, com_config));
+  mc_rtc::Configuration com_config(config("network_interface"));
+  setCommunication(mc_communication::CommunicationFactory::makeCommunication("server", com_config));
+
+  // Subscribe to state messages — callback updates the latest state
+  auto state_sub =
+      communication().subscribe<mc_communication::State>("state",
+                                                         [this](const mc_communication::State & s)
+                                                         {
+                                                           setState(s);
+                                                           mc_rtc::log::success("Received state from {}", this->name());
+                                                         });
+
+  if(!state_sub)
+  {
+    mc_rtc::log::error("Failed to subscribe to state for {}", this->name());
+  }
 
   mc_rtc::log::info("FMInterfaceTemplate done");
-};
+}
 
 void FMInterfaceTemplate::updateSensors()
 {
-  if(auto latest_state = communication().receive())
-  {
-    if(!latest_state->empty())
-    {
-      mc_rtc::log::success("Received state");
-    }
-  }
-  else
-  {
-    mc_rtc::log::error("Trouble receiving state");
-  }
-};
+  // State is received asynchronously via the subscriber callback.
+  // If there is complicated execution everytime a state is received, do that there.
+}
 
 void FMInterfaceTemplate::updateControl()
 {
@@ -63,11 +63,8 @@ void FMInterfaceTemplate::updateControl()
 
   setCommand(command);
 
-  // Serialize to FlatBuffers
-  auto buffer = communication().encode(command);
-
-  // Send to robot manager
-  bool sent = communication().send(buffer);
+  // Publish command
+  bool sent = communication().publish("command", command);
 
   if(sent)
   {

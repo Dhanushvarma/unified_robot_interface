@@ -39,7 +39,7 @@ Robots:
   #     control_mode: position # position, velocity, torque
 
   robot1_zenoh:
-    module: jvrc1
+    module: interface_template
     network_interface:
       protocol: zenoh/shm
       configuration: "/home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/client.json5"
