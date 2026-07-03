@@ -14,6 +14,6 @@ enable_testing()
 
 add_subdirectory(mc_communication)
 add_subdirectory(mc_robot_interface)
-add_subdirectory(mc_robot_manager)
 
-# add_subdirectory(local_robot)
+add_subdirectory(mc_robot_manager)
+add_subdirectory(local_robot)

@@ -1,10 +1,10 @@
-#include <mc_communication/CommunicationZenoh.h>
+#include <mc_communication/Communication.h>
+#include <mc_communication/CommunicationFactory.h>
 #include <InterfaceTemplate.h>
 
 #include <mc_rtc/logging.h>
 
 #include <filesystem>
-#include <fstream>
 #include <random>
 #include <thread>
 
@@ -30,7 +30,6 @@ static std::string findConfigFile()
     return source_config.string();
   }
 
-  // If neither exists, return source path anyway (will error with helpful message)
   return source_config.string();
 }
 
@@ -38,26 +37,32 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("InterfaceTemplate remote start");
 
-  mc_rtc::Configuration com_config("/home/tduvinage/devel/sandbox/mc_rtc_interface/local_robot/etc/communication.yaml");
-  if(com_config.has("name"))
-  {
-    setCommunication(mc_communication::CommunicationFactory::makeCommunicationClient(com_config));
-  }
-  else
+  mc_rtc::Configuration com_config(findConfigFile());
+  // mc_rtc::Configuration com_config("local_robot/etc/communication.yaml");
+  // mc_rtc::Configuration
+  // com_config("/home/tduvinage/devel/sandbox/mc_rtc_interface/local_robot/etc/communication.yaml");
+
+  if(!com_config.has("name"))
   {
     mc_rtc::log::error_and_throw("Missing name of robot");
   }
 
-  mc_communication::ByteBuffer config_;
+  setCommunication(mc_communication::CommunicationFactory::makeCommunication("client", com_config));
 
-  while(!config_.empty() && !interrupt)
+  // ── Query for config from robot manager (blocking until we get one) ──
+  while(!interrupt)
   {
-    mc_rtc::log::info("[mc_communication] Waiting for config from robot manager");
-    config_ = communication().receive().value();
-    if(config_.empty())
+    auto config = communication().query<std::string>(name() + "/config", std::chrono::seconds(2));
+
+    if(config)
     {
-      std::this_thread::sleep_for(std::chrono::seconds(2));
+      mc_rtc::log::success("[mc_communication] Got config from server");
+      mc_rtc::log::info(*config);
+      // TODO: parse *config here if needed and apply it
+      break;
     }
+
+    mc_rtc::log::info("[mc_communication] Waiting for config...");
   }
 
   if(interrupt)
@@ -66,11 +71,16 @@ InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
     return;
   }
 
-  mc_rtc::log::success("HERE IS CONFIG");
-  mc_rtc::log::info(config_);
+  // ── Subscribe to command from robot manager ──
+  communication().subscribe<mc_communication::Command>("command",
+                                                       [this](const mc_communication::Command & cmd)
+                                                       {
+                                                         setCommand(cmd);
+                                                         mc_rtc::log::success("Received command kp={:.3f}", cmd.kp);
+                                                       });
 
   mc_rtc::log::info("InterfaceTemplate local done");
-};
+}
 
 void InterfaceTemplate::updateSensors()
 {
@@ -80,7 +90,6 @@ void InterfaceTemplate::updateSensors()
   constexpr size_t dof = 6;
 
   mc_communication::State state;
-
   state.position.resize(dof);
   state.velocity.resize(dof);
   state.torque.resize(dof);
@@ -92,11 +101,9 @@ void InterfaceTemplate::updateSensors()
     state.torque[i] = dist(rng);
   }
 
-  // Serialize to FlatBuffers
-  auto buffer = communication().encode(state);
+  setState(state);
 
-  // Send to robot manager
-  bool sent = communication().send(buffer);
+  bool sent = communication().publish("state", state);
 
   if(sent)
   {
@@ -110,17 +117,8 @@ void InterfaceTemplate::updateSensors()
 
 void InterfaceTemplate::updateControl()
 {
-  if(auto latest_command = communication().receive())
-  {
-    if(!latest_command->empty())
-    {
-      mc_rtc::log::success("Received command");
-    }
-  }
-  else
-  {
-    mc_rtc::log::error("Trouble receiving command");
-  }
-};
+  // Commands arrive asynchronously via the subscribe callback.
+  // The latest command is stored via setCommand() — access via command().
+}
 
 } // namespace mc_interface_template

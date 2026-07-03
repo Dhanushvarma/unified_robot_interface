@@ -14,6 +14,7 @@ std::unique_ptr<Communication> CommunicationFactory::makeCommunication(const std
 
   if(protocol == "zenoh/shm")
   {
+    mc_rtc::log::info("PROTOCOL:{}", protocol);
     return std::make_unique<ZenohCommunication>(name, com_config);
   }
   // else if(protocol == "shm")

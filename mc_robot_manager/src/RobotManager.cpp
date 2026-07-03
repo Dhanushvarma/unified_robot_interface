@@ -17,7 +17,7 @@ RobotManager::RobotManager(const std::string & mc_config_path, const std::atomic
 : gconfig_(mc_control::MCGlobalController::GlobalConfiguration(mc_config_path))
 {
   processGConfig(gconfig_);
-  mc_rtc::log::info(gconfig_.config("Robots").dump(true, true));
+  // mc_rtc::log::info(gconfig_.config("Robots").dump(true, true));
 
   gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig_);
 
@@ -69,10 +69,20 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 
   mc_rtc::Configuration robots_config = gconfig_.config("Robots");
 
-  // Start Zenoh Router if neccessary
+  /* Start Zenoh Router if necessary */
   if(robots_config.dump().find("zenoh") != std::string::npos)
   {
     startZenohRouter();
+  }
+
+  mc_rtc::log::warning("[SERVER] robots_config keys:");
+  for(auto & robot_name : robots_config.keys())
+  {
+    mc_rtc::log::warning("  {} → protocol={}, config file={}", robot_name,
+                         robots_config(robot_name)("network_interface")("protocol").operator std::string(),
+                         robots_config(robot_name)("network_interface").has("configuration")
+                             ? robots_config(robot_name)("network_interface")("configuration").operator std::string()
+                             : std::string("(none)"));
   }
 
   /* Set up robot interface and communication*/
@@ -88,32 +98,30 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 
     mc_rtc::Configuration robot_config{robots_config(robot_name)};
 
-    std::unique_ptr<mc_robot::RobotInterfaceBase> interface =
-        mc_robot::RobotInterfaceFactory::makeInterface(robot_name, robot_config);
+    auto interface =
+        mc_communication::CommunicationFactory::makeCommunication(robot_name, robot_config("network_interface"));
     if(!interface)
     {
       continue;
     }
 
+    /* Register config queryable */
+    interface->registerQueryable<std::string>(robot_name,
+                                              [robot_config]() -> std::string { return robot_config.dump(); });
+
+    mc_rtc::log::info("ROBOT NAME: {}", robot_name);
+    mc_rtc::log::info("ROBOT CONFIG: {}", robot_config.dump(true, true));
+
     interfaces_.try_emplace(robot_name, std::move(interface));
   }
-
-  // TODO
-  /* Send config to real robots */
-  // for(auto & [robot_name, interface] : interfaces_)
-  // {
-  //   mc_rtc::log::info("manager init send config {}", robot_name);
-
-  //   auto buffer = interface->communication().serializer()->serialize(interface->config().dump());
-  //   interface->communication().send(buffer);
-  // }
 
   /* Check timestep compatifibility between mc_rtc and robot */
   double controller_s = gcontroller_->controller().timeStep;
   size_t max_step_size{0};
   for(auto & [robot_name, interface] : interfaces_)
   {
-    double cycle_s = interface->dt();
+    // double cycle_s = interface->dt();
+    double cycle_s = 0.005;
     auto cycle_ns = static_cast<size_t>(cycle_s * 1e9);
     auto controller_ns = static_cast<size_t>(controller_s * 1e9);
     if(controller_ns < cycle_ns)
@@ -161,7 +169,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
     threads_.emplace_back(
         [&, this, interface_ptr]()
         {
-          interface_ptr->controlThread(*gcontroller_, start_mutex_, start_cv_, start_control_, gcontroller_->running);
+          /* controlThread() */
         });
   }
 
@@ -291,10 +299,10 @@ void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interr
       return;
     }
 
-    // for(auto & [robot_name, interface] : interfaces_)
-    // {
-    //   interface->updateSensors();
-    // }
+    for(auto & [robot_name, interface] : interfaces_)
+    {
+      /* updateSensors(); */
+    }
 
     if(step % step_size == 0)
     {
@@ -308,10 +316,11 @@ void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interr
     }
     start_cv_.notify_all();
 
-    // for(auto & [robot_name, interface] : interfaces_)
-    // {
-    //   interface->updateControl();
-    // }
+    for(auto & [robot_name, interface] : interfaces_)
+    {
+      // interface->updateControl();
+      /* updateControl(); */
+    }
     step++;
   }
 }

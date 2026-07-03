@@ -1,4 +1,5 @@
-name: local_robot
-protocol: zenoh/shm
-ip: /workspace/sandbox/mc_robot_manager/
-port: 100
+local_robot:
+  protocol: zenoh/shm
+  configuration: /home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/client.json5
+  ip: 192.168.0.1
+  port: 100

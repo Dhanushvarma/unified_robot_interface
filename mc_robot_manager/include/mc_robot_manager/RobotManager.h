@@ -1,7 +1,7 @@
 #pragma once
 
 #include <mc_communication/Communication.h>
-#include <mc_robot_interface/RobotInterfaceBase.h>
+// #include <mc_robot_interface/RobotInterfaceBase.h>
 
 #include <mc_control/mc_global_controller.h>
 #include <zenoh.hxx>
@@ -58,8 +58,8 @@ private:
   void startZenohRouter();
   std::unique_ptr<zenoh::Session> zenoh_router_;
 
-  // std::unordered_map<std::string, std::unique_ptr<mc_communication::Communication>> interfaces_{};
-  std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
+  std::unordered_map<std::string, std::unique_ptr<mc_communication::Communication>> interfaces_{};
+  // std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
 
   /* Process configuration */
   void processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig);

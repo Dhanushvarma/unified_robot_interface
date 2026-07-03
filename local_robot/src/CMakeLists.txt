@@ -12,7 +12,8 @@ target_compile_definitions(
 )
 
 target_link_libraries(
-  ${PROGRAM_NAME} PRIVATE Boost::program_options mc_fleet::robot_interface
+  ${PROGRAM_NAME} PRIVATE Boost::program_options
+                          mc_robot_interface::mc_robot_interface
 )
 
 set(JOB_POOL_OPTION)

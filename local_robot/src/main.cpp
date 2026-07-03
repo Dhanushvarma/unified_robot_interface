@@ -1,6 +1,8 @@
+#include <mc_communication/CommunicationFactory.h>
 #include <InterfaceTemplate.h>
 
 #include <mc_rtc/logging.h>
+#include <zenoh.hxx>
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
@@ -21,6 +23,7 @@ namespace po = boost::program_options;
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <syscall.h>
+#include <thread>
 #include <unistd.h>
 
 int schedSetattr(pid_t pid, const struct sched_attr * attr, unsigned int flags)
@@ -69,8 +72,8 @@ int main(int argc, char * argv[])
     return -2;
   }
 
-  std::unique_ptr<mc_interface_template::InterfaceTemplate> data // Automatically free data if schedSetattr fails
-      {static_cast<mc_interface_template::InterfaceTemplate *>(raw)};
+  // Automatically free data if schedSetattr fails
+  std::unique_ptr<mc_communication::Communication> data{static_cast<mc_communication::Communication *>(raw)};
 
   /* Time reservation */
   struct sched_attr attr = {};
@@ -94,22 +97,40 @@ int main(int argc, char * argv[])
   return 0;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// --- MC_INTERFACE_TEMPLATE -------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+
 namespace mc_interface_template
 {
 
 void run(void * data, const std::atomic<bool> & interrupt)
 {
   mc_rtc::log::success("local run start");
-  auto * interface_template = static_cast<InterfaceTemplate *>(data);
+  auto * interface = static_cast<mc_communication::Communication *>(data);
+
+  /* QUERY FOR CONFIGURATION */
+  mc_rtc::log::info("[mc_communication] Waiting for config...");
+  while(!interrupt)
+  {
+    auto config = interface->query<std::string>("robot2_zenoh");
+
+    if(config)
+    {
+      mc_rtc::log::success("[mc_communication] Got config from server");
+      mc_rtc::log::info(*config);
+      // TODO: parse *config here if needed and apply it
+      break;
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+  }
 
   while(!interrupt)
   {
-    interface_template->updateSensors();
-    interface_template->updateControl();
+    /* updateSensors(); */
+    /* updateControl(); */
   }
-
-  // TODO: delete logging
-  interface_template->dumpLog("mc_local_log.json");
 
   mc_rtc::log::info("local run done");
 }
@@ -118,35 +139,47 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
 {
   mc_rtc::log::success("local init start");
 
-  std::string conf_file;
+  std::string conf_path;
   po::options_description desc("mc_interface_template options");
   // clang-format off
    desc.add_options()
     ("help,h", "Display help message")
-    ("conf,f", po::value<std::string>(&conf_file), "Configuration file");
+    ("conf,f", po::value<std::string>(&conf_path), "Configuration file");
   // clang-format on
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
 
-  if(vm.count("help") != 0U)
+  if(conf_path.empty())
   {
-    std::cout << desc << "\n";
-    std::cout << "see etc/mc_rtc.yaml for example configuration\n";
-    return nullptr;
+    std::exit(0);
   }
 
-  if(vm.count("conf") != 0U)
+  mc_rtc::Configuration conf_file(conf_path);
+
+  mc_rtc::log::warning("[CLIENT] Creating with config:");
+  mc_rtc::log::warning("  protocol = {}", conf_file("local_robot")("protocol").operator std::string());
+  if(conf_file("local_robot").has("configuration"))
   {
-    mc_rtc::log::error("'conf' is not supported");
-    return nullptr;
+    mc_rtc::log::warning("  config file = {}", conf_file("local_robot")("configuration").operator std::string());
   }
 
-  mc_rtc::log::info("local init 2");
-
-  /* Initialize robot manager */
-  auto interface = std::make_unique<mc_interface_template::InterfaceTemplate>(interrupt);
+  // Wait for router to start communication
+  std::unique_ptr<mc_communication::Communication> interface;
+  while(!interrupt)
+  {
+    try
+    {
+      interface = mc_communication::CommunicationFactory::makeCommunication("client", conf_file("local_robot"));
+      break;
+    }
+    catch(const std::exception & e)
+    {
+      mc_rtc::log::warning("Waiting for router... ({})", e.what());
+      std::this_thread::sleep_for(std::chrono::seconds(2));
+    }
+  }
 
   mc_rtc::log::info("local init done");
 
