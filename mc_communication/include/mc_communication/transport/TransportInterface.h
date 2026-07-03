@@ -1,7 +1,9 @@
 #pragma once
 
+#include <chrono>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include <mc_rtc/Configuration.h>
@@ -12,6 +14,7 @@ namespace mc_communication
 {
 
 using ReceiveCallback = std::function<void(const std::string & topic, const ByteBuffer & payload)>;
+using QueryHandler = std::function<ByteBuffer(const std::string & topic)>;
 
 class TransportInterface
 {
@@ -29,6 +32,11 @@ public:
   virtual void subscribe(const std::string & topic, ReceiveCallback callback) = 0;
 
   virtual bool hasSubscriber(const std::string & topic) const = 0;
+
+  virtual void registerQueryable(const std::string & topic, QueryHandler handler) = 0;
+
+  virtual std::optional<ByteBuffer> query(const std::string & topic,
+                                          std::chrono::milliseconds timeout = std::chrono::seconds(1)) = 0;
 
 protected:
   mc_rtc::Configuration config_;
