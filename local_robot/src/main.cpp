@@ -1,8 +1,6 @@
 #include <mc_communication/CommunicationFactory.h>
-// #include <InterfaceTemplate.h>
 
 #include <mc_rtc/logging.h>
-#include <zenoh.hxx>
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;

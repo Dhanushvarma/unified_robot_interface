@@ -1,6 +1,10 @@
 set(PROGRAM_NAME mc_local)
 
-add_executable(${PROGRAM_NAME} InterfaceTemplate.cpp main.cpp)
+add_executable(
+  ${PROGRAM_NAME}
+  # InterfaceTemplate.cpp
+  main.cpp
+)
 
 target_include_directories(
   ${PROGRAM_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include
@@ -12,8 +16,11 @@ target_compile_definitions(
 )
 
 target_link_libraries(
-  ${PROGRAM_NAME} PRIVATE Boost::program_options
-                          mc_robot_interface::mc_robot_interface
+  ${PROGRAM_NAME}
+  PRIVATE Boost::program_options
+          # mc_robot_interface::mc_robot_interface
+          mc_rtc::mc_control
+          mc_communication::mc_communication
 )
 
 set(JOB_POOL_OPTION)
