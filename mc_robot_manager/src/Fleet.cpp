@@ -26,13 +26,6 @@ void run(void * data, const std::atomic<bool> & interrupt)
     sched_yield();
   }
 
-  // TODO: delete logging
-  // for(const auto & [name, interface] : robot_manager->interfaces())
-  // {
-  //   std::string fn = name + "_log.json";
-  //   interface->dumpLog(fn);
-  // }
-
   mc_rtc::log::info("fleet run done");
 }
 

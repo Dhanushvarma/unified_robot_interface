@@ -49,6 +49,8 @@ Robots:
 
   robot2_zenoh:
     base: robot1_zenoh
+    network_interface:
+      port: 101
 
   # robot1_shm:
   #   module: jvrc1
