@@ -14,6 +14,8 @@ set(CMAKE_CXX_STANDARD 17)
 # set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+enable_testing()
+
 # Dependencies
 find_package(Boost REQUIRED COMPONENTS program_options thread)
 find_package(mc_rtc REQUIRED)
@@ -28,6 +30,10 @@ endif()
 
 # Add Subdirectories
 add_subdirectory(src)
+
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
 
 install(DIRECTORY include/ DESTINATION include)
 

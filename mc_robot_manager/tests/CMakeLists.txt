@@ -16,12 +16,13 @@ if(NOT GTest_FOUND)
 endif()
 include(GoogleTest)
 
-add_executable(test_serialization test_serialization.cpp)
-target_link_libraries(
-  test_serialization PRIVATE mc_communication GTest::gtest_main
-)
-gtest_discover_tests(test_serialization)
+# ── E2E tests ──
+add_executable(test_config_delivery test_config_delivery.cpp)
+target_link_libraries(test_config_delivery PRIVATE GTest::gtest_main)
 
-# add_executable(test_e2e test_e2e.cpp)
-# target_link_libraries(test_e2e PRIVATE GTest::gtest_main)
-# gtest_discover_tests(test_e2e)
+# Register with special label so it can be opted in/out
+gtest_discover_tests(
+  test_config_delivery
+  PROPERTIES LABELS "e2e"
+  TIMEOUT 60
+)
