@@ -60,7 +60,7 @@ add_serializer(
   ../include/mc_communication/serialization/FlatbufferSerializer.h
 )
 
-target_link_libraries(mc-flatbuffers PUBLIC mc_rtc_flatbuffers)
+target_link_libraries(mc-flatbuffers PRIVATE mc_rtc_flatbuffers)
 
 if(TARGET proto-mc-rtc)
   add_serializer(
