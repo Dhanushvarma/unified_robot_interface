@@ -1,16 +1,18 @@
-#include <filesystem>
-#include <gtest/gtest.h>
-
 #include <mc_communication/CommunicationFactory.h>
 #include "config.h"
+
+#include <filesystem>
+#include <gtest/gtest.h>
 
 namespace fs = std::filesystem;
 
 using namespace mc_communication;
 
+// ── Tests ──
+
 TEST(CommunicationFactory, CreateServer)
 {
-  mc_rtc::Configuration config(fs::path(TEST_CONFIG_DIR) / "test.yaml");
+  mc_rtc::Configuration config(fs::path(TEST_CONFIG_DIR) / "etc/test.yaml");
 
   EXPECT_NO_THROW({
     auto server =
@@ -22,7 +24,7 @@ TEST(CommunicationFactory, CreateServer)
 
 TEST(CommunicationFactory, CreateClient)
 {
-  mc_rtc::Configuration config(fs::path(TEST_CONFIG_DIR) / "test.yaml");
+  mc_rtc::Configuration config(fs::path(TEST_CONFIG_DIR) / "etc/test.yaml");
 
   EXPECT_NO_THROW({
     auto client =
