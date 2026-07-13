@@ -40,6 +40,7 @@ struct RunContext
 {
   std::unique_ptr<mc_communication::Communication> interface;
   std::string robot_name;
+  mc_rtc::Configuration config;
 };
 
 void run(RunContext * context, const std::atomic<bool> & interrupt)
@@ -48,24 +49,6 @@ void run(RunContext * context, const std::atomic<bool> & interrupt)
 
   auto * interface = context->interface.get();
   const std::string & robot_name = context->robot_name;
-
-  /* QUERY FOR CONFIGURATION */
-  mc_rtc::log::info("[mc_communication] Waiting for config...");
-  while(!interrupt)
-  {
-    auto config_data = interface->query<std::string>(robot_name);
-
-    if(config_data)
-    {
-      mc_rtc::Configuration config;
-      config.loadData(*config_data);
-      mc_rtc::log::success("[mc_communication] Got config from server for {}", robot_name);
-      mc_rtc::log::info(config.dump(true, true));
-      break;
-    }
-
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-  }
 
   // TODO: add check if network_interface configs (from -f and received from manager) are the same
 
@@ -88,13 +71,19 @@ RunContext * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic
   // clang-format off
    desc.add_options()
     ("help,h", "Display help message")
-    ("conf,f", po::value<std::string>(&conf_path), "Configuration file");
+    ("conf,f", po::value<std::string>(&conf_path), "Configuration file")
     ("robot,r", po::value<std::string>(&robot_name), "Name of robot to extract from master configuration");
   // clang-format on
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
+
+  if(vm.count("help") != 0U)
+  {
+    std::cout << desc << "\n";
+    std::exit(0);
+  }
 
   mc_rtc::Configuration conf_file{};
 
@@ -130,12 +119,31 @@ RunContext * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic
     }
   }
 
+  /* QUERY FOR CONFIGURATION */
+  mc_rtc::log::info("[mc_communication] Waiting for config...");
+  mc_rtc::Configuration robot_config{};
+  while(!interrupt)
+  {
+    auto config_data = interface->query<std::string>(robot_name + "/config");
+
+    if(config_data)
+    {
+      robot_config.loadData(*config_data);
+      mc_rtc::log::success("[mc_communication] Got config from server for {}", robot_name);
+      mc_rtc::log::info(robot_config.dump(true, true));
+      break;
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  }
+
   mc_rtc::log::info("local init done");
 
   // Create the context on the heap and pass ownership to main
   auto * context = new RunContext();
   context->interface = std::move(interface);
   context->robot_name = std::move(robot_name);
+  context->config = std::move(robot_config);
 
   return context;
 }
