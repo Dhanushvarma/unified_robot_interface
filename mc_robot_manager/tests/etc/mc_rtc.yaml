@@ -39,6 +39,7 @@ Robots:
   #     control_mode: position # position, velocity, torque
 
   robot1_zenoh:
+    launch: true
     module: interface_template
     network_interface:
       protocol: zenoh/shm

@@ -83,25 +83,33 @@ RunContext * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic
   mc_rtc::log::success("local init start");
 
   std::string conf_path;
+  std::string robot_name;
   po::options_description desc("mc_local options");
   // clang-format off
    desc.add_options()
     ("help,h", "Display help message")
     ("conf,f", po::value<std::string>(&conf_path), "Configuration file");
+    ("robot,r", po::value<std::string>(&robot_name), "Name of robot to extract from master configuration");
   // clang-format on
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
 
-  if(conf_path.empty())
+  mc_rtc::Configuration conf_file{};
+
+  if(vm.count("conf"))
   {
-    mc_rtc::log::info("Configuration file is required.");
-    std::exit(0);
+    mc_rtc::Configuration base_config(conf_path);
+    robot_name = base_config.keys()[0];
+    conf_file = base_config(robot_name);
+  }
+  else if(vm.count("robot"))
+  {
+    std::string default_config_path{"/home/vscode/workspace/sandbox/fleet/local_robot/etc/default.yaml"};
+    conf_file.load(default_config_path);
   }
 
-  mc_rtc::Configuration conf_file(conf_path);
-  std::string robot_name = conf_file.keys()[0];
   mc_rtc::log::info("ROBOT_NAME: {}", robot_name);
 
   mc_rtc::log::warning("[local] Creating with config:\n{}", conf_file.dump(true, true));
@@ -112,7 +120,7 @@ RunContext * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic
   {
     try
     {
-      interface = mc_communication::CommunicationFactory::makeCommunication("client", conf_file(robot_name));
+      interface = mc_communication::CommunicationFactory::makeCommunication("client", conf_file);
       break;
     }
     catch(const std::exception & e)
@@ -127,7 +135,7 @@ RunContext * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic
   // Create the context on the heap and pass ownership to main
   auto * context = new RunContext();
   context->interface = std::move(interface);
-  context->robot_name = robot_name;
+  context->robot_name = std::move(robot_name);
 
   return context;
 }

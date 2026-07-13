@@ -54,12 +54,13 @@ private:
 
   std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
 
-  // Check if necessary to use before run
-  void startZenohRouter();
+  void launchZenohRouter();
   std::unique_ptr<zenoh::Session> zenoh_router_;
 
+  void launchLocalRobot(const std::string & robot_name);
+  std::unordered_map<std::string, pid_t> local_robot_pids_;
+
   std::unordered_map<std::string, std::unique_ptr<mc_communication::Communication>> interfaces_{};
-  // std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
 
   /* Process configuration */
   void processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig);

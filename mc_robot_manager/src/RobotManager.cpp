@@ -5,8 +5,12 @@
 #include <mc_rtc/logging.h>
 
 #include <cstdlib>
+#include <signal.h>
+#include <string>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 namespace mc_fleet
 {
@@ -60,6 +64,12 @@ RobotManager::~RobotManager()
     }
   }
 
+  for(const auto & [robot_name, pid] : local_robot_pids_)
+  {
+    kill(pid, SIGINT);
+    waitpid(pid, nullptr, 0);
+  }
+
   mc_rtc::log::info("RobotManager shutdown complete.");
 }
 
@@ -72,9 +82,10 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   /* Start Zenoh Router if necessary */
   if(robots_config.dump().find("zenoh") != std::string::npos)
   {
-    startZenohRouter();
+    launchZenohRouter();
   }
 
+  // TODO: delete logging
   mc_rtc::log::warning("[SERVER] robots_config keys:");
   for(auto & robot_name : robots_config.keys())
   {
@@ -106,7 +117,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
     }
 
     /* Register config queryable */
-    interface->registerQueryable<std::string>(robot_name,
+    interface->registerQueryable<std::string>(robot_name + "/config",
                                               [robot_config]() -> std::string { return robot_config.dump(); });
 
     mc_rtc::log::info("ROBOT NAME: {}", robot_name);
@@ -152,6 +163,15 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 
   mc_rtc::log::info("[mc_fleet] mc_rtc will compute commands every {} robot control step", max_step_size);
 
+  /* Launch mc_local if necessary */
+  for(auto & robot_name : robots_config.keys())
+  {
+    if(robots_config(robot_name)("launch"))
+    {
+      launchLocalRobot(robot_name);
+    }
+  }
+
   auto & robots = gcontroller_->controller().robots();
 
   /* Initialize all real robots */
@@ -178,11 +198,11 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   mc_rtc::log::info("manager init done");
 }
 
-void RobotManager::startZenohRouter()
+void RobotManager::launchZenohRouter()
 {
   if(zenoh_router_) return;
 
-  mc_rtc::log::info("[mc_fleet] startZenohRouter start");
+  mc_rtc::log::info("[mc_fleet] launchZenohRouter start");
 
   zenoh::Config config =
       zenoh::Config::from_file("/home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/router.json5");
@@ -192,7 +212,29 @@ void RobotManager::startZenohRouter()
   // Let the router fully start before clients try to connect
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-  mc_rtc::log::success("[mc_fleet] startZenohRouter done");
+  mc_rtc::log::success("[mc_fleet] launchZenohRouter done");
+}
+
+void RobotManager::launchLocalRobot(const std::string & robot_name)
+{
+  pid_t pid = fork();
+
+  if(pid == 0)
+  {
+    execlp("mc_local", "mc_local", "--robot", robot_name.c_str(), nullptr);
+
+    perror("execlp");
+    std::exit(EXIT_FAILURE);
+  }
+
+  if(pid < 0)
+  {
+    mc_rtc::log::error_and_throw("Failed to launch mc_local");
+  }
+
+  local_robot_pids_[robot_name] = pid;
+
+  mc_rtc::log::success("Started mc_local {} [{}]", robot_name, pid);
 }
 
 void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig)
