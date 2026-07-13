@@ -166,7 +166,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   /* Launch mc_local if necessary */
   for(auto & robot_name : robots_config.keys())
   {
-    if(robots_config(robot_name)("launch"))
+    if(robots_config(robot_name).has("launch"))
     {
       launchLocalRobot(robot_name);
     }
@@ -272,6 +272,10 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
     {
       mc_rtc::Configuration base_config{};
       base_config.load(robots_config(robot_config("base")));
+      if(base_config.has("launch"))
+      {
+        base_config.remove("launch");
+      }
       base_config.load(robot_config);
       robot_config.load(base_config);
     }
