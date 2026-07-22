@@ -23,6 +23,14 @@ macro(add_protocol NAME)
   )
 
   target_link_libraries(mc_communication PUBLIC ${NAME})
+
+  install(
+    TARGETS ${NAME}
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+
 endmacro()
 
 ### Serialization
@@ -35,6 +43,13 @@ macro(add_serializer NAME)
   )
 
   target_link_libraries(mc_serializer INTERFACE ${NAME})
+
+  install(
+    TARGETS ${NAME}
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
 endmacro()
 
 add_library(mc_serializer INTERFACE)
@@ -45,16 +60,16 @@ add_serializer(
   ../include/mc_communication/serialization/FlatbufferSerializer.h
 )
 
-target_link_libraries(mc-flatbuffers PUBLIC mc_rtc_flatbuffers)
+target_link_libraries(mc-flatbuffers PRIVATE mc_rtc_flatbuffers)
 
 if(TARGET proto-mc-rtc)
   add_serializer(
     mc-protobuf serialization/ProtobufSerializer.cpp
     ../include/mc_communication/serialization/ProtobufSerializer.h
   )
-  target_link_libraries(mc-protobuf PRIVATE proto-mc-rtc)
+  target_link_libraries(mc-protobuf PUBLIC proto-mc-rtc)
 
-  message(ERROR "im here")
+  message(STATUS "mc_communication: Protobuf serializer enabled")
 endif()
 
 ###  Communication Interface
@@ -103,3 +118,10 @@ add_protocol(zenoh)
 target_link_libraries(zenoh PUBLIC zenohcxx::zenohc)
 
 # add_protocol(shm)
+
+install(
+  TARGETS mc_communication mc_communication_interface
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+)

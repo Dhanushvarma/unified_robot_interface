@@ -18,7 +18,7 @@ using namespace mc_communication;
 
 TEST(CommunicationTest, SharedMemoryLatestMessage)
 {
-  mc_rtc::Configuration config(fs::path(TEST_CONFIG_DIR) / "test.yaml");
+  mc_rtc::Configuration config(fs::path(TEST_CONFIG_DIR) / "etc/test.yaml");
 
   auto client = CommunicationFactory::makeCommunication("client", config("Robots")("robot1_shm")("network_interface"));
 

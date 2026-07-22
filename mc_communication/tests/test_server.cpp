@@ -1,16 +1,14 @@
+#include <mc_communication/CommunicationFactory.h>
+#include "config.h"
+
+#include <gtest/gtest.h>
+
 #include <atomic>
-#include <chrono>
 #include <filesystem>
 #include <future>
 #include <iostream>
 #include <thread>
 #include <variant>
-
-#include <gtest/gtest.h>
-
-#include <mc_communication/CommunicationFactory.h>
-
-#include "config.h"
 
 namespace fs = std::filesystem;
 
@@ -18,7 +16,7 @@ using namespace mc_communication;
 
 TEST(CommunicationTest, ReliableMessageDelivery)
 {
-  mc_rtc::Configuration config(fs::path(TEST_CONFIG_DIR) / "test.yaml");
+  mc_rtc::Configuration config(fs::path(TEST_CONFIG_DIR) / "etc/test.yaml");
 
   auto client =
       CommunicationFactory::makeCommunication("client", config("Robots")("robot1_zenoh")("network_interface"));

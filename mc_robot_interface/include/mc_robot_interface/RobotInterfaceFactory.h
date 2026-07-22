@@ -14,8 +14,7 @@ public:
   void checkCompatibility();
 
   static std::unique_ptr<RobotInterfaceBase> makeInterface(const std::string & name,
-                                                           const mc_rtc::Configuration & config,
-                                                           const uint8_t & buffer_size = 0);
+                                                           const mc_rtc::Configuration & config);
 };
 
 } // namespace mc_robot

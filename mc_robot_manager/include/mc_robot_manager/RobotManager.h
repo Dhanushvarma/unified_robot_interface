@@ -1,9 +1,10 @@
 #pragma once
 
-#include <mc_communication/CommunicationFactory.h>
-#include <mc_robot_interface/RobotInterfaceFactory.h>
+#include <mc_communication/Communication.h>
+// #include <mc_robot_interface/RobotInterfaceBase.h>
 
 #include <mc_control/mc_global_controller.h>
+#include <zenoh.hxx>
 
 #include <atomic>
 #include <condition_variable>
@@ -24,7 +25,7 @@ class RobotManager
 public:
   RobotManager();
 
-  RobotManager(mc_control::MCGlobalController::GlobalConfiguration & gconfig, const std::atomic<bool> & interrupt);
+  RobotManager(const std::string & mc_config_path, const std::atomic<bool> & interrupt);
 
   ~RobotManager();
 
@@ -38,6 +39,11 @@ public:
     return *gcontroller_;
   }
 
+  [[nodiscard]] const auto & interfaces()
+  {
+    return interfaces_;
+  }
+
   void notify()
   {
     cv_.notify_one();
@@ -48,7 +54,12 @@ private:
 
   std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
 
-  std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
+  // Check if necessary to use before run
+  void startZenohRouter();
+  std::unique_ptr<zenoh::Session> zenoh_router_;
+
+  std::unordered_map<std::string, std::unique_ptr<mc_communication::Communication>> interfaces_{};
+  // std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
 
   /* Process configuration */
   void processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig);
@@ -56,15 +67,14 @@ private:
   struct DefaultConfig
   {
     std::string module{};
-    std::string control_mode{"position"};
     std::string driver{};
     double time_step{0.001};
-    std::string communication_protocol{"zenoh"};
+    std::string control_mode{"position"};
+    std::string network_protocol{"zenoh/shm"};
   };
   DefaultConfig user_default_;
 
   /* Start */
-  // Start with main thread
   std::unique_ptr<std::thread> main_thread_;
   std::mutex start_mutex_;
   std::condition_variable start_cv_;

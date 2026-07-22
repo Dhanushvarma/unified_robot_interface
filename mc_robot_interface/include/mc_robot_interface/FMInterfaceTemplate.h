@@ -11,7 +11,7 @@ namespace mc_interface_template
 class FMInterfaceTemplate : public mc_robot::RobotInterfaceBase
 {
 public:
-  FMInterfaceTemplate(const std::string & name, const mc_rtc::Configuration & config, uint8_t buffer_size = 6);
+  FMInterfaceTemplate(const std::string & name, const mc_rtc::Configuration & config);
 
   void init() override {}
   void reset() override {}

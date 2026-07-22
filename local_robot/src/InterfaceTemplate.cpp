@@ -1,101 +1,124 @@
-#include <mc_communication/CommunicationZenoh.h>
-#include <InterfaceTemplate.h>
+// #include <mc_communication/Communication.h>
+// #include <mc_communication/CommunicationFactory.h>
+// #include <InterfaceTemplate.h>
 
-#include <mc_rtc/logging.h>
+// #include <mc_rtc/logging.h>
 
-#include <random>
-#include <thread>
+// #include <filesystem>
+// #include <random>
+// #include <thread>
 
-namespace mc_interface_template
-{
+// namespace mc_interface_template
+// {
 
-InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
-{
-  mc_rtc::log::success("InterfaceTemplate remote start");
+// // Helper function to find config file
+// static std::string findConfigFile()
+// {
+//   // Try installed location first
+//   const char * install_prefix = CMAKE_INSTALL_PREFIX;
+//   std::filesystem::path installed_config = std::string(install_prefix) + "/etc/communication.yaml";
 
-  mc_rtc::Configuration com_config("/home/tduvinage/devel/sandbox/mc_rtc_interface/local_robot/etc/communication.yaml");
-  if(com_config.has("name"))
-  {
-    setCommunication(mc_communication::CommunicationFactory::makeCommunicationClient(com_config));
-  }
-  else
-  {
-    mc_rtc::log::error_and_throw("Missing name of robot");
-  }
+//   if(std::filesystem::exists(installed_config))
+//   {
+//     return installed_config.string();
+//   }
 
-  mc_communication::ByteBuffer config_;
+//   // Fall back to source tree
+//   std::filesystem::path source_config = std::string(PROJECT_SOURCE_DIR) + "/etc/communication.yaml";
+//   if(std::filesystem::exists(source_config))
+//   {
+//     return source_config.string();
+//   }
 
-  while(!config_.empty() && !interrupt)
-  {
-    mc_rtc::log::info("[mc_communication] Waiting for config from robot manager");
-    config_ = communication().receive().value();
-    if(config_.empty())
-    {
-      std::this_thread::sleep_for(std::chrono::seconds(2));
-    }
-  }
+//   return source_config.string();
+// }
 
-  if(interrupt)
-  {
-    mc_rtc::log::warning("Initialization interrupted");
-    return;
-  }
+// InterfaceTemplate::InterfaceTemplate(const std::atomic<bool> & interrupt)
+// {
+//   mc_rtc::log::success("InterfaceTemplate remote start");
 
-  mc_rtc::log::success("HERE IS CONFIG");
-  mc_rtc::log::info(config_);
+//   mc_rtc::Configuration com_config(findConfigFile());
+//   // mc_rtc::Configuration com_config("local_robot/etc/communication.yaml");
+//   // mc_rtc::Configuration
+//   // com_config("/home/tduvinage/devel/sandbox/mc_rtc_interface/local_robot/etc/communication.yaml");
 
-  mc_rtc::log::info("InterfaceTemplate local done");
-};
+//   if(!com_config.has("name"))
+//   {
+//     mc_rtc::log::error_and_throw("Missing name of robot");
+//   }
 
-void InterfaceTemplate::updateSensors()
-{
-  static std::mt19937 rng{std::random_device{}()};
-  static std::uniform_real_distribution<double> dist(-1.0, 1.0);
+//   setCommunication(mc_communication::CommunicationFactory::makeCommunication("client", com_config));
 
-  mc_communication::State state;
+//   // ── Query for config from robot manager (blocking until we get one) ──
+//   while(!interrupt)
+//   {
+//     auto config = communication().query<std::string>(name() + "/config", std::chrono::seconds(2));
 
-  constexpr size_t dof = 6; // example: 6 joints
+//     if(config)
+//     {
+//       mc_rtc::log::success("[mc_communication] Got config from server");
+//       mc_rtc::log::info(*config);
+//       // TODO: parse *config here if needed and apply it
+//       break;
+//     }
 
-  state.position.resize(dof);
-  state.velocity.resize(dof);
-  state.torque.resize(dof);
+//     mc_rtc::log::info("[mc_communication] Waiting for config...");
+//   }
 
-  for(size_t i = 0; i < dof; ++i)
-  {
-    state.position[i] = dist(rng);
-    state.velocity[i] = dist(rng);
-    state.torque[i] = dist(rng);
-  }
+//   if(interrupt)
+//   {
+//     mc_rtc::log::warning("Initialization interrupted");
+//     return;
+//   }
 
-  // Serialize to FlatBuffers
-  auto buffer = communication().encode(state);
+//   // ── Subscribe to command from robot manager ──
+//   communication().subscribe<mc_communication::Command>("command",
+//                                                        [this](const mc_communication::Command & cmd)
+//                                                        {
+//                                                          setCommand(cmd);
+//                                                          mc_rtc::log::success("Received command kp={:.3f}", cmd.kp);
+//                                                        });
 
-  // Send to robot manager
-  bool sent = communication().send(buffer);
+//   mc_rtc::log::info("InterfaceTemplate local done");
+// }
 
-  if(sent)
-  {
-    mc_rtc::log::success("Sent state");
-  }
-  else
-  {
-    mc_rtc::log::warning("Failed to send STATE to robot manager");
-  }
-}
+// void InterfaceTemplate::updateSensors()
+// {
+//   static std::mt19937 rng{std::random_device{}()};
+//   static std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
-void InterfaceTemplate::updateControl()
-{
-  if(auto latest_command = communication().receive())
-  {
-    if(!latest_command->empty())
-    {
-      mc_rtc::log::success("Received command");
-    }
-  }
-  else
-  {
-    mc_rtc::log::error("Trouble receiving command");
-  }
-};
+//   constexpr size_t dof = 6;
 
-} // namespace mc_interface_template
+//   mc_communication::State state;
+//   state.position.resize(dof);
+//   state.velocity.resize(dof);
+//   state.torque.resize(dof);
+
+//   for(size_t i = 0; i < dof; ++i)
+//   {
+//     state.position[i] = dist(rng);
+//     state.velocity[i] = dist(rng);
+//     state.torque[i] = dist(rng);
+//   }
+
+//   setState(state);
+
+//   bool sent = communication().publish("state", state);
+
+//   if(sent)
+//   {
+//     mc_rtc::log::success("Sent state");
+//   }
+//   else
+//   {
+//     mc_rtc::log::warning("Failed to send STATE to robot manager");
+//   }
+// }
+
+// void InterfaceTemplate::updateControl()
+// {
+//   // Commands arrive asynchronously via the subscribe callback.
+//   // The latest command is stored via setCommand() — access via command().
+// }
+
+// } // namespace mc_interface_template

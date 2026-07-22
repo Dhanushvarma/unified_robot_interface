@@ -35,7 +35,7 @@ flatbuffers_generate_headers(
   SCHEMAS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/mc_communication/serialization/flatbuffers/mc_rtc_msgs.fbs"
 )
-target_link_libraries(mc_rtc_flatbuffers INTERFACE flatbuffers::flatbuffers)
+# target_link_libraries(mc_rtc_flatbuffers INTERFACE flatbuffers::flatbuffers)
 
 # Protobuf
 if(${protobuf_FOUND} AND WITH_PROTOBUF)

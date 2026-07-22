@@ -1,0 +1,69 @@
+MainRobot: JVRC1
+Enabled: Posture
+Timestep: 0.5
+
+LogPolicy : threaded
+
+# used to override system default for all robots
+Default:
+  module: default_module
+  control_mode: position # velocity or torque [optional] default to POSITION
+  driver: default_driver # [optional] default to driver defined in module
+  time_step: 0.05       # [optional] default to controller frequency (Hz)
+  communication_protocol: tcp  # [optional] default to tcp
+
+Robots:
+  # robot1:
+  #   module: jvrc1
+  #   # ... other parameters
+  #   network_interface:
+  #     protocol: tcp
+  #     ip: 192.168.1.2
+  #     port: 45000
+
+  # robot2:
+  #   module: jvrc1
+  #   init_pos:
+  #     translation: [0.0, 1.5, 0.0]
+
+  #   network_interface:
+  #     protocol: udp
+  #     backend: flatbuffer
+  #     ip: 192.168.0.1
+  #     port: 100
+
+  #   robot_interface:
+  #     driver: RTDE
+  #     ip: 127.0.0.1
+  #     port: 3000
+  #     control_mode: position # position, velocity, torque
+
+  robot1_zenoh:
+    module: interface_template
+    network_interface:
+      protocol: zenoh/shm
+      configuration: "/home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/client.json5"
+      backend: flatbuffer
+      ip: 192.168.0.1
+      port: 100
+
+  robot2_zenoh:
+    base: robot1_zenoh
+    network_interface:
+      port: 101
+
+  # robot1_shm:
+  #   module: jvrc1
+  #   network_interface:
+  #     protocol: shm
+  #     backend: protobuf
+  #     ip: 192.168.0.1
+  #     port: 100
+
+  # robot2_shm:
+  #   module: jvrc1
+  #   network_interface:
+  #     protocol: shm
+  #     backend: flatbuffer
+  #     ip: 192.168.0.1
+  #     port: 100
