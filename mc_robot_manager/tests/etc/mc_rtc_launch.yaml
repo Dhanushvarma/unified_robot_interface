@@ -14,15 +14,11 @@ Default:
 
 Robots:
   robot1:
+    launch: true
     module: interface_template
     network_interface:
       protocol: zenoh/shm
       configuration: "/home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/client.json5"
       backend: flatbuffer
       ip: 192.168.0.1
-      port: 100
-
-  robot2:
-    base: robot1
-    network_interface:
       port: 101

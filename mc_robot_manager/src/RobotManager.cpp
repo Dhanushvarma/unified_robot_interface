@@ -66,8 +66,10 @@ RobotManager::~RobotManager()
 
   for(const auto & [robot_name, pid] : local_robot_pids_)
   {
+    mc_rtc::log::info("Stopping {} [{}]", robot_name, pid);
     kill(pid, SIGINT);
     waitpid(pid, nullptr, 0);
+    mc_rtc::log::info("Stopped {} [{}]", robot_name, pid);
   }
 
   mc_rtc::log::info("RobotManager shutdown complete.");
@@ -118,7 +120,11 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 
     /* Register config queryable */
     interface->registerQueryable<std::string>(robot_name + "/config",
-                                              [robot_config]() -> std::string { return robot_config.dump(); });
+                                              [robot_name, robot_config]() -> std::string
+                                              {
+                                                mc_rtc::log::info("Sent config to {}", robot_name);
+                                                return robot_config.dump();
+                                              });
 
     mc_rtc::log::info("ROBOT NAME: {}", robot_name);
     mc_rtc::log::info("ROBOT CONFIG: {}", robot_config.dump(true, true));

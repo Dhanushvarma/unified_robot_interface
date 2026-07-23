@@ -95,6 +95,7 @@ RunContext * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic
   }
   else if(vm.count("robot"))
   {
+    // You still need a default zenoh config for client
     std::string default_config_path{"/home/vscode/workspace/sandbox/fleet/local_robot/etc/default.yaml"};
     conf_file.load(default_config_path);
   }

@@ -24,5 +24,13 @@ target_link_libraries(test_config_delivery PRIVATE GTest::gtest_main)
 gtest_discover_tests(
   test_config_delivery
   PROPERTIES LABELS "e2e"
-  TIMEOUT 60
+  TIMEOUT 30
+)
+
+add_executable(test_local_launch test_local_launch.cpp)
+target_link_libraries(test_local_launch PRIVATE GTest::gtest_main)
+gtest_discover_tests(
+  test_local_launch
+  PROPERTIES LABELS "launch"
+  TIMEOUT 30
 )
