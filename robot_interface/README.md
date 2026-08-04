@@ -4,6 +4,6 @@ robot_interface library aims to support easy integration of robot api.
 
 ## Dependencies
 
-- mc_communication
+- robot_comm
 
 ### TODO
