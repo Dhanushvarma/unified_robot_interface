@@ -1,80 +1,91 @@
-#include <mc_communication/CommunicationZenoh.h>
-#include <mc_communication/serialization/FlatBufferSerializer.h>
 #include <mc_robot_interface/FMInterfaceTemplate.h>
+#include <robot_comm/CommunicationZenoh.h>
 
+#include <mc_control/mc_global_controller.h>
 #include <mc_rtc/logging.h>
-
-#include <random>
-#include <thread>
 
 namespace mc_interface_template
 {
+
+namespace
+{
+mc_robot::ControlMode parseModeString(const std::string & mode)
+{
+  if(mode == "velocity") return mc_robot::VELOCITY;
+  if(mode == "torque") return mc_robot::TORQUE;
+  return mc_robot::POSITION;
+}
+} // namespace
 
 FMInterfaceTemplate::FMInterfaceTemplate(const std::string & name,
                                          const mc_rtc::Configuration & config,
                                          uint8_t buffer_size)
 : RobotInterfaceBase(name, config, (buffer_size == 0) ? 6 : buffer_size)
 {
-  mc_rtc::log::success("FMInterfaceTemplate manager start");
+  mc_rtc::log::success("FMInterfaceTemplate '{}' starting", name);
 
-  mc_rtc::Configuration com_config(config("communication"));
-  setCommunication(mc_communication::CommunicationFactory::makeCommunicationServer(name, com_config));
+  const std::string mode = config("controller")("mode", std::string{"position"});
+  control_mode_ = parseModeString(mode);
+  mc_rtc::log::info("FMInterfaceTemplate '{}' control mode: {}", name, mode);
 
-  mc_rtc::log::info("FMInterfaceTemplate done");
-};
+  mc_rtc::Configuration com_config(config("network_interface"));
+  auto comm = robot_comm::CommunicationFactory::makeCommunication(name, com_config);
+  comm->setupServer();
+  setCommunication(std::move(comm));
 
-void FMInterfaceTemplate::updateSensors()
+  mc_rtc::log::info("FMInterfaceTemplate '{}' ready", name);
+}
+
+void FMInterfaceTemplate::updateSensors(mc_control::MCGlobalController & gc)
 {
-  if(auto latest_state = communication().receive())
-  {
-    if(!latest_state->empty())
-    {
-      mc_rtc::log::success("Received state");
-    }
-  }
-  else
-  {
-    mc_rtc::log::error("Trouble receiving state");
-  }
-};
+  auto rx = communication().receive();
+  if(!rx || rx->empty()) return;
 
-void FMInterfaceTemplate::updateControl()
+  auto s = communication().serializer()->deserialize<robot_comm::State>(robot_comm::MessageType::STATE, rx->data(),
+                                                                        rx->size());
+  if(!s) return;
+
+  if(!s->position.empty()) gc.setEncoderValues(name(), s->position);
+  if(!s->velocity.empty()) gc.setEncoderVelocities(name(), s->velocity);
+  if(!s->torque.empty()) gc.setJointTorques(name(), s->torque);
+
+  if(!gc_initialized_)
+  {
+    gc.init(gc.controller().robots().robot(name()).encoderValues());
+    gc_initialized_ = true;
+    mc_rtc::log::success("[FMInterfaceTemplate] '{}' controller initialized", name());
+  }
+}
+
+void FMInterfaceTemplate::updateControl(mc_control::MCGlobalController & gc)
 {
-  static std::mt19937 rng{std::random_device{}()};
-  static std::uniform_real_distribution<double> dist(-1.0, 1.0);
+  if(!gc_initialized_) return;
 
-  mc_communication::Command command;
+  auto & robot = gc.controller().robots().robot(name());
+  const auto & rjo = robot.refJointOrder();
+  const size_t dof = rjo.size();
 
-  constexpr size_t dof = 6;
-
-  command.kp = dist(rng);
-  command.kd = dist(rng);
-
-  command.position.resize(dof);
-  command.velocity.resize(dof);
-  command.torque.resize(dof);
-
-  for(size_t i = 0; i < dof; ++i)
+  robot_comm::Command command;
+  switch(control_mode_)
   {
-    command.position[i] = dist(rng);
-    command.velocity[i] = dist(rng);
-    command.torque[i] = dist(rng);
+    case mc_robot::POSITION:
+      command.position.resize(dof);
+      for(size_t i = 0; i < dof; ++i) command.position[i] = robot.mbc().q[robot.jointIndexInMBC(i)][0];
+      break;
+
+    case mc_robot::VELOCITY:
+      command.velocity.resize(dof);
+      for(size_t i = 0; i < dof; ++i) command.velocity[i] = robot.mbc().alphaD[robot.jointIndexInMBC(i)][0];
+      break;
+
+    case mc_robot::TORQUE:
+      command.torque.resize(dof);
+      for(size_t i = 0; i < dof; ++i) command.torque[i] = robot.mbc().jointTorque[robot.jointIndexInMBC(i)][0];
+      break;
   }
 
-  // Serialize to FlatBuffers
-  auto buffer = communication().encode(command);
-
-  // Send to robot manager
-  bool sent = communication().send(buffer);
-
-  if(sent)
-  {
-    mc_rtc::log::success("Sent command");
-  }
-  else
-  {
-    mc_rtc::log::warning("Failed to send COMMAND to robot {}", name());
-  }
+  if(!communication().send(communication().encode(command)))
+    mc_rtc::log::warning("[FMInterfaceTemplate] '{}' failed to send command", name());
 }
 
 } // namespace mc_interface_template

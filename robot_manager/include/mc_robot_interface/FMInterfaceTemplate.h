@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <optional>
 
 namespace mc_interface_template
 {
@@ -16,8 +17,16 @@ public:
   void init() override {}
   void reset() override {}
   void stop() override {}
-  void updateSensors() override;
-  void updateControl() override;
+  void updateSensors(mc_control::MCGlobalController & gc) override;
+  void updateControl(mc_control::MCGlobalController & gc) override;
+
+  [[nodiscard]] bool isInitialized() const override
+  {
+    return gc_initialized_;
+  }
+
+private:
+  bool gc_initialized_ = false;
 };
 
 } // namespace mc_interface_template

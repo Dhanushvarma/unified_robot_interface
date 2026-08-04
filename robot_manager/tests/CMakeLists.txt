@@ -16,7 +16,7 @@ endif()
 add_executable(test_init test_init.cpp)
 
 target_link_libraries(
-  test_init PRIVATE mc_robot_manager mc_robot_interface mc_communication
+  test_init PRIVATE mc_robot_manager mc_robot_interface robot_comm
                     mc_rtc::mc_control gtest_main
 )
 

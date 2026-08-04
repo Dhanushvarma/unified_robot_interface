@@ -1,9 +1,11 @@
 #pragma once
 
-#include <mc_communication/CommunicationFactory.h>
 #include <mc_robot_interface/RobotInterfaceFactory.h>
+#include <robot_comm/CommunicationFactory.h>
 
 #include <mc_control/mc_global_controller.h>
+
+#include <sys/types.h>
 
 #include <atomic>
 #include <condition_variable>
@@ -49,6 +51,12 @@ private:
   std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
 
   std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
+
+  /* Co-located robot_interface processes (robot_interface.autostart: true) */
+  static bool autostartEnabled(const mc_rtc::Configuration & robot_config);
+  pid_t spawnRobotInterface(const std::string & robot_name, const mc_rtc::Configuration & robot_config);
+  void stopSpawnedInterfaces();
+  std::unordered_map<std::string, pid_t> spawned_interfaces_{};
 
   /* Process configuration */
   void processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig);

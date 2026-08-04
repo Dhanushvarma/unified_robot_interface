@@ -1,13 +1,38 @@
-#include <mc_communication/CommunicationZenoh.h>
 #include <mc_rtc/logging.h>
 #include <mc_robot_manager/RobotManager.h>
+#include <robot_comm/CommunicationZenoh.h>
 
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <csignal>
 #include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <spawn.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/wait.h>
+#include <thread>
+#include <unistd.h>
+
+extern char ** environ;
 
 namespace mc_fleet
 {
+
+namespace
+{
+// Directory containing the currently running MCFleetControl executable, so the
+// co-located RobotInterface binary can be found without relying on PATH.
+std::filesystem::path selfDir()
+{
+  std::error_code ec;
+  auto exe = std::filesystem::read_symlink("/proc/self/exe", ec);
+  if(ec) return {};
+  return exe.parent_path();
+}
+} // namespace
 
 RobotManager::RobotManager() : gconfig_(mc_rtc::Configuration{}) {};
 
@@ -57,7 +82,82 @@ RobotManager::~RobotManager()
     }
   }
 
+  stopSpawnedInterfaces();
+
   mc_rtc::log::info("RobotManager shutdown complete.");
+}
+
+bool RobotManager::autostartEnabled(const mc_rtc::Configuration & robot_config)
+{
+  return robot_config.has("robot_interface") && robot_config("robot_interface").has("autostart")
+         && static_cast<bool>(robot_config("robot_interface")("autostart"));
+}
+
+pid_t RobotManager::spawnRobotInterface(const std::string & robot_name, const mc_rtc::Configuration & robot_config)
+{
+  // robot_interface only needs its own name plus the network/robot_interface sections.
+  mc_rtc::Configuration iface_config;
+  iface_config.add("name", robot_name);
+  iface_config.add("network_interface", robot_config("network_interface"));
+  iface_config.add("robot_interface", robot_config("robot_interface"));
+
+  const auto config_path = std::filesystem::temp_directory_path() / ("mc_fleet_" + robot_name + "_interface.yaml");
+  iface_config.save(config_path.string());
+
+  auto bin_path = selfDir() / "RobotInterface";
+  if(!std::filesystem::exists(bin_path))
+  {
+    bin_path = "RobotInterface"; // fall back to PATH lookup
+  }
+
+  mc_rtc::log::info("[mc_fleet] Spawning co-located robot_interface for '{}' ({})", robot_name, bin_path.string());
+
+  // posix_spawn (rather than fork()+exec()) avoids duplicating this process's
+  // other threads (GUI server, ROS, ...) into the child: fork() in a
+  // multi-threaded process only carries over the calling thread, so any lock
+  // held by another thread at that instant is inherited pre-locked with no
+  // owner left to release it. mlockall(MCL_FUTURE), active here since
+  // main.cpp, makes plain fork() doubly unsafe (see fork(2)/mlockall(2)).
+  const std::string bin_path_str = bin_path.string();
+  const std::string config_path_str = config_path.string();
+  std::array<char *, 6> argv{const_cast<char *>(bin_path_str.c_str()),    const_cast<char *>("-c"),
+                             const_cast<char *>(config_path_str.c_str()), const_cast<char *>("-n"),
+                             const_cast<char *>(robot_name.c_str()),      nullptr};
+
+  pid_t pid = 0;
+  int err = posix_spawnp(&pid, bin_path_str.c_str(), nullptr, nullptr, argv.data(), environ);
+  if(err != 0)
+  {
+    mc_rtc::log::error("[mc_fleet] posix_spawn failed while spawning robot_interface for '{}': {}", robot_name,
+                       std::strerror(err));
+    return -1;
+  }
+
+  spawned_interfaces_[robot_name] = pid;
+  return pid;
+}
+
+void RobotManager::stopSpawnedInterfaces()
+{
+  for(auto & [robot_name, pid] : spawned_interfaces_)
+  {
+    if(kill(pid, SIGTERM) != 0) continue;
+
+    int status = 0;
+    for(int i = 0; i < 50; ++i) // wait up to ~5s for a clean exit
+    {
+      if(waitpid(pid, &status, WNOHANG) != 0) break;
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    if(waitpid(pid, &status, WNOHANG) == 0)
+    {
+      mc_rtc::log::warning("[mc_fleet] robot_interface '{}' (pid {}) did not exit, sending SIGKILL", robot_name, pid);
+      kill(pid, SIGKILL);
+      waitpid(pid, &status, 0);
+    }
+  }
+  spawned_interfaces_.clear();
 }
 
 void RobotManager::init(const std::atomic<bool> & interrupt)
@@ -79,6 +179,12 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
     }
 
     mc_rtc::Configuration robot_config{robots_config(robot_name)};
+
+    if(autostartEnabled(robot_config))
+    {
+      spawnRobotInterface(robot_name, robot_config);
+    }
+
     std::unique_ptr<mc_robot::RobotInterfaceBase> interface =
         mc_robot::RobotInterfaceFactory::makeInterface(robot_name, robot_config);
     if(!interface)
@@ -89,13 +195,45 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
     interfaces_.try_emplace(robot_name, std::move(interface));
   }
 
-  /* Send config to real robots */
+  /* Send init query to each robot_interface process (query/reply: waits for driver load confirmation). */
+  std::vector<std::string> failed_robots;
   for(auto & [robot_name, interface] : interfaces_)
   {
-    mc_rtc::log::info("manager init send config {}", robot_name);
+    mc_rtc::log::info("[mc_fleet] Querying robot_interface '{}' (waiting up to 10 s)…", robot_name);
 
-    auto buffer = interface->communication().serializer()->serialize(interface->config().dump());
-    interface->communication().send(buffer);
+    const std::string init_topic = robot_name + "/init";
+    auto config_payload = interface->communication().serializer()->serialize(interface->config().dump());
+
+    auto reply = interface->communication().query(init_topic, config_payload, std::chrono::seconds(10));
+
+    if(!reply)
+    {
+      mc_rtc::log::error("[mc_fleet] Init query to robot_interface '{}' timed out — "
+                         "is the process running? Skipping this robot.",
+                         robot_name);
+      failed_robots.push_back(robot_name);
+      continue;
+    }
+
+    const std::string reply_str(reply->begin(), reply->end());
+    if(reply_str != "OK")
+    {
+      mc_rtc::log::error("[mc_fleet] Robot '{}' init failed: {} — skipping.", robot_name, reply_str);
+      failed_robots.push_back(robot_name);
+      continue;
+    }
+
+    mc_rtc::log::success("[mc_fleet] Robot '{}' driver loaded successfully", robot_name);
+  }
+
+  for(const auto & name : failed_robots)
+  {
+    interfaces_.erase(name);
+  }
+
+  if(interfaces_.empty())
+  {
+    mc_rtc::log::error_and_throw("[mc_fleet] No robot_interface responded — cannot start controller.");
   }
 
   /* Check timestep compatifibility between mc_rtc and robot */
@@ -161,8 +299,6 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 
 void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig)
 {
-  mc_rtc::log::success("manager processGConfig start");
-
   if(!gconfig.config.has("Robots"))
   {
     mc_rtc::log::error_and_throw<std::runtime_error>(
@@ -178,7 +314,7 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
     user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
     user_default_.driver = dc("driver", std::string(user_default_.driver));
     user_default_.time_step = dc("time_step", double(user_default_.time_step));
-    user_default_.communication_protocol = dc("communication", std::string(user_default_.communication_protocol));
+    user_default_.communication_protocol = dc("network_interface", std::string(user_default_.communication_protocol));
   }
 
   mc_rtc::log::info("manager processGConfig 2");
@@ -205,7 +341,6 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
     {
       robot_config.add("controller");
       robot_config("controller").add("mode", user_default_.control_mode);
-      robot_config("controller").add("driver", user_default_.driver);
       robot_config("controller").add("time_step", user_default_.time_step);
     }
     else
@@ -214,26 +349,38 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
       {
         robot_config("controller").add("mode", user_default_.control_mode);
       }
-      if(!robot_config("controller").has("driver"))
-      {
-        robot_config("controller").add("driver", user_default_.driver);
-      }
       if(!robot_config("controller").has("time_step"))
       {
         robot_config("controller").add("time_step", user_default_.time_step);
       }
     }
 
-    if(robot_config.has("communication"))
+    // robot_interface section carries the driver name and robot-side ip/port.
+    // Fill in a default driver only if the whole section is absent.
+    if(!robot_config.has("robot_interface"))
     {
-      if(!robot_config("communication").has("protocol"))
+      robot_config.add("robot_interface");
+      robot_config("robot_interface").add("driver", user_default_.driver);
+    }
+    else if(!robot_config("robot_interface").has("driver"))
+    {
+      robot_config("robot_interface").add("driver", user_default_.driver);
+    }
+
+    if(robot_config.has("network_interface"))
+    {
+      if(!robot_config("network_interface").has("protocol"))
       {
-        robot_config("communication").add("protocol", user_default_.communication_protocol);
+        // A co-located robot_interface is guaranteed to share this host, so it can
+        // use Zenoh's shared-memory transport by default instead of the network stack.
+        const std::string default_protocol =
+            autostartEnabled(robot_config) ? std::string{"zenoh/shm"} : user_default_.communication_protocol;
+        robot_config("network_interface").add("protocol", default_protocol);
       }
     }
     else
     {
-      mc_rtc::log::error_and_throw("No `communication` section in the configuration of robot {}", robot_name);
+      mc_rtc::log::error_and_throw("No `network_interface` section in the configuration of robot {}", robot_name);
     }
   }
 
@@ -242,33 +389,36 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
 
 void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interrupt)
 {
-
-  std::mutex controller_mutex;
   size_t step = 0;
+
+  double cycle_s = 0.005; // fallback: 200Hz
+  if(!interfaces_.empty()) cycle_s = interfaces_.begin()->second->dt();
+
+  using Clock = std::chrono::steady_clock;
+  using Duration = std::chrono::duration<double>;
+  auto next_wake = Clock::now();
 
   while(gcontroller_->running)
   {
-    // Synchronize with hardware
-    std::unique_lock lock(controller_mutex);
-    cv_.wait(lock);
+    // Sleep until the next scheduled cycle tick.
+    next_wake += std::chrono::duration_cast<Clock::duration>(Duration(cycle_s));
+    std::this_thread::sleep_until(next_wake);
 
     if(interrupt)
     {
-      std::cout << "controller_run_ interrupted" << std::endl;
       gcontroller_->running = false;
       return;
     }
 
-    for(auto & [robot_name, interface] : interfaces_)
-    {
-      interface->updateSensors();
-    }
+    for(auto & [robot_name, interface] : interfaces_) interface->updateSensors(*gcontroller_);
 
-    if(step % step_size == 0)
-    {
-      gcontroller_->run();
-      // mc_rtc::log::info("main tick");
-    }
+    // Gate controller.run() until every interface has fed its initial sensor
+    // values and called gc.init(), otherwise the Posture task would command
+    // the robot from a default (potentially far) configuration.
+    bool all_ready =
+        std::all_of(interfaces_.begin(), interfaces_.end(), [](const auto & kv) { return kv.second->isInitialized(); });
+
+    if(all_ready && step % step_size == 0) gcontroller_->run();
 
     {
       std::lock_guard<std::mutex> lock(start_mutex_);
@@ -276,10 +426,7 @@ void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interr
     }
     start_cv_.notify_all();
 
-    for(auto & [robot_name, interface] : interfaces_)
-    {
-      interface->updateControl();
-    }
+    for(auto & [robot_name, interface] : interfaces_) interface->updateControl(*gcontroller_);
     step++;
   }
 }

@@ -3,14 +3,20 @@
 #include <mc_control/mc_global_controller.h>
 #include <mc_rtc/Configuration.h>
 
-#include <mc_communication/Communication.h>
-#include <mc_communication/CommunicationFactory.h>
-#include <mc_robot_interface/RobotDriver.h>
+#include <robot_comm/Communication.h>
+#include <robot_comm/CommunicationFactory.h>
 
 #include <condition_variable>
 
 namespace mc_robot
 {
+
+enum ControlMode
+{
+  POSITION = 0,
+  VELOCITY,
+  TORQUE
+};
 
 class RobotInterfaceBase
 {
@@ -31,8 +37,15 @@ public:
   virtual void reset() = 0;
   virtual void stop() = 0;
 
-  virtual void updateSensors() = 0;
-  virtual void updateControl() = 0;
+  virtual void updateSensors(mc_control::MCGlobalController & gc) = 0;
+  virtual void updateControl(mc_control::MCGlobalController & gc) = 0;
+
+  // Returns true once the interface has fed initial sensor values into mc_rtc
+  // and called gc.init(). mainThread uses this to gate the first controller.run().
+  [[nodiscard]] virtual bool isInitialized() const
+  {
+    return true;
+  }
 
   /**
    * @brief Method in charge of robot sensors and commands update
@@ -50,7 +63,7 @@ public:
   // TODO: use loadConfig instead of constructor to process
   void loadConfig(const mc_rtc::Configuration & config);
 
-  void setCommunication(std::unique_ptr<mc_communication::Communication> communication)
+  void setCommunication(std::unique_ptr<robot_comm::Communication> communication)
   {
     communication_ = std::move(communication);
   }
@@ -72,7 +85,7 @@ public:
     return buffer_size_;
   }
 
-  [[nodiscard]] mc_communication::Communication & communication()
+  [[nodiscard]] robot_comm::Communication & communication()
   {
     return *communication_;
   }
@@ -89,8 +102,10 @@ private:
   std::vector<double> state_{};
   std::vector<double> command_{};
 
-  // TODO: control mode ?
-  std::unique_ptr<mc_communication::Communication> communication_{};
+  std::unique_ptr<robot_comm::Communication> communication_{};
+
+protected:
+  ControlMode control_mode_ = POSITION;
 };
 
 } // namespace mc_robot

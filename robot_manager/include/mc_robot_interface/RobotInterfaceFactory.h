@@ -1,8 +1,8 @@
 #pragma once
 
-#include <mc_communication/CommunicationFactory.h>
 #include <mc_rtc/Configuration.h>
 #include <mc_robot_interface/RobotInterfaceBase.h>
+#include <robot_comm/CommunicationFactory.h>
 #include <string>
 
 namespace mc_robot

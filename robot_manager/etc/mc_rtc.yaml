@@ -1,41 +1,66 @@
-# MainRobot: UR5e
+MainRobot: UR5e
 Enabled: Posture
-Timestep: 0.5
+Timestep: 0.005
 
 LogPolicy : threaded
 
 # used to override system default for all robots
 Default:
   module: default_module
-  control_mode: position # velocity or torque [optional] default to POSITION
-  driver: default_driver # [optional] default to driver defined in module
-  time_step: 0.05       # [optional] default to controller frequency (Hz)
-  communication_protocol: tcp  # [optional] default to tcp
+  control_mode: position   # velocity or torque [optional] default to position
+  driver: RobotDriverRTDE   # [optional] default to driver defined in module
+  time_step: 0.00025          # [optional] default to controller frequency (Hz)
+  network_interface: tcp   # [optional] default to tcp
 
 Robots:
-  panda1:
-    module: panda_default
-    # visual: Sphere # TODO: what is this for ?
-    init_pos: # [optional] default to all zeros
-      translation: [0.70, 0.5, 0.0]
-      rotation: [0.0, 0.0, 1.57]
-    controller:
-      mode: velocity
-      driver: default
-      time_step: 0.002
-    communication:
-      protocol: tcp
-      ip: 192.168.1.2
-      port: 45000
+  # panda1:
+  #   module: panda_default
+  #   init_pos: # [optional] default to all zeros
+  #     translation: [0.70, 0.5, 0.0]
+  #     rotation: [0.0, 0.0, 1.57]
+  #   controller:
+  #     mode: velocity
+  #     time_step: 0.002
+  #   network_interface:
+  #     protocol: zenoh
+  #   robot_interface:
+  #     driver: RobotDriverRTDE
+  #     ip: 192.168.1.2
+  #     port: 30004        # RTDE port on UR controller
+  #     control_mode: position
 
-  panda2:
-    base: panda1
-    init_pos:
-      translation: [0.0, 1.5, 0.0]
+  # panda2:
+  #   base: panda1
+  #   init_pos:
+  #     translation: [0.0, 1.5, 0.0]
+  #   robot_interface:
+  #     driver: RobotDriverRTDE
+  #     ip: 192.168.1.3
+  #     port: 30004
 
-  local_robot:
-    module: interface_template
-    communication:
-      protocol: zenoh/shm
-      ip: /workspace/sandbox/mc_robot_manager/
-      port: 100
+  ur5e:
+    module: UR5e            # mc_rtc RobotModule name (as installed by mc_ur5e)
+    interface: interface_template   # [optional] manager-side interface implementation, default to interface_template
+    # protocol left unset: robot_interface.autostart below defaults it to zenoh/shm
+    network_interface:
+      protocol: zenoh
+    robot_interface:
+      driver: RobotDriverRTDE
+      control_mode: position
+      ip: 150.18.227.205
+      # port: 0
+      # Set to true when this robot is directly plugged into the control
+      # computer (no separate robot-side PC): MCFleetControl will spawn and
+      # manage the RobotInterface process itself, so it no longer needs to
+      # be started manually before running MCFleetControl.
+      autostart: true
+
+  # local_robot1:
+  #   module: UR5e            # mc_rtc RobotModule name (as installed by mc_ur5e)
+  #   interface: interface_template   # [optional] manager-side interface implementation, default to interface_template
+  #   network_interface:
+  #     protocol: zenoh
+  #   robot_interface:
+  #     driver: DummyDriver
+  #     ip: 127.0.0.1
+  #     port: 0

@@ -10,14 +10,15 @@ std::unique_ptr<RobotInterfaceBase> RobotInterfaceFactory::makeInterface(const s
                                                                          const uint8_t & buffer_size)
 {
   mc_rtc::log::success("makeInterface start");
-  const std::string module = config("module");
+  // "interface" selects the manager-side RobotInterfaceBase implementation.
+  const std::string interface_type = config("interface", std::string{"interface_template"});
 
-  if(module == "interface_template")
+  if(interface_type == "interface_template")
   {
     return std::make_unique<mc_interface_template::FMInterfaceTemplate>(name, config, buffer_size);
   }
 
-  mc_rtc::log::error("Robot module {} is not supported", module);
+  mc_rtc::log::error("Robot interface type {} is not supported", interface_type);
   return nullptr;
 }
 
