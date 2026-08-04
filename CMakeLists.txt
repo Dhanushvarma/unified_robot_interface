@@ -11,8 +11,7 @@ project(
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_subdirectory(mc_communication)
+add_subdirectory(robot_comm)
 add_subdirectory(robot_interface)
 
-# add_subdirectory(robot_manager)
-# add_subdirectory(local_robot)
+add_subdirectory(robot_manager)

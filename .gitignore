@@ -1,8 +1,8 @@
 .cache
 .vscode
 build
+install
+
+graphify-out
 
 compile_commands.json
-
-# FlatBuffers generated files
-*generated.h
