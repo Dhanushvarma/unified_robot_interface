@@ -1,0 +1,42 @@
+{
+  "name": "mc_rtc_interface",
+
+  // Published by .github/workflows/devcontainer-image.yaml on every push to
+  // main that touches .devcontainer/**. To build locally instead (e.g. while
+  // iterating on the Dockerfile), replace this with:
+    "build": { "dockerfile": "Dockerfile" },
+  // "image": "ghcr.io/thomasduvinage/mc_rtc_interface-devcontainer:latest",
+
+  // Persist the mc-rtc-superbuild checkout and its build/install output
+  // across container rebuilds, so rebuilding this devcontainer image doesn't
+  // force a multi-hour mc_rtc rebuild every time.
+  "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/mc_rtc_interface/superbuild,target=/home/vscode/superbuild,type=bind",
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/mc_rtc_interface/workspace,target=/home/vscode/workspace,type=bind",
+    // Forward your git identity: mc-rtc-superbuild creates a meta-repository
+    // with submodules and needs user.name/user.email to be set.
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/vscode/.gitconfig,type=bind"
+  ],
+
+  "runArgs": [
+    "--cap-add=sys_nice",
+    "--security-opt", "seccomp=unconfined"
+  ],
+
+  "remoteUser": "vscode",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/mc_rtc_interface,type=bind",
+  "workspaceFolder": "/home/vscode/mc_rtc_interface",
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "twxs.cmake",
+        "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack"
+      ]
+    }
+  }
+}
