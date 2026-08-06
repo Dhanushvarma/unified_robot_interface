@@ -1,5 +1,12 @@
 #pragma once
 
+#include <robot_comm/Publisher.h>
+#include <robot_comm/Subscriber.h>
+#include <robot_comm/serialization/Serializer.h>
+#include <robot_comm/transport/TransportInterface.h>
+
+#include <mc_rtc/Configuration.h>
+
 #include <atomic>
 #include <chrono>
 #include <memory>
@@ -8,13 +15,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include <mc_rtc/Configuration.h>
-
-#include <robot_comm/Publisher.h>
-#include <robot_comm/Subscriber.h>
-#include <robot_comm/serialization/Serializer.h>
-#include <robot_comm/transport/TransportInterface.h>
 
 namespace robot_comm
 {
@@ -43,6 +43,12 @@ public:
 
   template<typename T, typename Callback>
   std::shared_ptr<Subscriber<T>> subscribe(const std::string & topic, Callback && cb);
+
+  template<typename T, typename Handler>
+  void registerQueryable(const std::string & topic, Handler && handler);
+
+  template<typename T>
+  std::optional<T> query(const std::string & topic, std::chrono::milliseconds timeout = std::chrono::seconds(1));
 
   void dispatch(const std::string & topic, const ByteBuffer & payload);
 

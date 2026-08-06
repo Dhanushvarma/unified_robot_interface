@@ -40,6 +40,11 @@ public:
     return *gcontroller_;
   }
 
+  [[nodiscard]] const auto & interfaces()
+  {
+    return interfaces_;
+  }
+
   void notify()
   {
     cv_.notify_one();

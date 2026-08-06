@@ -1,9 +1,6 @@
 #include <mc_rtc/logging.h>
 #include <mc_robot_manager/RobotManager.h>
 
-#include <boost/program_options.hpp>
-namespace po = boost::program_options;
-
 // Resolve redefinition conflict with pthread.h
 #define sched_param linux_sched_param // NOLINT(readability-identifier-naming)
 #include <linux/sched.h>
@@ -14,9 +11,7 @@ namespace po = boost::program_options;
 #include <cerrno>
 #include <csignal>
 #include <cstdint>
-#include <cstdio>
 #include <cstdlib>
-#include <string>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <syscall.h>
@@ -30,6 +25,7 @@ int schedSetattr(pid_t pid, const struct sched_attr * attr, unsigned int flags)
 namespace
 {
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+// Use atomic to precent cached reading
 std::atomic<bool> interrupt{false};
 } // namespace
 
@@ -62,12 +58,15 @@ int main(int argc, char * argv[])
   }
 
   /* Initialize callback (non real-time yet) */
-  void * robot_manager = mc_fleet::init(argc, argv, cycle_ns, interrupt);
-  if(robot_manager == nullptr)
+  void * raw = mc_fleet::init(argc, argv, cycle_ns, interrupt);
+  if(raw == nullptr)
   {
     mc_rtc::log::error("Initialization failed");
     return -2;
   }
+
+  // Automatically free data if schedSetattr fails
+  std::unique_ptr<mc_fleet::RobotManager> robot_manager{static_cast<mc_fleet::RobotManager *>(raw)};
 
   /* Time reservation */
   struct sched_attr attr = {};
@@ -82,11 +81,11 @@ int main(int argc, char * argv[])
   if(schedSetattr(0, &attr, 0) < 0)
   {
     mc_rtc::log::error("schedSetattr failed");
-    return -2;
+    // return -2;
   }
 
   /* Run */
-  mc_fleet::run(robot_manager, interrupt);
+  mc_fleet::run(robot_manager.get(), interrupt);
 
   return 0;
 }

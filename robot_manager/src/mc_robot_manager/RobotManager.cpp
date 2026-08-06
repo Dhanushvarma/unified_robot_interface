@@ -1,6 +1,7 @@
-#include <mc_rtc/logging.h>
 #include <mc_robot_manager/RobotManager.h>
 #include <robot_comm/CommunicationZenoh.h>
+
+#include <mc_rtc/logging.h>
 
 #include <algorithm>
 #include <array>
@@ -36,12 +37,13 @@ std::filesystem::path selfDir()
 
 RobotManager::RobotManager() : gconfig_(mc_rtc::Configuration{}) {};
 
-RobotManager::RobotManager(mc_control::MCGlobalController::GlobalConfiguration & gconfig,
-                           const std::atomic<bool> & interrupt)
-: gconfig_(gconfig)
+RobotManager::RobotManager(const std::string & mc_config_path, const std::atomic<bool> & interrupt)
+: gconfig_(mc_control::MCGlobalController::GlobalConfiguration(mc_config_path))
 {
   processGConfig(gconfig_);
-  gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig);
+  // mc_rtc::log::info(gconfig_.config("Robots").dump(true, true));
+
+  gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig_);
 
   // // Connect to the signal
   // auto & mc_controller = gcontroller_->controller();
@@ -165,7 +167,23 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   mc_rtc::log::success("manager init start");
 
   mc_rtc::Configuration robots_config = gconfig_.config("Robots");
-  mc_rtc::log::info(robots_config.dump(true, true));
+
+  /* Start Zenoh Router if necessary */
+  if(robots_config.dump().find("zenoh") != std::string::npos)
+  {
+    launchZenohRouter();
+  }
+
+  // TODO: delete logging
+  mc_rtc::log::warning("[SERVER] robots_config keys:");
+  for(auto & robot_name : robots_config.keys())
+  {
+    mc_rtc::log::warning("  {} → protocol={}, config file={}", robot_name,
+                         robots_config(robot_name)("network_interface")("protocol").operator std::string(),
+                         robots_config(robot_name)("network_interface").has("configuration")
+                             ? robots_config(robot_name)("network_interface")("configuration").operator std::string()
+                             : std::string("(none)"));
+  }
 
   /* Set up robot interface and communication*/
   for(auto & robot_name : robots_config.keys())
@@ -191,6 +209,17 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
     {
       continue;
     }
+
+    /* Register config queryable */
+    interface->registerQueryable<std::string>(robot_name + "/config",
+                                              [robot_name, robot_config]() -> std::string
+                                              {
+                                                mc_rtc::log::info("Sent config to {}", robot_name);
+                                                return robot_config.dump();
+                                              });
+
+    mc_rtc::log::info("ROBOT NAME: {}", robot_name);
+    mc_rtc::log::info("ROBOT CONFIG: {}", robot_config.dump(true, true));
 
     interfaces_.try_emplace(robot_name, std::move(interface));
   }
@@ -241,7 +270,8 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   size_t max_step_size{0};
   for(auto & [robot_name, interface] : interfaces_)
   {
-    double cycle_s = interface->dt();
+    // double cycle_s = interface->dt();
+    double cycle_s = 0.005;
     auto cycle_ns = static_cast<size_t>(cycle_s * 1e9);
     auto controller_ns = static_cast<size_t>(controller_s * 1e9);
     if(controller_ns < cycle_ns)
@@ -272,7 +302,17 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 
   mc_rtc::log::info("[mc_fleet] mc_rtc will compute commands every {} robot control step", max_step_size);
 
+  /* Launch mc_local if necessary */
+  for(auto & robot_name : robots_config.keys())
+  {
+    if(robots_config(robot_name).has("launch"))
+    {
+      launchLocalRobot(robot_name);
+    }
+  }
+
   auto & robots = gcontroller_->controller().robots();
+
   /* Initialize all real robots */
   for(size_t i = gcontroller_->realRobots().size(); i < robots.size(); ++i)
   {
@@ -288,13 +328,52 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
     threads_.emplace_back(
         [&, this, interface_ptr]()
         {
-          interface_ptr->controlThread(*gcontroller_, start_mutex_, start_cv_, start_control_, gcontroller_->running);
+          /* controlThread() */
         });
   }
 
   main_thread_ = std::make_unique<std::thread>(&RobotManager::mainThread, this, max_step_size, std::ref(interrupt));
 
   mc_rtc::log::info("manager init done");
+}
+
+void RobotManager::launchZenohRouter()
+{
+  if(zenoh_router_) return;
+
+  mc_rtc::log::info("[mc_fleet] launchZenohRouter start");
+
+  zenoh::Config config =
+      zenoh::Config::from_file("/home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/router.json5");
+
+  zenoh_router_ = std::make_unique<zenoh::Session>(zenoh::Session::open(std::move(config)));
+
+  // Let the router fully start before clients try to connect
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  mc_rtc::log::success("[mc_fleet] launchZenohRouter done");
+}
+
+void RobotManager::launchLocalRobot(const std::string & robot_name)
+{
+  pid_t pid = fork();
+
+  if(pid == 0)
+  {
+    execlp("mc_local", "mc_local", "--robot", robot_name.c_str(), nullptr);
+
+    perror("execlp");
+    std::exit(EXIT_FAILURE);
+  }
+
+  if(pid < 0)
+  {
+    mc_rtc::log::error_and_throw("Failed to launch mc_local");
+  }
+
+  local_robot_pids_[robot_name] = pid;
+
+  mc_rtc::log::success("Started mc_local {} [{}]", robot_name, pid);
 }
 
 void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig)
@@ -307,14 +386,15 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
 
   mc_rtc::log::info("manager processGConfig 1");
 
+  // Extract default value
   if(gconfig.config.has("Default"))
   {
     mc_rtc::Configuration dc = gconfig.config("Default");
     user_default_.module = dc("module", std::string(user_default_.module));
-    user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
+    user_default_.communication_protocol = dc("network_interface", std::string(user_default_.communication_protocol));
     user_default_.driver = dc("driver", std::string(user_default_.driver));
     user_default_.time_step = dc("time_step", double(user_default_.time_step));
-    user_default_.communication_protocol = dc("network_interface", std::string(user_default_.communication_protocol));
+    user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
   }
 
   mc_rtc::log::info("manager processGConfig 2");
@@ -324,10 +404,15 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
   {
     mc_rtc::Configuration robot_config{gconfig.config("Robots")(robot_name)};
 
+    // Copy config setting from a previous robot
     if(robot_config.has("base"))
     {
       mc_rtc::Configuration base_config{};
       base_config.load(robots_config(robot_config("base")));
+      if(base_config.has("launch"))
+      {
+        base_config.remove("launch");
+      }
       base_config.load(robot_config);
       robot_config.load(base_config);
     }
@@ -337,7 +422,7 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
       robot_config.add("module", user_default_.module);
     }
 
-    if(!robot_config.has("controller"))
+    if(robot_config.has("network_interface"))
     {
       robot_config.add("controller");
       robot_config("controller").add("mode", user_default_.control_mode);

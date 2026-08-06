@@ -4,6 +4,7 @@
 
 #include <condition_variable>
 #include <filesystem>
+#include <thread>
 #include <utility>
 
 namespace fs = std::filesystem;
@@ -17,6 +18,7 @@ zenoh::Config ZenohTransport::configureTransport(const mc_rtc::Configuration & c
 
   const std::string protocol = config("protocol");
 
+  // TODO: consider give user warning instead of modifying zenoh_config
   if(protocol == "zenoh/shm")
   {
     zenoh_config.insert_json5("transport/shared_memory/enabled", "true");
@@ -60,6 +62,7 @@ void ZenohTransport::stop()
 {
   subscribers_.clear();
   publishers_.clear();
+  queryables_.clear();
 
   mc_rtc::log::info("[ZenohTransport] Stopped");
 }

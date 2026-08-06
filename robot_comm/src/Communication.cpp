@@ -1,7 +1,10 @@
 #include <robot_comm/Communication.h>
 
 #include <robot_comm/serialization/FlatbufferSerializer.h>
-#include <robot_comm/serialization/ProtobufSerializer.h>
+
+#ifdef WITH_PROTOBUF
+#  include <robot_comm/serialization/ProtobufSerializer.h>
+#endif
 
 #include <mc_rtc/logging.h>
 
@@ -24,11 +27,13 @@ Communication::Communication(std::string name, const mc_rtc::Configuration & con
       break;
     }
 
+#ifdef WITH_PROTOBUF
     case SerializationBackend::Protobuf:
     {
       serializer_ = std::make_shared<ProtobufSerializer>();
       break;
     }
+#endif
 
     default:
     {
