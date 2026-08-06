@@ -1,2 +1,0 @@
-protocol: zenoh/shm
-configuration: /home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/client.json5

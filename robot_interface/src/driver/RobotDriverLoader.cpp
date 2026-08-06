@@ -1,0 +1,37 @@
+#include <mc_rtc/loader.h>
+#include <robot_interface/driver/RobotDriverLoader.h>
+
+#include <robot_interface/config.h>
+
+namespace mc_robot_interface
+{
+void RobotDriverLoader::init(bool skip_default_path)
+{
+  if(!robot_driver_loader_)
+  {
+    try
+    {
+      std::vector<std::string> default_path = {};
+      if(!skip_default_path)
+      {
+        default_path.push_back(MC_ROBOT_INTERFACE_INSTALL_PREFIX);
+      }
+      robot_driver_loader_.reset(new mc_rtc::ObjectLoader<RobotDriver>("MC_RTC_ROBOT_DRIVER", default_path, verbose_));
+      // TODO consider aliases if needed
+    }
+    catch(const mc_rtc::LoaderException & e)
+    {
+      mc_rtc::log::error("Failed to initialize RobotDriver : {}", e.what());
+      throw(e);
+    }
+  }
+}
+
+std::vector<std::string> RobotDriverLoader::available_interfaces()
+{
+  std::lock_guard<std::recursive_mutex> guard{mtx};
+  init();
+  auto ret = robot_driver_loader_->objects();
+  return ret;
+}
+} // namespace mc_robot_interface

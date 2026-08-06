@@ -1,6 +1,9 @@
 .cache
 .vscode
 build
+install
+
+graphify-out
 
 compile_commands.json
 *log.json

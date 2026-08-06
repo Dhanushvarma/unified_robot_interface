@@ -1,0 +1,5 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/mc_robot_interfaceTargets.cmake")
+
+check_required_components(mc_robot_interface)

@@ -1,5 +1,0 @@
-robot2:
-  protocol: zenoh/shm
-  configuration: /home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/client.json5
-  ip: 192.168.0.1
-  port: 100

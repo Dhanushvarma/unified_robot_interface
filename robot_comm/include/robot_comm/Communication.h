@@ -1,0 +1,186 @@
+#pragma once
+
+#include <robot_comm/Publisher.h>
+#include <robot_comm/Subscriber.h>
+#include <robot_comm/serialization/Serializer.h>
+#include <robot_comm/transport/TransportInterface.h>
+
+#include <mc_rtc/Configuration.h>
+
+#include <atomic>
+#include <chrono>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+namespace robot_comm
+{
+
+class Communication
+{
+public:
+  Communication(std::string name,
+                const mc_rtc::Configuration & config,
+                SerializationBackend backend = SerializationBackend::Flatbuffer);
+
+  virtual ~Communication();
+
+  void start();
+  void stop();
+
+  // -------------------------------------------------------
+  // Typed pub/sub
+  // -------------------------------------------------------
+
+  template<typename T>
+  bool publish(const std::string & topic, const T & msg);
+
+  template<typename T>
+  std::shared_ptr<Publisher<T>> createPublisher(const std::string & topic);
+
+  template<typename T, typename Callback>
+  std::shared_ptr<Subscriber<T>> subscribe(const std::string & topic, Callback && cb);
+
+  template<typename T, typename Handler>
+  void registerQueryable(const std::string & topic, Handler && handler);
+
+  template<typename T>
+  std::optional<T> query(const std::string & topic, std::chrono::milliseconds timeout = std::chrono::seconds(1));
+
+  void dispatch(const std::string & topic, const ByteBuffer & payload);
+
+  // -------------------------------------------------------
+  // Query / reply
+  // -------------------------------------------------------
+
+  // Register a synchronous query handler on this communication object.
+  void handleQuery(const std::string & topic, QueryHandler handler);
+
+  // Send a blocking query; returns reply payload or nullopt on timeout.
+  std::optional<ByteBuffer> query(const std::string & topic,
+                                  const ByteBuffer & payload,
+                                  std::chrono::milliseconds timeout = std::chrono::seconds(5));
+
+  // -------------------------------------------------------
+  // Convenience send / receive (role-based)
+  // Uses fixed topics: {name}/state and {name}/command.
+  // Call setupServer() or setupClient() once before use.
+  // -------------------------------------------------------
+
+  void setupServer(); // RobotManager side
+  void setupClient(); // robot_interface side
+
+  template<typename T>
+  ByteBuffer encode(const T & msg);
+
+  // Publish to the role's TX topic.
+  bool send(const ByteBuffer & buffer);
+
+  // Return the latest buffer received on the role's RX topic (non-blocking).
+  // Returns nullopt on error, empty ByteBuffer if no new data yet.
+  std::optional<ByteBuffer> receive();
+
+  // -------------------------------------------------------
+  // Accessors
+  // -------------------------------------------------------
+
+  inline std::shared_ptr<ISerializer> serializer() const
+  {
+    return serializer_;
+  }
+
+protected:
+  mc_rtc::Configuration parseConfig(const mc_rtc::Configuration & config);
+
+  SerializationBackend backendFromString(const std::string & backend);
+
+  Protocol protocolFromString(const std::string & protocol);
+
+protected:
+  std::string name_;
+
+  std::shared_ptr<ISerializer> serializer_;
+
+  std::shared_ptr<TransportInterface> transport_;
+
+  std::unordered_map<std::string, std::vector<std::shared_ptr<SubscriberBase>>> subscribers_;
+
+  mutable std::mutex mutex_;
+
+  std::atomic<bool> running_ = false;
+
+private:
+  // Role-based send/receive state
+  std::string tx_topic_;
+  std::string rx_topic_;
+  std::optional<ByteBuffer> latest_rx_;
+  std::mutex rx_mutex_;
+  std::shared_ptr<SubscriberBase> rx_subscriber_;
+};
+
+///------------------------------------------------------------
+/// Typed publish
+///------------------------------------------------------------
+
+template<typename T>
+bool Communication::publish(const std::string & topic, const T & msg)
+{
+  auto payload = serializer_->serialize(msg);
+
+  return transport_->publish(topic, payload);
+}
+
+///------------------------------------------------------------
+/// Publisher creation
+///------------------------------------------------------------
+
+template<typename T>
+std::shared_ptr<Publisher<T>> Communication::createPublisher(const std::string & topic)
+{
+  return std::make_shared<Publisher<T>>(*this, topic);
+}
+
+///------------------------------------------------------------
+/// Subscriber creation
+///------------------------------------------------------------
+
+template<typename T, typename Callback>
+std::shared_ptr<Subscriber<T>> Communication::subscribe(const std::string & topic, Callback && cb)
+{
+  auto subscriber = std::make_shared<Subscriber<T>>(topic, serializer_, std::forward<Callback>(cb));
+
+  bool create_transport_subscription = false;
+
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    auto & subscribers = subscribers_[topic];
+
+    create_transport_subscription = subscribers.empty();
+
+    subscribers.push_back(subscriber);
+  }
+
+  if(create_transport_subscription)
+  {
+    transport_->subscribe(topic,
+                          [this](const std::string & topic, const ByteBuffer & payload) { dispatch(topic, payload); });
+  }
+
+  return subscriber;
+}
+
+///------------------------------------------------------------
+/// Encode convenience
+///------------------------------------------------------------
+
+template<typename T>
+ByteBuffer Communication::encode(const T & msg)
+{
+  return serializer_->serialize(msg);
+}
+
+} // namespace robot_comm
