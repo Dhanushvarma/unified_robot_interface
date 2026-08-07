@@ -1,6 +1,10 @@
 #include <robot_comm/SubscriberBase.h>
 #include <robot_comm/serialization/Serializer.h>
 
+#include <functional>
+#include <memory>
+#include <string>
+
 namespace robot_comm
 {
 template<typename T>

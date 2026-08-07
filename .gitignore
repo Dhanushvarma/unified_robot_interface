@@ -6,3 +6,8 @@ install
 graphify-out
 
 compile_commands.json
+*log.json
+
+# FlatBuffers/Protobuf generated files
+*generated.h
+*.pb.*

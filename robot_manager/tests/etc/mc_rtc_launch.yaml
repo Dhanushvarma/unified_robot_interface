@@ -1,0 +1,24 @@
+MainRobot: JVRC1
+Enabled: Posture
+Timestep: 0.5
+
+LogPolicy : threaded
+
+# used to override system default for all robots
+Default:
+  module: default_module
+  control_mode: position # velocity or torque [optional] default to POSITION
+  driver: default_driver # [optional] default to driver defined in module
+  time_step: 0.05       # [optional] default to controller frequency (Hz)
+  communication_protocol: tcp  # [optional] default to tcp
+
+Robots:
+  robot1:
+    launch: true
+    module: interface_template
+    network_interface:
+      protocol: zenoh/shm
+      configuration: "/home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/client.json5"
+      backend: flatbuffer
+      ip: 192.168.0.1
+      port: 101

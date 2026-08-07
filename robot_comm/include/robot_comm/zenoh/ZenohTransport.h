@@ -1,6 +1,8 @@
 #pragma once
 
+#include <chrono>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -37,7 +39,6 @@ public:
 private:
   zenoh::Config configureTransport(const mc_rtc::Configuration & config);
 
-private:
   std::unique_ptr<zenoh::Session> session_;
 
   std::unordered_map<std::string, zenoh::Publisher> publishers_;
