@@ -13,20 +13,21 @@ set(CMAKE_CXX_STANDARD 17)
 # set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-enable_testing()
+# enable_testing()
 
 option(BUILD_TESTING "Build tests" OFF)
 
 # Dependencies
 find_package(mc_robot_interface REQUIRED)
 find_package(ur_client_library REQUIRED)
+find_package(fmt REQUIRED)
 
 # Add Subdirectories
 add_subdirectory(src)
 
-# Optional Testing
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-endif()
+# # Optional Testing
+# if(BUILD_TESTING)
+#   add_subdirectory(tests)
+# endif()
 
 install(DIRECTORY include/ DESTINATION include)

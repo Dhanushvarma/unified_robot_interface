@@ -9,6 +9,6 @@ target_include_directories(
 target_link_libraries(
   RobotDriverRTDE PUBLIC mc_robot_interface::robot_driver_api
 )
-target_link_libraries(RobotDriverRTDE PRIVATE ur_client_library::urcl)
+target_link_libraries(RobotDriverRTDE PRIVATE ur_client_library::urcl fmt::fmt)
 
 install(TARGETS RobotDriverRTDE LIBRARY DESTINATION lib/robot_interface)
