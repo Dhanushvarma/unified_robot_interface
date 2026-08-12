@@ -1,8 +1,8 @@
+#include <mc_robot_manager/Logging.h>
 #include <mc_robot_manager/RobotManager.h>
 
 #include <mc_control/Configuration.h>
 #include <mc_control/mc_global_controller.h>
-#include <mc_rtc/logging.h>
 // #include "zenoh.hxx"
 
 #include <boost/program_options.hpp>
@@ -16,7 +16,7 @@ namespace mc_fleet
 
 void run(void * data, const std::atomic<bool> & interrupt)
 {
-  mc_rtc::log::success("fleet run start");
+  log::info("fleet run start");
   auto * robot_manager = static_cast<RobotManager *>(data);
   mc_control::MCGlobalController & gcontroller{robot_manager->gcontroller()};
 
@@ -26,12 +26,12 @@ void run(void * data, const std::atomic<bool> & interrupt)
     sched_yield();
   }
 
-  mc_rtc::log::info("fleet run done");
+  log::info("fleet run done");
 }
 
 void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool> & interrupt)
 {
-  mc_rtc::log::success("fleet init start");
+  log::info("fleet init start");
 
   std::string mc_config_path;
   std::string com_config_path;
@@ -53,13 +53,13 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
     std::exit(0);
   }
 
-  mc_rtc::log::info("mc_fleet::init 2");
+  log::info("mc_fleet::init 2");
 
   /* Initialize robot manager */
   std::unique_ptr<RobotManager> robot_manager;
   robot_manager = std::make_unique<RobotManager>(mc_config_path, interrupt);
 
-  mc_rtc::log::info("fleet init done");
+  log::info("fleet init done");
 
   return robot_manager.release();
 }

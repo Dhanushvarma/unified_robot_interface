@@ -1,7 +1,6 @@
+#include <mc_robot_manager/Logging.h>
 #include <mc_robot_manager/RobotManager.h>
 #include <robot_comm/CommunicationZenoh.h>
-
-#include <mc_rtc/logging.h>
 
 #include <algorithm>
 #include <array>
@@ -24,6 +23,7 @@ namespace mc_fleet
 
 namespace
 {
+
 // Directory containing the currently running MCFleetControl executable, so the
 // co-located RobotInterface binary can be found without relying on PATH.
 std::filesystem::path selfDir()
@@ -33,6 +33,7 @@ std::filesystem::path selfDir()
   if(ec) return {};
   return exe.parent_path();
 }
+
 } // namespace
 
 RobotManager::RobotManager() : gconfig_(mc_rtc::Configuration{}) {};
@@ -41,7 +42,7 @@ RobotManager::RobotManager(const std::string & mc_config_path, const std::atomic
 : gconfig_(mc_control::MCGlobalController::GlobalConfiguration(mc_config_path))
 {
   processGConfig(gconfig_);
-  // mc_rtc::log::info(gconfig_.config("Robots").dump(true, true));
+  // log::info(gconfig_.config("Robots").dump(true, true));
 
   gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig_);
 
@@ -52,7 +53,7 @@ RobotManager::RobotManager(const std::string & mc_config_path, const std::atomic
   //     {
   //       std::lock_guard<std::mutex> lock(replace_mutex_);
   //       replace_queue_.push({old_robot_name, new_robot_name});
-  //       mc_rtc::log::info("[mc_rtde] Signal caught: Request switching from {} to {}", old_robot_name,
+  //       log::info("[mc_rtde] Signal caught: Request switching from {} to {}", old_robot_name,
   //       new_robot_name);
   //     });
 
@@ -86,7 +87,7 @@ RobotManager::~RobotManager()
 
   stopSpawnedInterfaces();
 
-  mc_rtc::log::info("RobotManager shutdown complete.");
+  log::info("RobotManager shutdown complete.");
 }
 
 bool RobotManager::autostartEnabled(const mc_rtc::Configuration & robot_config)
@@ -112,7 +113,7 @@ pid_t RobotManager::spawnRobotInterface(const std::string & robot_name, const mc
     bin_path = "RobotInterface"; // fall back to PATH lookup
   }
 
-  mc_rtc::log::info("[mc_fleet] Spawning co-located robot_interface for '{}' ({})", robot_name, bin_path.string());
+  log::info("[mc_fleet] Spawning co-located robot_interface for '", robot_name, "' (", bin_path.string(), ")");
 
   // posix_spawn (rather than fork()+exec()) avoids duplicating this process's
   // other threads (GUI server, ROS, ...) into the child: fork() in a
@@ -130,8 +131,8 @@ pid_t RobotManager::spawnRobotInterface(const std::string & robot_name, const mc
   int err = posix_spawnp(&pid, bin_path_str.c_str(), nullptr, nullptr, argv.data(), environ);
   if(err != 0)
   {
-    mc_rtc::log::error("[mc_fleet] posix_spawn failed while spawning robot_interface for '{}': {}", robot_name,
-                       std::strerror(err));
+    log::error("[mc_fleet] posix_spawn failed while spawning robot_interface for '", robot_name,
+               "': ", std::strerror(err));
     return -1;
   }
 
@@ -154,7 +155,7 @@ void RobotManager::stopSpawnedInterfaces()
 
     if(waitpid(pid, &status, WNOHANG) == 0)
     {
-      mc_rtc::log::warning("[mc_fleet] robot_interface '{}' (pid {}) did not exit, sending SIGKILL", robot_name, pid);
+      log::warning("[mc_fleet] robot_interface '", robot_name, "' (pid ", pid, ") did not exit, sending SIGKILL");
       kill(pid, SIGKILL);
       waitpid(pid, &status, 0);
     }
@@ -164,7 +165,7 @@ void RobotManager::stopSpawnedInterfaces()
 
 void RobotManager::init(const std::atomic<bool> & interrupt)
 {
-  mc_rtc::log::success("manager init start");
+  log::info("manager init start");
 
   mc_rtc::Configuration robots_config = gconfig_.config("Robots");
 
@@ -177,11 +178,11 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   /* Set up robot interface and communication*/
   for(auto & robot_name : robots_config.keys())
   {
-    mc_rtc::log::info("manager init robot {}", robot_name);
+    log::info("manager init robot ", robot_name);
 
     if(interfaces_.count(robot_name) != 0)
     {
-      mc_rtc::log::error("Skip already exists robot interface {}", robot_name);
+      log::error("Skip already exists robot interface ", robot_name);
       continue;
     }
 
@@ -206,7 +207,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   std::vector<std::string> failed_robots;
   for(auto & [robot_name, interface] : interfaces_)
   {
-    mc_rtc::log::info("[mc_fleet] Querying robot_interface '{}' (waiting up to 10 s)…", robot_name);
+    log::info("[mc_fleet] Querying robot_interface '", robot_name, "' (waiting up to 10 s)…");
 
     const std::string init_topic = robot_name + "/init";
     auto config_payload = interface->communication().serializer()->serialize(interface->config().dump());
@@ -215,9 +216,9 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 
     if(!reply)
     {
-      mc_rtc::log::error("[mc_fleet] Init query to robot_interface '{}' timed out — "
-                         "is the process running? Skipping this robot.",
-                         robot_name);
+      log::error("[mc_fleet] Init query to robot_interface '", robot_name,
+                 "' timed out — "
+                 "is the process running? Skipping this robot.");
       failed_robots.push_back(robot_name);
       continue;
     }
@@ -225,12 +226,12 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
     const std::string reply_str(reply->begin(), reply->end());
     if(reply_str != "OK")
     {
-      mc_rtc::log::error("[mc_fleet] Robot '{}' init failed: {} — skipping.", robot_name, reply_str);
+      log::error("[mc_fleet] Robot '", robot_name, "' init failed: ", reply_str, " — skipping.");
       failed_robots.push_back(robot_name);
       continue;
     }
 
-    mc_rtc::log::success("[mc_fleet] Robot '{}' driver loaded successfully", robot_name);
+    log::info("[mc_fleet] Robot '", robot_name, "' driver loaded successfully");
   }
 
   for(const auto & name : failed_robots)
@@ -240,7 +241,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 
   if(interfaces_.empty())
   {
-    mc_rtc::log::error_and_throw("[mc_fleet] No robot_interface responded — cannot start controller.");
+    log::errorAndThrow("[mc_fleet] No robot_interface responded — cannot start controller.");
   }
 
   /* Check timestep compatifibility between mc_rtc and robot */
@@ -254,23 +255,21 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
     auto controller_ns = static_cast<size_t>(controller_s * 1e9);
     if(controller_ns < cycle_ns)
     {
-      mc_rtc::log::error_and_throw(
-          "[mc_fleet] mc_rtc cannot run faster than the robot's control frequency (RobotTimeStep= {}s, Timestep={}s)",
-          cycle_s, controller_s);
+      log::errorAndThrow("[mc_fleet] mc_rtc cannot run faster than the robot's control frequency (RobotTimeStep= ",
+                         cycle_s, "s, Timestep=", controller_s, "s)");
     }
 
     if(controller_ns % cycle_ns != 0)
     {
-      mc_rtc::log::error_and_throw(
-          "[mc_fleet] mc_rtc timestep must be a multiple of the robot's control loop frequency "
-          "(RobotTimeStep= {}s, Timestep={}s)",
-          cycle_s, controller_s);
+      log::errorAndThrow("[mc_fleet] mc_rtc timestep must be a multiple of the robot's control loop frequency "
+                         "(RobotTimeStep= ",
+                         cycle_s, "s, Timestep=", controller_s, "s)");
     }
 
     size_t step_size = controller_ns / cycle_ns;
     size_t freq = std::ceil(1 / controller_s);
     size_t robot_freq = std::ceil(1 / cycle_s);
-    mc_rtc::log::info("[mc_fleet] mc_rtc running at {}Hz, robot running at {}Hz", freq, robot_freq);
+    log::info("[mc_fleet] mc_rtc running at ", freq, "Hz, robot running at ", robot_freq, "Hz");
 
     if(max_step_size < step_size)
     {
@@ -278,7 +277,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
     }
   }
 
-  mc_rtc::log::info("[mc_fleet] mc_rtc will compute commands every {} robot control step", max_step_size);
+  log::info("[mc_fleet] mc_rtc will compute commands every ", max_step_size, "robot control step");
 
   auto & robots = gcontroller_->controller().robots();
 
@@ -303,14 +302,14 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 
   main_thread_ = std::make_unique<std::thread>(&RobotManager::mainThread, this, max_step_size, std::ref(interrupt));
 
-  mc_rtc::log::info("manager init done");
+  log::info("manager init done");
 }
 
 void RobotManager::launchZenohRouter()
 {
   if(zenoh_router_) return;
 
-  mc_rtc::log::info("[mc_fleet] launchZenohRouter start");
+  log::info("[mc_fleet] launchZenohRouter start");
 
   zenoh::Config config =
       zenoh::Config::from_file("/home/vscode/workspace/sandbox/mc_rtc_interface/robot_comm/tests/zenoh/router.json5");
@@ -320,18 +319,17 @@ void RobotManager::launchZenohRouter()
   // Let the router fully start before clients try to connect
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-  mc_rtc::log::success("[mc_fleet] launchZenohRouter done");
+  log::info("[mc_fleet] launchZenohRouter done");
 }
 
 void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig)
 {
   if(!gconfig.config.has("Robots"))
   {
-    mc_rtc::log::error_and_throw<std::runtime_error>(
-        "No `Robots` section in the configuration, see etc/mc_rtc.yaml for an example");
+    log::errorAndThrow("No `Robots` section in the configuration, see etc/mc_rtc.yaml for an example");
   }
 
-  mc_rtc::log::info("manager processGConfig 1");
+  log::info("manager processGConfig 1");
 
   // Extract default value
   if(gconfig.config.has("Default"))
@@ -344,7 +342,7 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
     user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
   }
 
-  mc_rtc::log::info("manager processGConfig 2");
+  log::info("manager processGConfig 2");
 
   mc_rtc::Configuration robots_config = gconfig.config("Robots");
   for(auto & robot_name : robots_config.keys())
@@ -408,11 +406,11 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
     }
     else
     {
-      mc_rtc::log::error_and_throw("No `network_interface` section in the configuration of robot {}", robot_name);
+      log::errorAndThrow("No `network_interface` section in the configuration of robot ", robot_name);
     }
   }
 
-  mc_rtc::log::info("manager processGConfig done");
+  log::info("manager processGConfig done");
 }
 
 void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interrupt)

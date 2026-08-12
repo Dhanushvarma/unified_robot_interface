@@ -1,8 +1,8 @@
 #include <mc_robot_interface/FMInterfaceTemplate.h>
+#include <mc_robot_manager/Logging.h>
 #include <robot_comm/CommunicationZenoh.h>
 
 #include <mc_control/mc_global_controller.h>
-#include <mc_rtc/logging.h>
 
 namespace mc_interface_template
 {
@@ -22,18 +22,18 @@ FMInterfaceTemplate::FMInterfaceTemplate(const std::string & name,
                                          uint8_t buffer_size)
 : RobotInterfaceBase(name, config, (buffer_size == 0) ? 6 : buffer_size)
 {
-  mc_rtc::log::success("FMInterfaceTemplate '{}' starting", name);
+  mc_fleet::log::info("FMInterfaceTemplate '{}' starting", name);
 
   const std::string mode = config("controller")("mode", std::string{"position"});
   control_mode_ = parseModeString(mode);
-  mc_rtc::log::info("FMInterfaceTemplate '{}' control mode: {}", name, mode);
+  mc_fleet::log::info("FMInterfaceTemplate '{}' control mode: {}", name, mode);
 
   mc_rtc::Configuration com_config(config("network_interface"));
   auto comm = robot_comm::CommunicationFactory::makeCommunication(name, com_config);
   comm->setupServer();
   setCommunication(std::move(comm));
 
-  mc_rtc::log::info("FMInterfaceTemplate '{}' ready", name);
+  mc_fleet::log::info("FMInterfaceTemplate '{}' ready", name);
 }
 
 void FMInterfaceTemplate::updateSensors(mc_control::MCGlobalController & gc)
@@ -53,7 +53,7 @@ void FMInterfaceTemplate::updateSensors(mc_control::MCGlobalController & gc)
   {
     gc.init(gc.controller().robots().robot(name()).encoderValues());
     gc_initialized_ = true;
-    mc_rtc::log::success("[FMInterfaceTemplate] '{}' controller initialized", name());
+    mc_fleet::log::info("[FMInterfaceTemplate] '{}' controller initialized", name());
   }
 }
 
@@ -85,7 +85,7 @@ void FMInterfaceTemplate::updateControl(mc_control::MCGlobalController & gc)
   }
 
   if(!communication().send(communication().encode(command)))
-    mc_rtc::log::warning("[FMInterfaceTemplate] '{}' failed to send command", name());
+    mc_fleet::log::warning("[FMInterfaceTemplate] '{}' failed to send command", name());
 }
 
 } // namespace mc_interface_template
