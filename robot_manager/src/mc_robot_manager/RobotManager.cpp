@@ -313,7 +313,7 @@ void RobotManager::launchZenohRouter()
   mc_rtc::log::info("[mc_fleet] launchZenohRouter start");
 
   zenoh::Config config =
-      zenoh::Config::from_file("/home/vscode/workspace/sandbox/fleet/mc_communication/tests/zenoh/router.json5");
+      zenoh::Config::from_file("/home/vscode/workspace/sandbox/mc_rtc_interface/robot_comm/tests/zenoh/router.json5");
 
   zenoh_router_ = std::make_unique<zenoh::Session>(zenoh::Session::open(std::move(config)));
 
