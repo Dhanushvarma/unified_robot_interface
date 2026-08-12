@@ -20,7 +20,10 @@
 
   "runArgs": [
     "--cap-add=sys_nice",
-    "--security-opt", "seccomp=unconfined"
+    "--security-opt",
+    "seccomp=unconfined",
+    "--ulimit=rtprio=99:99",
+    "--ulimit=memlock=100000000000:100000000000"
   ],
 
   "remoteUser": "vscode",

@@ -31,7 +31,7 @@ jrl_find_package(FlatBuffers REQUIRED)
 jrl_find_package(mc_rtc REQUIRED) # TODO: remove — used only for logging
 jrl_find_package(zenohc REQUIRED)
 jrl_find_package(zenohcxx REQUIRED)
-jrl_find_package(protobuf QUIET)
+jrl_find_package(Protobuf QUIET)
 
 # ── Flatbuffers code generation ───────────────────────────────────────────────
 flatbuffers_generate_headers(

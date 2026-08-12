@@ -4,11 +4,13 @@
 #include <robot_comm/CommunicationFactory.h>
 
 #include <mc_control/mc_global_controller.h>
+#include <zenoh.hxx>
 
 #include <sys/types.h>
 
 #include <atomic>
 #include <condition_variable>
+#include <memory>
 #include <queue>
 #include <string>
 #include <thread>
@@ -26,7 +28,7 @@ class RobotManager
 public:
   RobotManager();
 
-  RobotManager(mc_control::MCGlobalController::GlobalConfiguration & gconfig, const std::atomic<bool> & interrupt);
+  RobotManager(const std::string & mc_config_path, const std::atomic<bool> & interrupt);
 
   ~RobotManager();
 
@@ -54,6 +56,10 @@ private:
   void init(const std::atomic<bool> & interrupt);
 
   std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
+
+  // TODO: make zenoh router optional
+  void launchZenohRouter();
+  std::unique_ptr<zenoh::Session> zenoh_router_;
 
   std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
 

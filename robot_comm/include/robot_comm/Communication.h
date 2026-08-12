@@ -1,6 +1,5 @@
 #pragma once
 
-#include <robot_comm/Publisher.h>
 #include <robot_comm/Subscriber.h>
 #include <robot_comm/serialization/Serializer.h>
 #include <robot_comm/transport/TransportInterface.h>
@@ -37,9 +36,6 @@ public:
 
   template<typename T>
   bool publish(const std::string & topic, const T & msg);
-
-  template<typename T>
-  std::shared_ptr<Publisher<T>> createPublisher(const std::string & topic);
 
   template<typename T, typename Callback>
   std::shared_ptr<Subscriber<T>> subscribe(const std::string & topic, Callback && cb);
@@ -131,16 +127,6 @@ bool Communication::publish(const std::string & topic, const T & msg)
   auto payload = serializer_->serialize(msg);
 
   return transport_->publish(topic, payload);
-}
-
-///------------------------------------------------------------
-/// Publisher creation
-///------------------------------------------------------------
-
-template<typename T>
-std::shared_ptr<Publisher<T>> Communication::createPublisher(const std::string & topic)
-{
-  return std::make_shared<Publisher<T>>(*this, topic);
 }
 
 ///------------------------------------------------------------

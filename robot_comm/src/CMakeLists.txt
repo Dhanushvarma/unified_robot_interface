@@ -103,13 +103,23 @@ target_include_directories(
                     $<INSTALL_INTERFACE:include>
 )
 
-install(
-  TARGETS robot_comm robot_comm_interface robot_comm_serializer
-          robot_comm_protobuf robot_comm_flatbuffers
-  EXPORT robot_commTargets
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
+if(TARGET proto-mc-rtc)
+  install(
+    TARGETS robot_comm robot_comm_interface robot_comm_serializer
+            robot_comm_protobuf robot_comm_flatbuffers
+    EXPORT robot_commTargets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+else()
+  install(
+    TARGETS robot_comm robot_comm_interface robot_comm_serializer
+            robot_comm_flatbuffers
+    EXPORT robot_commTargets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+endif()
 
 ### Add Protocols
 

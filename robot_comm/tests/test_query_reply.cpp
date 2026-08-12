@@ -1,5 +1,5 @@
-#include <mc_communication/CommunicationFactory.h>
 #include "config.h"
+#include <robot_comm/CommunicationFactory.h>
 
 #include <gtest/gtest.h>
 
@@ -9,7 +9,7 @@
 
 namespace fs = std::filesystem;
 
-using namespace mc_communication;
+using namespace robot_comm;
 
 TEST(QueryReplyTest, ConfigDelivery)
 {

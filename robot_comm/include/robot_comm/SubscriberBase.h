@@ -2,8 +2,11 @@
 
 #include <robot_comm/serialization/Buffer.h>
 
+#include <string>
+
 namespace robot_comm
 {
+
 class SubscriberBase
 {
 public:
@@ -20,4 +23,5 @@ public:
 private:
   std::string topic_;
 };
+
 } // namespace robot_comm
