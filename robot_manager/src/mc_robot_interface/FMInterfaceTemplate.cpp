@@ -36,7 +36,7 @@ FMInterfaceTemplate::FMInterfaceTemplate(const std::string & name,
   mc_fleet::log::info("FMInterfaceTemplate '{}' ready", name);
 }
 
-void FMInterfaceTemplate::updateSensors(mc_control::MCGlobalController & gc)
+void FMInterfaceTemplate::updateSensors(robot_controller::Controller & gc)
 {
   auto rx = communication().receive();
   if(!rx || rx->empty()) return;
@@ -49,38 +49,32 @@ void FMInterfaceTemplate::updateSensors(mc_control::MCGlobalController & gc)
   if(!s->velocity.empty()) gc.setEncoderVelocities(name(), s->velocity);
   if(!s->torque.empty()) gc.setJointTorques(name(), s->torque);
 
-  if(!gc_initialized_)
+  if(!gc_initialized_ && !s->position.empty())
   {
-    gc.init(gc.controller().robots().robot(name()).encoderValues());
+    gc.initialize(s->position);
     gc_initialized_ = true;
     mc_fleet::log::info("[FMInterfaceTemplate] '{}' controller initialized", name());
   }
 }
 
-void FMInterfaceTemplate::updateControl(mc_control::MCGlobalController & gc)
+void FMInterfaceTemplate::updateControl(robot_controller::Controller & gc)
 {
   if(!gc_initialized_) return;
 
-  auto & robot = gc.controller().robots().robot(name());
-  const auto & rjo = robot.refJointOrder();
-  const size_t dof = rjo.size();
-
   robot_comm::Command command;
+
   switch(control_mode_)
   {
     case mc_robot::POSITION:
-      command.position.resize(dof);
-      for(size_t i = 0; i < dof; ++i) command.position[i] = robot.mbc().q[robot.jointIndexInMBC(i)][0];
+      command.position = gc.command(name(), robot_controller::ControlMode::POSITION);
       break;
 
     case mc_robot::VELOCITY:
-      command.velocity.resize(dof);
-      for(size_t i = 0; i < dof; ++i) command.velocity[i] = robot.mbc().alphaD[robot.jointIndexInMBC(i)][0];
+      command.velocity = gc.command(name(), robot_controller::ControlMode::VELOCITY);
       break;
 
     case mc_robot::TORQUE:
-      command.torque.resize(dof);
-      for(size_t i = 0; i < dof; ++i) command.torque[i] = robot.mbc().jointTorque[robot.jointIndexInMBC(i)][0];
+      command.torque = gc.command(name(), robot_controller::ControlMode::TORQUE);
       break;
   }
 

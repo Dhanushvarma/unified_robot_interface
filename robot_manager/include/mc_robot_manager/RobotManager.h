@@ -2,8 +2,10 @@
 
 #include <mc_robot_interface/RobotInterfaceFactory.h>
 #include <robot_comm/CommunicationFactory.h>
+#include <robot_controller/ControllerLoader.h>
 
 #include <mc_control/mc_global_controller.h>
+#include <mc_rtc/SignalSlot.h>
 #include <zenoh.hxx>
 
 #include <sys/types.h>
@@ -37,9 +39,9 @@ public:
   RobotManager(RobotManager &&) = delete;
   RobotManager & operator=(RobotManager &&) = delete;
 
-  [[nodiscard]] mc_control::MCGlobalController & gcontroller()
+  [[nodiscard]] robot_controller::Controller & controller()
   {
-    return *gcontroller_;
+    return *controller_;
   }
 
   [[nodiscard]] const auto & interfaces()
@@ -55,7 +57,8 @@ public:
 private:
   void init(const std::atomic<bool> & interrupt);
 
-  std::unique_ptr<mc_control::MCGlobalController> gcontroller_;
+  robot_controller::ControllerLoader controller_loader_{};
+  robot_controller::ControllerLoader::ControllerPtr controller_{};
 
   // TODO: make zenoh router optional
   void launchZenohRouter();

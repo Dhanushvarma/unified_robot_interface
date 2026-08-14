@@ -1,8 +1,8 @@
 #include <mc_robot_manager/Logging.h>
 #include <mc_robot_manager/RobotManager.h>
+#include <robot_controller/Controller.h>
 
 #include <mc_control/Configuration.h>
-#include <mc_control/mc_global_controller.h>
 // #include "zenoh.hxx"
 
 #include <boost/program_options.hpp>
@@ -18,9 +18,9 @@ void run(void * data, const std::atomic<bool> & interrupt)
 {
   log::info("fleet run start");
   auto * robot_manager = static_cast<RobotManager *>(data);
-  mc_control::MCGlobalController & gcontroller{robot_manager->gcontroller()};
+  robot_controller::Controller & controller{robot_manager->controller()};
 
-  while(gcontroller.running && !interrupt)
+  while(controller.isRunning() && !interrupt)
   {
     robot_manager->notify();
     sched_yield();

@@ -42,12 +42,13 @@ RobotManager::RobotManager(const std::string & mc_config_path, const std::atomic
 : gconfig_(mc_control::MCGlobalController::GlobalConfiguration(mc_config_path))
 {
   processGConfig(gconfig_);
-  // log::info(gconfig_.config("Robots").dump(true, true));
+  log::info(gconfig_.config("Robots").dump(true, true));
 
-  gcontroller_ = std::make_unique<mc_control::MCGlobalController>(gconfig_);
+  const std::string backend = gconfig_.config("Controller", std::string{"mc_rtc"});
+  controller_ = controller_loader_.create(backend, gconfig_.config.dump());
 
   // // Connect to the signal
-  // auto & mc_controller = gcontroller_->controller();
+  // auto & mc_controller = controller_->controller();
   // replace_slot_ = mc_controller.replaceRobot.connect(
   //     [&](const std::string & old_robot_name, const std::string & new_robot_name)
   //     {
@@ -62,7 +63,7 @@ RobotManager::RobotManager(const std::string & mc_config_path, const std::atomic
 
 RobotManager::~RobotManager()
 {
-  gcontroller_->running = false;
+  if(controller_) controller_->stop();
 
   cv_.notify_all();
 
@@ -245,7 +246,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   }
 
   /* Check timestep compatifibility between mc_rtc and robot */
-  double controller_s = gcontroller_->controller().timeStep;
+  double controller_s = controller_->timeStep();
   size_t max_step_size{0};
   for(auto & [robot_name, interface] : interfaces_)
   {
@@ -279,25 +280,17 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 
   log::info("[mc_fleet] mc_rtc will compute commands every ", max_step_size, "robot control step");
 
-  auto & robots = gcontroller_->controller().robots();
-
   /* Initialize all real robots */
-  for(size_t i = gcontroller_->realRobots().size(); i < robots.size(); ++i)
-  {
-    gcontroller_->realRobots().robotCopy(robots.robot(i), robots.robot(i).name());
-  }
+  controller_->initializeRobots();
 
   /* Init threads */
-  gcontroller_->running = true;
+  controller_->start();
 
   for(auto & [robot_name, interface] : interfaces_)
   {
     auto * interface_ptr = interface.get();
-    threads_.emplace_back(
-        [&, this, interface_ptr]()
-        {
-          interface_ptr->controlThread(*gcontroller_, start_mutex_, start_cv_, start_control_, gcontroller_->running);
-        });
+    threads_.emplace_back([&, this, interface_ptr]()
+                          { interface_ptr->controlThread(*controller_, start_mutex_, start_cv_, start_control_); });
   }
 
   main_thread_ = std::make_unique<std::thread>(&RobotManager::mainThread, this, max_step_size, std::ref(interrupt));
@@ -424,7 +417,7 @@ void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interr
   using Duration = std::chrono::duration<double>;
   auto next_wake = Clock::now();
 
-  while(gcontroller_->running)
+  while(controller_->isRunning())
   {
     // Sleep until the next scheduled cycle tick.
     next_wake += std::chrono::duration_cast<Clock::duration>(Duration(cycle_s));
@@ -432,11 +425,11 @@ void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interr
 
     if(interrupt)
     {
-      gcontroller_->running = false;
+      controller_->stop();
       return;
     }
 
-    for(auto & [robot_name, interface] : interfaces_) interface->updateSensors(*gcontroller_);
+    for(auto & [robot_name, interface] : interfaces_) interface->updateSensors(*controller_);
 
     // Gate controller.run() until every interface has fed its initial sensor
     // values and called gc.init(), otherwise the Posture task would command
@@ -444,7 +437,7 @@ void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interr
     bool all_ready =
         std::all_of(interfaces_.begin(), interfaces_.end(), [](const auto & kv) { return kv.second->isInitialized(); });
 
-    if(all_ready && step % step_size == 0) gcontroller_->run();
+    if(all_ready && step % step_size == 0) controller_->run();
 
     {
       std::lock_guard<std::mutex> lock(start_mutex_);
@@ -452,7 +445,7 @@ void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interr
     }
     start_cv_.notify_all();
 
-    for(auto & [robot_name, interface] : interfaces_) interface->updateControl(*gcontroller_);
+    for(auto & [robot_name, interface] : interfaces_) interface->updateControl(*controller_);
     step++;
   }
 }
