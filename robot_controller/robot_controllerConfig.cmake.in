@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+if(@ROBOT_CONTROLLER_WITH_MC_RTC@)
+  find_dependency(mc_rtc REQUIRED)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/robot_controllerTargets.cmake")
+
+check_required_components(robot_controller)

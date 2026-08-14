@@ -48,5 +48,5 @@ endif()
 
 install(DIRECTORY include/ DESTINATION include)
 
-jrl_print_dependencies_summary()
+# jrl_print_dependencies_summary()
 jrl_print_options_summary()

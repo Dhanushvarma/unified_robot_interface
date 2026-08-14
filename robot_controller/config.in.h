@@ -1,0 +1,3 @@
+#pragma once
+
+#define ROBOT_CONTROLLER_PLUGIN_INSTALL_PREFIX "@CMAKE_INSTALL_FULL_LIBDIR@/robot_controller"

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <mc_control/mc_global_controller.h>
-#include <mc_rtc/Configuration.h>
-
 #include <robot_comm/Communication.h>
 #include <robot_comm/CommunicationFactory.h>
+#include <robot_controller/Controller.h>
+
+#include <mc_rtc/Configuration.h>
 
 #include <condition_variable>
 
@@ -37,8 +37,8 @@ public:
   virtual void reset() = 0;
   virtual void stop() = 0;
 
-  virtual void updateSensors(mc_control::MCGlobalController & gc) = 0;
-  virtual void updateControl(mc_control::MCGlobalController & gc) = 0;
+  virtual void updateSensors(robot_controller::Controller & gc) = 0;
+  virtual void updateControl(robot_controller::Controller & gc) = 0;
 
   // Returns true once the interface has fed initial sensor values into mc_rtc
   // and called gc.init(). mainThread uses this to gate the first controller.run().
@@ -51,11 +51,16 @@ public:
    * @brief Method in charge of robot sensors and commands update
    *
    */
-  void controlThread(mc_control::MCGlobalController & controller,
+  void controlThread(robot_controller::Controller & controller,
                      std::mutex & startM,
                      std::condition_variable & start_cv_,
-                     bool & start,
-                     bool & running) {};
+                     bool & start) {
+    // Not include `bool & running` like usual.
+    // The value can be extract or change using methods defined in robot_controller::Controller
+    // - isRunning()
+    // - start()
+    // - stop()
+  };
 
   template<typename cm>
   void control();

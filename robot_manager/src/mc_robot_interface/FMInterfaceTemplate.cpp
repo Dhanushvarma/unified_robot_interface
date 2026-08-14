@@ -1,8 +1,8 @@
 #include <mc_robot_interface/FMInterfaceTemplate.h>
+#include <mc_robot_manager/Logging.h>
 #include <robot_comm/CommunicationZenoh.h>
 
 #include <mc_control/mc_global_controller.h>
-#include <mc_rtc/logging.h>
 
 namespace mc_interface_template
 {
@@ -22,21 +22,21 @@ FMInterfaceTemplate::FMInterfaceTemplate(const std::string & name,
                                          uint8_t buffer_size)
 : RobotInterfaceBase(name, config, (buffer_size == 0) ? 6 : buffer_size)
 {
-  mc_rtc::log::success("FMInterfaceTemplate '{}' starting", name);
+  mc_fleet::log::info("FMInterfaceTemplate '{}' starting", name);
 
   const std::string mode = config("controller")("mode", std::string{"position"});
   control_mode_ = parseModeString(mode);
-  mc_rtc::log::info("FMInterfaceTemplate '{}' control mode: {}", name, mode);
+  mc_fleet::log::info("FMInterfaceTemplate '{}' control mode: {}", name, mode);
 
   mc_rtc::Configuration com_config(config("network_interface"));
   auto comm = robot_comm::CommunicationFactory::makeCommunication(name, com_config);
   comm->setupServer();
   setCommunication(std::move(comm));
 
-  mc_rtc::log::info("FMInterfaceTemplate '{}' ready", name);
+  mc_fleet::log::info("FMInterfaceTemplate '{}' ready", name);
 }
 
-void FMInterfaceTemplate::updateSensors(mc_control::MCGlobalController & gc)
+void FMInterfaceTemplate::updateSensors(robot_controller::Controller & gc)
 {
   auto rx = communication().receive();
   if(!rx || rx->empty()) return;
@@ -49,43 +49,37 @@ void FMInterfaceTemplate::updateSensors(mc_control::MCGlobalController & gc)
   if(!s->velocity.empty()) gc.setEncoderVelocities(name(), s->velocity);
   if(!s->torque.empty()) gc.setJointTorques(name(), s->torque);
 
-  if(!gc_initialized_)
+  if(!gc_initialized_ && !s->position.empty())
   {
-    gc.init(gc.controller().robots().robot(name()).encoderValues());
+    gc.initialize(s->position);
     gc_initialized_ = true;
-    mc_rtc::log::success("[FMInterfaceTemplate] '{}' controller initialized", name());
+    mc_fleet::log::info("[FMInterfaceTemplate] '{}' controller initialized", name());
   }
 }
 
-void FMInterfaceTemplate::updateControl(mc_control::MCGlobalController & gc)
+void FMInterfaceTemplate::updateControl(robot_controller::Controller & gc)
 {
   if(!gc_initialized_) return;
 
-  auto & robot = gc.controller().robots().robot(name());
-  const auto & rjo = robot.refJointOrder();
-  const size_t dof = rjo.size();
-
   robot_comm::Command command;
+
   switch(control_mode_)
   {
     case mc_robot::POSITION:
-      command.position.resize(dof);
-      for(size_t i = 0; i < dof; ++i) command.position[i] = robot.mbc().q[robot.jointIndexInMBC(i)][0];
+      command.position = gc.command(name(), robot_controller::ControlMode::POSITION);
       break;
 
     case mc_robot::VELOCITY:
-      command.velocity.resize(dof);
-      for(size_t i = 0; i < dof; ++i) command.velocity[i] = robot.mbc().alphaD[robot.jointIndexInMBC(i)][0];
+      command.velocity = gc.command(name(), robot_controller::ControlMode::VELOCITY);
       break;
 
     case mc_robot::TORQUE:
-      command.torque.resize(dof);
-      for(size_t i = 0; i < dof; ++i) command.torque[i] = robot.mbc().jointTorque[robot.jointIndexInMBC(i)][0];
+      command.torque = gc.command(name(), robot_controller::ControlMode::TORQUE);
       break;
   }
 
   if(!communication().send(communication().encode(command)))
-    mc_rtc::log::warning("[FMInterfaceTemplate] '{}' failed to send command", name());
+    mc_fleet::log::warning("[FMInterfaceTemplate] '{}' failed to send command", name());
 }
 
 } // namespace mc_interface_template

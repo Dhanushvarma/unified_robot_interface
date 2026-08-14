@@ -1,4 +1,4 @@
-#include <mc_rtc/logging.h>
+#include <mc_robot_manager/Logging.h>
 #include <mc_robot_manager/RobotManager.h>
 
 // Resolve redefinition conflict with pthread.h
@@ -31,7 +31,7 @@ std::atomic<bool> interrupt{false};
 
 void signalHandler(int s)
 {
-  mc_rtc::log::warning("Caught signal {}", s);
+  mc_fleet::log::warning("Caught signal {}", s);
   interrupt = true;
 }
 
@@ -42,10 +42,10 @@ int main(int argc, char * argv[])
   /* Lock Memory*/
   if(mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
   {
-    mc_rtc::log::error("mlockall failed: {}", strerror(errno));
+    mc_fleet::log::error("mlockall failed: ", strerror(errno));
     if(errno == ENOMEM)
     {
-      mc_rtc::log::info("Check /etc/security/limits.conf for memlock limits.");
+      mc_fleet::log::info("Check /etc/security/limits.conf for memlock limits.");
     }
     return -2;
   }
@@ -61,7 +61,7 @@ int main(int argc, char * argv[])
   void * raw = mc_fleet::init(argc, argv, cycle_ns, interrupt);
   if(raw == nullptr)
   {
-    mc_rtc::log::error("Initialization failed");
+    mc_fleet::log::error("Initialization failed");
     return -2;
   }
 
@@ -75,12 +75,12 @@ int main(int argc, char * argv[])
   attr.sched_policy = SCHED_DEADLINE;
   attr.sched_runtime = attr.sched_deadline = attr.sched_period = cycle_ns; // nanoseconds
 
-  mc_rtc::log::info("Running thread at {}ms per cycle", double(cycle_ns) / 1e6);
+  mc_fleet::log::info("Running thread at ", double(cycle_ns) / 1e6, "ms per cycle");
 
   /* Set scheduler policy for the main thread */
   if(schedSetattr(0, &attr, 0) < 0)
   {
-    mc_rtc::log::error("schedSetattr failed");
+    mc_fleet::log::error("schedSetattr failed");
     // return -2;
   }
 

@@ -18,8 +18,8 @@ public:
   void init() override {}
   void reset() override {}
   void stop() override {}
-  void updateSensors(mc_control::MCGlobalController & gc) override;
-  void updateControl(mc_control::MCGlobalController & gc) override;
+  void updateSensors(robot_controller::Controller & gc) override;
+  void updateControl(robot_controller::Controller & gc) override;
 
   [[nodiscard]] bool isInitialized() const override
   {

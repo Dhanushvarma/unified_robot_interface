@@ -1,3 +1,5 @@
+include(GNUInstallDirs)
+
 # Robot Interface
 set(INTERFACE_SRC mc_robot_interface/RobotInterfaceFactory.cpp
                   mc_robot_interface/FMInterfaceTemplate.cpp
@@ -6,12 +8,14 @@ set(INTERFACE_SRC mc_robot_interface/RobotInterfaceFactory.cpp
 add_library(mc_robot_interface SHARED ${INTERFACE_SRC})
 add_library(${PROJECT_NAME}::robot_interface ALIAS mc_robot_interface)
 
-target_link_libraries(mc_robot_interface PUBLIC mc_rtc::mc_control robot_comm)
+target_link_libraries(
+  mc_robot_interface PUBLIC robot_controller::core robot_comm
+)
 
 target_include_directories(
   mc_robot_interface
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
-         $<INSTALL_INTERFACE:include>
+         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 # Robot Manager
@@ -22,20 +26,19 @@ set(ROBOT_MANAGER_SRC mc_robot_manager/Fleet.cpp
 add_library(mc_robot_manager SHARED ${ROBOT_MANAGER_SRC})
 add_library(${PROJECT_NAME}::robot_manager ALIAS mc_robot_manager)
 
-target_link_libraries(mc_robot_manager PUBLIC mc_rtc::mc_control robot_comm)
+target_link_libraries(mc_robot_manager PUBLIC robot_controller::core robot_comm)
 
 target_include_directories(
   mc_robot_manager
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
-         $<INSTALL_INTERFACE:include>
+         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-# Install libraries (robot_comm_serializer and robot_comm are installed by their own subdirectory)
 install(
   TARGETS mc_robot_interface mc_robot_manager
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 # Executable
@@ -46,20 +49,33 @@ target_link_libraries(
                          Boost::program_options
 )
 
+# Installed executable and libraries use the same custom installation prefix.
+# Use an absolute RPATH because MCFleetControl receives file capabilities.
+set_target_properties(
+  mc_robot_interface mc_robot_manager MCFleetControl
+  PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}"
+)
+
 set(PROGRAM_NAME MCFleetControl)
 
 set(JOB_POOL_OPTION)
-if(${CMAKE_VERSION} VERSION_GREATER "3.14")
+if(CMAKE_VERSION VERSION_GREATER "3.14")
   set(JOB_POOL_OPTION JOB_POOL console)
 endif()
+
 add_custom_target(
   setcap_${PROGRAM_NAME} ALL
   COMMAND ${SUDO} -S ${SETCAP} cap_sys_nice+eip $<TARGET_FILE:${PROGRAM_NAME}>
   DEPENDS ${PROGRAM_NAME} ${JOB_POOL_OPTION}
 )
 
-install(TARGETS ${PROGRAM_NAME} DESTINATION bin)
+install(TARGETS ${PROGRAM_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 install(
   CODE
-  "execute_process(COMMAND ${SUDO} -S ${SETCAP} cap_sys_nice+eip ${CMAKE_INSTALL_PREFIX}/bin/${PROGRAM_NAME})"
+  "execute_process(
+       COMMAND
+         ${SUDO} -S ${SETCAP} cap_sys_nice+eip
+         ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/${PROGRAM_NAME}
+     )"
 )
