@@ -22,7 +22,8 @@ Robots:
     robot_interface:
       driver: RobotDriverRTDE
       control_mode: position
-      ip: 150.18.227.205
+      # ip: 150.18.227.205
+      ip: 192.168.1.2
       # port: 0
       # Set to true when this robot is directly plugged into the control
       # computer (no separate robot-side PC): MCFleetControl will spawn and
