@@ -53,19 +53,17 @@ find_library(
 )
 
 if(KORTEX_API_INCLUDE_DIR AND KORTEX_API_LIBRARY)
-  # if(NOT KORTEX_ROOT_DIR)
-  #   # Expected archive layout:
-  #   # <root>/lib/release/libKortexApiCpp.a
-  #   get_filename_component(
-  #     KORTEX_API_RELEASE_DIR "${KORTEX_API_LIBRARY}" DIRECTORY
-  #   )
-  #
-  #   get_filename_component(
-  #     KORTEX_API_LIB_DIR "${KORTEX_API_RELEASE_DIR}" DIRECTORY
-  #   )
-  #
-  #   get_filename_component(KORTEX_ROOT_DIR "${KORTEX_API_LIB_DIR}" DIRECTORY)
-  # endif()
+  if(NOT KORTEX_ROOT_DIR)
+    # Reconstruct:
+    # <root>/lib/release/libKortexApiCpp.a
+    get_filename_component(
+      KORTEX_API_RELEASE_DIR "${KORTEX_API_LIBRARY}" DIRECTORY
+    )
+    get_filename_component(
+      KORTEX_API_LIB_DIR "${KORTEX_API_RELEASE_DIR}" DIRECTORY
+    )
+    get_filename_component(KORTEX_ROOT_DIR "${KORTEX_API_LIB_DIR}" DIRECTORY)
+  endif()
 
   message(STATUS "")
   message(STATUS "========== Existing Kortex API ==========")

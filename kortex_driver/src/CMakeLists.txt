@@ -1,11 +1,5 @@
 add_library(RobotDriverKortex SHARED RobotDriverKortex.cpp)
 
-# target_compile_definitions(
-#   RobotDriverKortex
-#   PRIVATE
-#     MC_ROBOT_DRIVER_EXPORTS
-# )
-
 target_include_directories(
   RobotDriverKortex
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
@@ -20,7 +14,7 @@ target_link_libraries(
 
 install(
   TARGETS RobotDriverKortex
-  # RUNTIME DESTINATION bin
-  # LIBRARY DESTINATION lib/robot_interface
-  ARCHIVE DESTINATION lib/robot_interface
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/robot_interface
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/robot_interface
 )
