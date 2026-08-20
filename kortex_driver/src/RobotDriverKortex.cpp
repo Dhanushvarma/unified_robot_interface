@@ -239,21 +239,8 @@ void RobotDriverKortex::disconnect() noexcept
 {
   command_initialized_ = false;
 
-  // Restore safe/default actuator and base modes before disconnecting.
   try
   {
-    if(actuator_config_ && actuator_count_ > 0)
-    {
-      auto control_mode = k_api::ActuatorConfig::ControlModeInformation();
-
-      control_mode.set_control_mode(k_api::ActuatorConfig::ControlMode::POSITION);
-
-      for(std::size_t i = 0; i < actuator_count_; ++i)
-      {
-        actuator_config_->SetControlMode(control_mode, static_cast<int>(i + 1));
-      }
-    }
-
     if(base_)
     {
       auto servoing_mode = k_api::Base::ServoingModeInformation();
@@ -265,111 +252,12 @@ void RobotDriverKortex::disconnect() noexcept
   }
   catch(const std::exception & error)
   {
-    fmt::print(stderr, "[RobotDriverKortex] Failed to restore position/single-level mode: {}\n", error.what());
+    fmt::print(stderr, "[RobotDriverKortex] mode restoration exception: {}\n", error.what());
   }
   catch(...)
   {
-    fmt::print(stderr, "[RobotDriverKortex] Unknown error while restoring safe control mode\n");
+    fmt::print(stderr, "[RobotDriverKortex] unknown mode restoration exception\n");
   }
-
-  // Destroy clients before their routers and transports.
-  actuator_config_.reset();
-  base_cyclic_.reset();
-  base_.reset();
-
-  try
-  {
-    if(udp_session_)
-    {
-      udp_session_->CloseSession();
-    }
-  }
-  catch(const std::exception & error)
-  {
-    std::cerr << "[RobotDriverKortex] Failed to close UDP session: " << error.what() << '\n';
-    fmt::print(stderr, "[RobotDriverKortex] Failed to close UDP session: {}\n", error.what());
-  }
-  catch(...)
-  {
-    // Ignore
-  }
-
-  try
-  {
-    if(tcp_session_)
-    {
-      tcp_session_->CloseSession();
-    }
-  }
-  catch(const std::exception & error)
-  {
-    fmt::print(stderr, "[RobotDriverKortex] Failed to close TCP session: {}\n", error.what());
-  }
-  catch(...)
-  {
-    // Ignore
-  }
-
-  udp_session_.reset();
-  tcp_session_.reset();
-
-  try
-  {
-    if(udp_router_)
-    {
-      udp_router_->SetActivationStatus(false);
-    }
-  }
-  catch(...)
-  {
-    // Ignore
-  }
-
-  try
-  {
-    if(tcp_router_)
-    {
-      tcp_router_->SetActivationStatus(false);
-    }
-  }
-  catch(...)
-  {
-    // Ignore
-  }
-
-  try
-  {
-    if(udp_transport_)
-    {
-      udp_transport_->disconnect();
-    }
-  }
-  catch(...)
-  {
-    // Ignore
-  }
-
-  try
-  {
-    if(tcp_transport_)
-    {
-      tcp_transport_->disconnect();
-    }
-  }
-  catch(...)
-  {
-    // Ignore
-  }
-
-  udp_router_.reset();
-  tcp_router_.reset();
-
-  udp_transport_.reset();
-  tcp_transport_.reset();
-
-  actuator_count_ = 0;
-  command_.Clear();
-  feedback_.Clear();
 }
 
 void RobotDriverKortex::initializeCyclicCommand()
