@@ -11,12 +11,15 @@ constexpr double pi = 3.14159265358979323846;
 
 double degToRad(double value)
 {
-  return value * pi / 180.0;
+  const double wrapped = value < 180.0 ? value : value - 360.0;
+  return wrapped * pi / 180.0;
 }
 
 double radToDeg(double value)
 {
-  return value * 180.0 / pi;
+  const double wrapped = value >= 0.0 ? value : value + 2.0 * pi;
+
+  return wrapped * 180.0 / pi;
 }
 
 } // namespace
@@ -212,7 +215,7 @@ void RobotDriverKortex::connect()
 
   actuator_config_ = std::make_unique<k_api::ActuatorConfig::ActuatorConfigClient>(tcp_router_.get());
 
-  // Start from the normal high-level mode.
+  // Start in normal high-level mode.
   auto servoing_mode = k_api::Base::ServoingModeInformation();
 
   servoing_mode.set_servoing_mode(k_api::Base::ServoingMode::SINGLE_LEVEL_SERVOING);
