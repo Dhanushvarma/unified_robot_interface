@@ -87,7 +87,54 @@ void RobotDriverKortex::sync()
     command_.mutable_actuators(i)->set_command_id(frame_id);
   }
 
-  feedback_ = base_cyclic_->Refresh(command_);
+  try
+  {
+    feedback_ = base_cyclic_->Refresh(command_);
+  }
+  catch(const k_api::KDetailedException & error)
+  {
+    try
+    {
+      const auto active_mode = base_->GetServoingMode();
+
+      fmt::print(stderr,
+                 "[RobotDriverKortex] Refresh failed; "
+                 "active servoing mode={}\n",
+                 static_cast<int>(active_mode.servoing_mode()));
+    }
+    catch(const std::exception & mode_error)
+    {
+      fmt::print(stderr, "[RobotDriverKortex] Servoing mode query failed: {}\n", mode_error.what());
+    }
+
+    try
+    {
+      const auto diagnostic_feedback = base_cyclic_->RefreshFeedback();
+
+      fmt::print(stderr,
+                 "[RobotDriverKortex] Base faults: "
+                 "bank_a={} bank_b={}\n",
+                 diagnostic_feedback.base().fault_bank_a(), diagnostic_feedback.base().fault_bank_b());
+
+      for(int i = 0; i < diagnostic_feedback.actuators_size(); ++i)
+      {
+        const auto & actuator = diagnostic_feedback.actuators(i);
+
+        fmt::print(stderr,
+                   "[RobotDriverKortex] Actuator {} faults: "
+                   "bank_a={} bank_b={} "
+                   "warnings_a={} warnings_b={}\n",
+                   i + 1, actuator.fault_bank_a(), actuator.fault_bank_b(), actuator.warning_bank_a(),
+                   actuator.warning_bank_b());
+      }
+    }
+    catch(const std::exception & feedback_error)
+    {
+      fmt::print(stderr, "[RobotDriverKortex] Diagnostic feedback failed: {}\n", feedback_error.what());
+    }
+
+    throw std::runtime_error(std::string{"[RobotDriverKortex] Cyclic Refresh failed: "} + error.what());
+  }
 
   const auto now = Clock::now();
 
@@ -231,11 +278,56 @@ void RobotDriverKortex::connect()
 
   fmt::print("[RobotDriverKortex] Robot has {} actuators\n", actuator_count_);
 
+  // Enter low-level mode afterward.
+  servoing_mode.set_servoing_mode(k_api::Base::ServoingMode::LOW_LEVEL_SERVOING);
+
+  base_->SetServoingMode(servoing_mode);
+
+  // Read feedback and initialize hold-position commands.
   initializeCyclicCommand();
 
-  // Cyclic commands require low-level servoing mode.
-  servoing_mode.set_servoing_mode(k_api::Base::ServoingMode::LOW_LEVEL_SERVOING);
-  base_->SetServoingMode(servoing_mode);
+  // Send the first cyclic frame while still inside connect().
+  auto frame_id = static_cast<uint16_t>(command_.frame_id() + 1);
+
+  if(frame_id == 0)
+  {
+    frame_id = 1;
+  }
+
+  command_.set_frame_id(frame_id);
+
+  for(int i = 0; i < command_.actuators_size(); ++i)
+  {
+    command_.mutable_actuators(i)->set_command_id(frame_id);
+  }
+
+  try
+  {
+    feedback_ = base_cyclic_->Refresh(command_);
+  }
+  catch(const k_api::KDetailedException & error)
+  {
+    try
+    {
+      const auto active_mode = base_->GetServoingMode();
+
+      fmt::print(stderr,
+                 "[RobotDriverKortex] Refresh failed; "
+                 "active servoing mode={}\n",
+                 static_cast<int>(active_mode.servoing_mode()));
+    }
+    catch(const std::exception & mode_error)
+    {
+      fmt::print(stderr,
+                 "[RobotDriverKortex] Failed to query "
+                 "servoing mode: {}\n",
+                 mode_error.what());
+    }
+
+    throw std::runtime_error(std::string{"[RobotDriverKortex] Cyclic Refresh failed: "} + error.what());
+  }
+
+  fmt::print("[RobotDriverKortex] First cyclic frame accepted\n");
 }
 
 void RobotDriverKortex::disconnect() noexcept
