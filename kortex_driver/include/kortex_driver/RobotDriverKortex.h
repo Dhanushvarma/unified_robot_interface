@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 
+#include <chrono>
+
 namespace k_api = Kinova::Api;
 
 namespace kortex_driver
@@ -51,6 +53,10 @@ private:
   void validateCommandSize(const std::vector<double> & command) const;
 
 private:
+  using Clock = std::chrono::steady_clock;
+  Clock::time_point next_cycle_;
+  bool cycle_timer_initialized_{false};
+
   static constexpr uint16_t default_tcp_port_ = 10000;
   static constexpr uint16_t default_udp_port_ = 10001;
 

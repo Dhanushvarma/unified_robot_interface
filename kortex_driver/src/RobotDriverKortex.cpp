@@ -1,10 +1,8 @@
 #include <kortex_driver/RobotDriverKortex.h>
 
-#include <cstdlib>
-#include <filesystem>
 #include <fmt/core.h>
-#include <iostream>
 #include <stdexcept>
+#include <thread>
 
 namespace
 {
@@ -56,6 +54,16 @@ RobotDriverKortex::~RobotDriverKortex()
 
 void RobotDriverKortex::sync()
 {
+  constexpr auto cycle_period = std::chrono::microseconds{1000};
+
+  if(!cycle_timer_initialized_)
+  {
+    next_cycle_ = Clock::now();
+    cycle_timer_initialized_ = true;
+  }
+
+  next_cycle_ += cycle_period;
+
   if(!command_initialized_)
   {
     initializeCyclicCommand();
@@ -77,6 +85,18 @@ void RobotDriverKortex::sync()
   }
 
   feedback_ = base_cyclic_->Refresh(command_);
+
+  const auto now = Clock::now();
+
+  if(next_cycle_ > now)
+  {
+    std::this_thread::sleep_until(next_cycle_);
+  }
+  else
+  {
+    // Do not accumulate lateness indefinitely.
+    next_cycle_ = now;
+  }
 }
 
 std::vector<double> RobotDriverKortex::getActualQ()
