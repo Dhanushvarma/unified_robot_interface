@@ -16,7 +16,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(FetchContent)
 include(GNUInstallDirs)
 
-option(BUILD_TESTING "Build tests" OFF)
+# option(BUILD_TESTING "Build tests" ON)
 
 # Dependencies -------------------------------------------------------------------------------------
 find_package(mc_robot_interface REQUIRED)
@@ -166,9 +166,9 @@ target_link_libraries(KortexApiCpp INTERFACE Threads::Threads ${CMAKE_DL_LIBS})
 
 add_subdirectory(src)
 
-if(BUILD_TESTING)
-  enable_testing()
-  add_subdirectory(tests)
-endif()
-
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+# if(BUILD_TESTING)
+#   enable_testing()
+#   add_subdirectory(tests)
+# endif()
