@@ -1,6 +1,6 @@
-#include <mc_robot_manager/Logging.h>
 #include <mc_robot_manager/RobotManager.h>
 
+#include <fmt/core.h>
 // Resolve redefinition conflict with pthread.h
 #define sched_param linux_sched_param // NOLINT(readability-identifier-naming)
 #include <linux/sched.h>
@@ -12,6 +12,7 @@
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <syscall.h>
@@ -25,13 +26,13 @@ int schedSetattr(pid_t pid, const struct sched_attr * attr, unsigned int flags)
 namespace
 {
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-// Use atomic to precent cached reading
+// Use atomic to prevent cached reading
 std::atomic<bool> interrupt{false};
 } // namespace
 
 void signalHandler(int s)
 {
-  mc_fleet::log::warning("Caught signal {}", s);
+  fmt::print("[warning] Caught signal {}\n", s);
   interrupt = true;
 }
 
@@ -39,13 +40,13 @@ int main(int argc, char * argv[])
 {
   signal(SIGINT, signalHandler);
 
-  /* Lock Memory*/
+  /* Lock Memory */
   if(mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
   {
-    mc_fleet::log::error("mlockall failed: ", strerror(errno));
+    fmt::print("[error] mlockall failed: {}\n", std::strerror(errno));
     if(errno == ENOMEM)
     {
-      mc_fleet::log::info("Check /etc/security/limits.conf for memlock limits.");
+      fmt::print("Check /etc/security/limits.conf for memlock limits.\n");
     }
     return -2;
   }
@@ -61,7 +62,7 @@ int main(int argc, char * argv[])
   void * raw = mc_fleet::init(argc, argv, cycle_ns, interrupt);
   if(raw == nullptr)
   {
-    mc_fleet::log::error("Initialization failed");
+    fmt::print("[error] Initialization failed\n");
     return -2;
   }
 
@@ -75,12 +76,12 @@ int main(int argc, char * argv[])
   attr.sched_policy = SCHED_DEADLINE;
   attr.sched_runtime = attr.sched_deadline = attr.sched_period = cycle_ns; // nanoseconds
 
-  mc_fleet::log::info("Running thread at ", double(cycle_ns) / 1e6, "ms per cycle");
+  fmt::print("Running thread at {}ms per cycle\n", double(cycle_ns) / 1e6);
 
   /* Set scheduler policy for the main thread */
   if(schedSetattr(0, &attr, 0) < 0)
   {
-    mc_fleet::log::error("schedSetattr failed");
+    fmt::print("[error] schedSetattr failed\n");
     // return -2;
   }
 

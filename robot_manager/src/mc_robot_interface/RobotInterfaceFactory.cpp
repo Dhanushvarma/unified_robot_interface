@@ -1,6 +1,7 @@
 #include <mc_robot_interface/FMInterfaceTemplate.h>
 #include <mc_robot_interface/RobotInterfaceFactory.h>
-#include <mc_robot_manager/Logging.h>
+
+#include <fmt/core.h>
 
 namespace mc_robot
 {
@@ -9,7 +10,7 @@ std::unique_ptr<RobotInterfaceBase> RobotInterfaceFactory::makeInterface(const s
                                                                          const mc_rtc::Configuration & config,
                                                                          const uint8_t & buffer_size)
 {
-  mc_fleet::log::info("makeInterface start");
+  fmt::print("[RobotInterfaceFactor] Making Interface for robot: {}\n", name);
   // "interface" selects the manager-side RobotInterfaceBase implementation.
   const std::string interface_type = config("interface", std::string{"interface_template"});
 
@@ -18,7 +19,8 @@ std::unique_ptr<RobotInterfaceBase> RobotInterfaceFactory::makeInterface(const s
     return std::make_unique<mc_interface_template::FMInterfaceTemplate>(name, config, buffer_size);
   }
 
-  mc_fleet::log::error("Robot interface type {} is not supported", interface_type);
+  fmt::print("[RobotInterfaceFactor][error] Robot interface type {} is not supported\n", interface_type);
+
   return nullptr;
 }
 

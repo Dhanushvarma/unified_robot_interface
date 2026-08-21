@@ -29,6 +29,7 @@ jrl_option(BUILD_TESTING "Build tests" OFF)
 jrl_find_package(Boost REQUIRED COMPONENTS program_options thread)
 jrl_find_package(mc_rtc REQUIRED)
 jrl_find_package(Threads REQUIRED)
+jrl_find_package(fmt REQUIRED)
 
 find_program(SETCAP setcap)
 find_program(SUDO sudo)

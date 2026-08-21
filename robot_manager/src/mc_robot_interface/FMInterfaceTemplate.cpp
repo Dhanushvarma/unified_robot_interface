@@ -1,8 +1,9 @@
 #include <mc_robot_interface/FMInterfaceTemplate.h>
-#include <mc_robot_manager/Logging.h>
 #include <robot_comm/CommunicationZenoh.h>
 
 #include <mc_control/mc_global_controller.h>
+
+#include <fmt/core.h>
 
 namespace mc_interface_template
 {
@@ -22,18 +23,18 @@ FMInterfaceTemplate::FMInterfaceTemplate(const std::string & name,
                                          uint8_t buffer_size)
 : RobotInterfaceBase(name, config, (buffer_size == 0) ? 6 : buffer_size)
 {
-  mc_fleet::log::info("FMInterfaceTemplate '{}' starting", name);
+  fmt::print("[FMInterfaceTemplate] '{}' starting\n", name);
 
   const std::string mode = config("controller")("mode", std::string{"position"});
   control_mode_ = parseModeString(mode);
-  mc_fleet::log::info("FMInterfaceTemplate '{}' control mode: {}", name, mode);
+  fmt::print("[FMInterfaceTemplate] '{}' control mode: {}\n", name, mode);
 
   mc_rtc::Configuration com_config(config("network_interface"));
   auto comm = robot_comm::CommunicationFactory::makeCommunication(name, com_config);
   comm->setupServer();
   setCommunication(std::move(comm));
 
-  mc_fleet::log::info("FMInterfaceTemplate '{}' ready", name);
+  fmt::print("[FMInterfaceTemplate] '{}' ready\n", name);
 }
 
 void FMInterfaceTemplate::updateSensors(robot_controller::Controller & gc)
@@ -53,7 +54,7 @@ void FMInterfaceTemplate::updateSensors(robot_controller::Controller & gc)
   {
     gc.initialize(s->position);
     gc_initialized_ = true;
-    mc_fleet::log::info("[FMInterfaceTemplate] '{}' controller initialized", name());
+    fmt::print("[FMInterfaceTemplate] '{}' controller initialized\n", name());
   }
 }
 
@@ -79,7 +80,7 @@ void FMInterfaceTemplate::updateControl(robot_controller::Controller & gc)
   }
 
   if(!communication().send(communication().encode(command)))
-    mc_fleet::log::warning("[FMInterfaceTemplate] '{}' failed to send command", name());
+    fmt::print("[FMInterfaceTemplate][warning] '{}' failed to send command\n", name());
 }
 
 } // namespace mc_interface_template

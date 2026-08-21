@@ -1,4 +1,3 @@
-#include <mc_robot_manager/Logging.h>
 #include <mc_robot_manager/RobotManager.h>
 #include <robot_controller/Controller.h>
 
@@ -8,15 +7,17 @@
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
-#include <iostream>
+#include <fmt/core.h>
 #include <sys/shm.h>
+
+#include <iostream>
 
 namespace mc_fleet
 {
 
 void run(void * data, const std::atomic<bool> & interrupt)
 {
-  log::info("fleet run start");
+  fmt::print("fleet run start\n");
   auto * robot_manager = static_cast<RobotManager *>(data);
   robot_controller::Controller & controller{robot_manager->controller()};
 
@@ -26,12 +27,12 @@ void run(void * data, const std::atomic<bool> & interrupt)
     sched_yield();
   }
 
-  log::info("fleet run done");
+  fmt::print("fleet run done\n");
 }
 
 void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool> & interrupt)
 {
-  log::info("fleet init start");
+  fmt::print("fleet init start\n");
 
   std::string mc_config_path;
   std::string com_config_path;
@@ -53,13 +54,13 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
     std::exit(0);
   }
 
-  log::info("mc_fleet::init 2");
+  fmt::print("mc_fleet::init 2\n");
 
   /* Initialize robot manager */
   std::unique_ptr<RobotManager> robot_manager;
   robot_manager = std::make_unique<RobotManager>(mc_config_path, interrupt);
 
-  log::info("fleet init done");
+  fmt::print("fleet init done\n");
 
   return robot_manager.release();
 }
