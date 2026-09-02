@@ -74,7 +74,7 @@ RUN git clone --branch ${ZENOH_CPP_VERSION} --depth 1 https://github.com/eclipse
 
 # Make zenoh discoverable by CMake's find_package() for this project and
 # the mc-rtc-superbuild install prefix (set up by post-create.sh at runtime).
-ENV CMAKE_PREFIX_PATH="${ZENOH_INSTALL_PREFIX}:/home/vscode/workspace/install:${CMAKE_PREFIX_PATH}"
-ENV LD_LIBRARY_PATH="${ZENOH_INSTALL_PREFIX}/lib:/home/vscode/workspace/install/lib:${LD_LIBRARY_PATH}"
+ENV CMAKE_PREFIX_PATH="${ZENOH_INSTALL_PREFIX}:${CMAKE_PREFIX_PATH}"
+ENV LD_LIBRARY_PATH="${ZENOH_INSTALL_PREFIX}/lib:${LD_LIBRARY_PATH}"
 
 WORKDIR /home/vscode/mc_rtc_interface

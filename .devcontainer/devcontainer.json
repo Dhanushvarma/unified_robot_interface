@@ -11,8 +11,8 @@
   // across container rebuilds, so rebuilding this devcontainer image doesn't
   // force a multi-hour mc_rtc rebuild every time.
   "mounts": [
-    "source=${localEnv:HOME}${localEnv:USERPROFILE}/mc_rtc_interface/superbuild,target=/home/vscode/superbuild,type=bind",
-    "source=${localEnv:HOME}${localEnv:USERPROFILE}/mc_rtc_interface/workspace,target=/home/vscode/workspace,type=bind",
+    "source=mc-rtc-interface-superbuild,target=/home/vscode/superbuild,type=volume",
+    "source=mc_rtc_interface-workspace,target=/home/vscode/workspace,type=volume",
     // Forward your git identity: mc-rtc-superbuild creates a meta-repository
     // with submodules and needs user.name/user.email to be set.
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/vscode/.gitconfig,type=bind"
