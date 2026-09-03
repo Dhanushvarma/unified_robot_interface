@@ -32,6 +32,7 @@ target_include_directories(
   mc_robot_manager
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
          $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../../third_party
 )
 
 install(
@@ -44,9 +45,11 @@ install(
 # Executable
 add_executable(MCFleetControl mc_robot_manager/main.cpp)
 
+target_include_directories(
+  MCFleetControl PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../../third_party
+)
 target_link_libraries(
   MCFleetControl PRIVATE mc_robot_manager mc_robot_interface robot_comm
-                         Boost::program_options
 )
 
 # Installed executable and libraries use the same custom installation prefix.

@@ -2,7 +2,6 @@
 
 include(CMakeFindDependencyMacro)
 
-find_dependency(Boost REQUIRED COMPONENTS program_options thread)
 find_dependency(Flatbuffers REQUIRED)
 find_dependency(mc_rtc REQUIRED)
 find_dependency(Threads REQUIRED)

@@ -4,8 +4,7 @@
 #include <mc_control/Configuration.h>
 // #include "zenoh.hxx"
 
-#include <boost/program_options.hpp>
-namespace po = boost::program_options;
+#include <CLI/CLI.hpp>
 
 #include <fmt/core.h>
 #include <sys/shm.h>
@@ -34,24 +33,21 @@ void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool>
 {
   fmt::print("fleet init start\n");
 
+  CLI::App app{"MCFleetControl options"};
+
   std::string mc_config_path;
-  std::string com_config_path;
-  po::options_description desc("MCFleetControl options");
-  // clang-format off
-  desc.add_options()
-    ("help,h", "Display help message")
-    ("config,f", po::value<std::string>(&mc_config_path), "Path to mc_rtc configuration file");
-  // clang-format on
+  // TODO: remove `required()`
+  // There should be a default path where RobotManager looks in first
+  app.add_option("-f,--config", mc_config_path, "Path to mc_rtc configuration file")->required();
+  app.footer("see etc/mc_rtc.yaml for example configuration");
 
-  po::variables_map vm;
-  po::store(po::parse_command_line(argc, argv, desc), vm);
-  po::notify(vm);
-
-  if(vm.count("help") != 0U)
+  try
   {
-    std::cout << desc << "\n";
-    std::cout << "see etc/mc_rtc.yaml for example configuration\n";
-    std::exit(0);
+    app.parse(argc, argv);
+  }
+  catch(const CLI::ParseError & e)
+  {
+    std::exit(app.exit(e));
   }
 
   fmt::print("mc_fleet::init 2\n");
