@@ -23,7 +23,10 @@
     "--security-opt",
     "seccomp=unconfined",
     "--ulimit=rtprio=99:99",
-    "--ulimit=memlock=100000000000:100000000000"
+    "--ulimit=memlock=100000000000:100000000000",
+    // Foward device path for triorb
+    "--device=/dev/ttyACM0:/dev/ttyACM0",
+    "--publish=127.0.0.1:2222:22"
   ],
 
   "remoteUser": "vscode",
