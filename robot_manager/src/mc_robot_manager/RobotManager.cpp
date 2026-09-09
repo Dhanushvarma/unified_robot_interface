@@ -146,24 +146,106 @@ pid_t RobotManager::spawnRobotInterface(const std::string & robot_name, const mc
 
 void RobotManager::stopSpawnedInterfaces()
 {
-  for(auto & [robot_name, pid] : spawned_interfaces_)
+  for(const auto & [robot_name, pid] : spawned_interfaces_)
   {
-    if(kill(pid, SIGTERM) != 0) continue;
-
-    int status = 0;
-    for(int i = 0; i < 50; ++i) // wait up to ~5s for a clean exit
+    if(pid <= 0)
     {
-      if(waitpid(pid, &status, WNOHANG) != 0) break;
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      continue;
     }
 
-    if(waitpid(pid, &status, WNOHANG) == 0)
+    fmt::print("[RobotManager] Stopping robot_interface '{}' (pid {})\n", robot_name, pid);
+
+    if(::kill(pid, SIGTERM) != 0 && errno != ESRCH)
     {
-      fmt::print("[RobotManager][warning] robot_interface '{}' (pid) did not exit, sending SIGKILL\n", robot_name, pid);
-      kill(pid, SIGKILL);
-      waitpid(pid, &status, 0);
+      fmt::print(stderr,
+                 "[RobotManager][warning] Failed to signal "
+                 "robot_interface '{}' (pid {}): {}\n",
+                 robot_name, pid, std::strerror(errno));
     }
   }
+
+  for(const auto & [robot_name, pid] : spawned_interfaces_)
+  {
+    if(pid <= 0)
+    {
+      continue;
+    }
+
+    int status = 0;
+    bool reaped = false;
+
+    for(int i = 0; i < 50; ++i)
+    {
+      const pid_t result = ::waitpid(pid, &status, WNOHANG);
+
+      if(result == pid)
+      {
+        reaped = true;
+        break;
+      }
+
+      if(result < 0)
+      {
+        if(errno == EINTR)
+        {
+          continue;
+        }
+
+        if(errno == ECHILD)
+        {
+          reaped = true;
+        }
+        else
+        {
+          fmt::print(stderr,
+                     "[RobotManager][warning] waitpid failed for "
+                     "robot_interface '{}' (pid {}): {}\n",
+                     robot_name, pid, std::strerror(errno));
+        }
+
+        break;
+      }
+
+      std::this_thread::sleep_for(std::chrono::milliseconds{100});
+    }
+
+    if(reaped)
+    {
+      continue;
+    }
+
+    fmt::print(stderr,
+               "[RobotManager][warning] robot_interface '{}' "
+               "(pid {}) did not exit after SIGTERM, sending SIGKILL\n",
+               robot_name, pid);
+
+    if(::kill(pid, SIGKILL) != 0 && errno != ESRCH)
+    {
+      fmt::print(stderr,
+                 "[RobotManager][warning] Failed to kill "
+                 "robot_interface '{}' (pid {}): {}\n",
+                 robot_name, pid, std::strerror(errno));
+    }
+
+    while(::waitpid(pid, &status, 0) < 0)
+    {
+      if(errno == EINTR)
+      {
+        continue;
+      }
+
+      if(errno != ECHILD)
+      {
+        fmt::print(stderr,
+                   "[RobotManager][warning] Final waitpid failed for "
+                   "robot_interface '{}' (pid {}): {}\n",
+                   robot_name, pid, std::strerror(errno));
+      }
+
+      break;
+    }
+  }
+
   spawned_interfaces_.clear();
 }
 
