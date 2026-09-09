@@ -12,7 +12,7 @@
   // force a multi-hour mc_rtc rebuild every time.
   "mounts": [
     "source=mc-rtc-interface-superbuild,target=/home/vscode/superbuild,type=volume",
-    "source=mc_rtc_interface-workspace,target=/home/vscode/workspace,type=volume",
+    "source=mc-rtc-interface-workspace,target=/home/vscode/workspace,type=volume",
     // Forward your git identity: mc-rtc-superbuild creates a meta-repository
     // with submodules and needs user.name/user.email to be set.
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/vscode/.gitconfig,type=bind"

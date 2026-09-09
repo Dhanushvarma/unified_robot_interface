@@ -336,8 +336,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   size_t max_step_size{0};
   for(auto & [robot_name, interface] : interfaces_)
   {
-    // double cycle_s = interface->dt();
-    double cycle_s = 0.005;
+    double cycle_s = interface->dt();
     auto cycle_ns = static_cast<size_t>(cycle_s * 1e9);
     auto controller_ns = static_cast<size_t>(controller_s * 1e9);
     if(controller_ns < cycle_ns)
