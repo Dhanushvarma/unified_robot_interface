@@ -1,6 +1,6 @@
-MainRobot: UR5e
-Enabled: Posture
-Timestep: 0.005
+MainRobot: triorb
+Enabled: TriOrbTest
+Timestep: 0.001
 
 LogPolicy : threaded
 
@@ -9,21 +9,20 @@ Default:
   module: default_module
   control_mode: position   # velocity or torque [optional] default to position
   driver: RobotDriverRTDE   # [optional] default to driver defined in module
-  time_step: 0.00025          # [optional] default to controller frequency (Hz)
+  time_step: 0.001          # [optional] default to controller frequency (Hz)
   network_interface: tcp   # [optional] default to tcp
 
 Robots:
   triorb:
-    module: TriOrb            # mc_rtc RobotModule name (as installed by mc_ur5e)
+    module: triorb            # mc_rtc RobotModule name (as installed by mc_ur5e)
     interface: interface_template   # [optional] manager-side interface implementation, default to interface_template
     # protocol left unset: robot_interface.autostart below defaults it to zenoh/shm
     network_interface:
       protocol: zenoh
     robot_interface:
       driver: RobotDriverTriOrb
-      control_mode: position
-      ip: 192.168.x.x
-      port: 8080
+      ip: /dev/ttyACM0
+      port: 0
       # Set to true when this robot is directly plugged into the control
       # computer (no separate robot-side PC): MCFleetControl will spawn and
       # manage the RobotInterface process itself, so it no longer needs to

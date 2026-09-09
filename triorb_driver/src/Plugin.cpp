@@ -12,9 +12,9 @@ extern "C"
     classes.push_back("RobotDriverTriOrb");
   }
 
-  mc_robot_interface::RobotDriver * create(const std::string &, const std::string & ip, const uint16_t & port)
+  mc_robot_interface::RobotDriver * create(const std::string &, const std::string & endpoint, const uint16_t & port)
   {
-    return new triorb_driver::RobotDriverTriOrb(ip, port);
+    return new triorb_driver::RobotDriverTriOrb(endpoint, port);
   }
 
   void destroy(mc_robot_interface::RobotDriver * driver)
