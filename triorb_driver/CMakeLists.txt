@@ -31,6 +31,7 @@ add_subdirectory(src)
 
 if(BUILD_CONTROLLER)
   message(STATUS "BUILD_CONTROLLER is enabled!")
+  add_subdirectory(test_controllers/callm_controller)
   add_subdirectory(test_controllers/triorb_controller)
 endif()
 
