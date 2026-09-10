@@ -16,6 +16,7 @@ include(GNUInstallDirs)
 include(CTest)
 
 # enable_testing()
+option(BUILD_CONTROLLER "Build testing controller for Triorb and Call-M" OFF)
 
 # Dependencies
 find_package(mc_robot_interface REQUIRED)
@@ -27,5 +28,10 @@ add_subdirectory(src)
 # if(BUILD_TESTING)
 #   add_subdirectory(tests)
 # endif()
+
+if(BUILD_CONTROLLER)
+  message(STATUS "BUILD_CONTROLLER is enabled!")
+  add_subdirectory(test_controllers/triorb_controller)
+endif()
 
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
