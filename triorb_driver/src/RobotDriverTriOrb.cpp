@@ -173,7 +173,7 @@ long findValueAfterCode(const std::vector<uint8_t> & buffer, uint16_t code, std:
 namespace triorb_driver
 {
 
-RobotDriverTriOrb::RobotDriverTriOrb(const std::string & device, uint16_t) : device_("/dev/ttyACM0")
+RobotDriverTriOrb::RobotDriverTriOrb(const std::string & device, uint16_t) : device_(device)
 {
   // TODO: test
   positionControlConfig_.translationGain = 1.0;
