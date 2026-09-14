@@ -6,7 +6,7 @@
 #include <mc_rtc/logging.h>
 #include <robot_interface/config.h>
 
-#include <thread>
+#include <chrono>
 
 namespace mc_robot_interface
 {
@@ -37,7 +37,7 @@ void RobotInterface::run(const std::atomic<bool> & interrupt)
       init_cv_.wait_for(lock, std::chrono::milliseconds(100));
   }
 
-  if(interrupt)
+  if(interrupt.load())
   {
     mc_rtc::log::warning("[RobotInterface] '{}' interrupted before init", name_);
     return;
@@ -64,9 +64,15 @@ void RobotInterface::run(const std::atomic<bool> & interrupt)
   }
 
   // Control loop: run at driver's natural rate (spin freely, driver sync() paces us).
-  while(!interrupt)
+  while(!interrupt.load())
   {
     driver_->sync();
+    // Shutdown may have been requested while sync() was blocking.
+    if(interrupt.load())
+    {
+      break;
+    }
+
     updateSensors();
     updateControl();
   }

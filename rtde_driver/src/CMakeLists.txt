@@ -11,4 +11,9 @@ target_link_libraries(
 )
 target_link_libraries(RobotDriverRTDE PRIVATE ur_client_library::urcl fmt::fmt)
 
-install(TARGETS RobotDriverRTDE LIBRARY DESTINATION lib/robot_interface)
+install(
+  TARGETS RobotDriverRTDE
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/robot_interface
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/robot_interface
+)
