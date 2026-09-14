@@ -1,5 +1,7 @@
 #include <robot_controller/mc_rtc/ControllerMcRtc.h>
 
+#include <stdexcept>
+
 namespace robot_controller
 {
 
@@ -59,9 +61,43 @@ void ControllerMcRtc::setJointTorques(const std::string & robot, const std::vect
   impl_->setJointTorques(robot, values);
 }
 
-void ControllerMcRtc::initialize(const std::vector<double> & encoder_values)
+void ControllerMcRtc::initializeRobot(const std::string & robotName, const std::vector<double> & encoderValues)
 {
-  impl_->init(encoder_values);
+  auto & controller = impl_->controller();
+  auto & robot = controller.robots().robot(robotName);
+
+  const auto & jointOrder = robot.refJointOrder();
+
+  if(encoderValues.size() != jointOrder.size())
+  {
+    throw std::invalid_argument("Cannot initialize robot '" + robotName + "': received "
+                                + std::to_string(encoderValues.size()) + " encoder values but expected "
+                                + std::to_string(jointOrder.size()));
+  }
+
+  // For MainRobot only
+  const bool isMainRobot = controller.robot().name() == robot.name();
+  if(isMainRobot)
+  {
+    impl_->init(encoderValues);
+    return;
+  }
+
+  for(std::size_t i = 0; i < jointOrder.size(); ++i)
+  {
+    const auto jointIndex = robot.jointIndexInMBC(i);
+
+    robot.mbc().q[jointIndex][0] = encoderValues[i];
+  }
+
+  robot.forwardKinematics();
+  robot.forwardVelocity();
+
+  auto & realRobot = controller.realRobots().robot(robotName);
+
+  realRobot.mbc() = robot.mbc();
+  realRobot.forwardKinematics();
+  realRobot.forwardVelocity();
 }
 
 void ControllerMcRtc::initializeRobots()

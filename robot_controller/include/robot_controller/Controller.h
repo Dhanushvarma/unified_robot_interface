@@ -31,7 +31,7 @@ public:
 
   virtual void setJointTorques(const std::string & robot, const std::vector<double> & values) = 0;
 
-  virtual void initialize(const std::vector<double> & encoder_values) = 0;
+  virtual void initializeRobot(const std::string & robotName, const std::vector<double> & encoderValues) = 0;
 
   virtual void initializeRobots() = 0;
 

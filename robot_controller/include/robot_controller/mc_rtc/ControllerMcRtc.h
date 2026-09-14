@@ -29,7 +29,7 @@ public:
 
   void initializeRobots() override;
 
-  void initialize(const std::vector<double> & encoder_values) override;
+  void initializeRobot(const std::string & robotName, const std::vector<double> & encoderValues) override;
 
   std::vector<double> command(const std::string & robot_name, ControlMode mode) const override;
 
