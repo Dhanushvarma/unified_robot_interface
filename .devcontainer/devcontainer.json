@@ -11,6 +11,10 @@
   // across container rebuilds, so rebuilding this devcontainer image doesn't
   // force a multi-hour mc_rtc rebuild every time.
   "mounts": [
+    // TODO: check and delete
+    // "type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix,consistency=cached",
+    "source=${localEnv:HOME}/.Xauthority,target=/home/vscode/.Xauthority,type=bind",
+
     "source=mc-rtc-interface-superbuild,target=/home/vscode/superbuild,type=volume",
     "source=mc-rtc-interface-workspace,target=/home/vscode/workspace,type=volume",
     // Forward your git identity: mc-rtc-superbuild creates a meta-repository
@@ -19,12 +23,20 @@
   ],
 
   "runArgs": [
+    "--network=host",
     "--cap-add=sys_nice",
     "--security-opt",
     "seccomp=unconfined",
     "--ulimit=rtprio=99:99",
-    "--ulimit=memlock=100000000000:100000000000"
+    "--ulimit=memlock=100000000000:100000000000",
+
+    // Foward device path for triorb. Uncomment if needed.
+    // "--device=/dev/serial/by-id/usb-TriOrb_TriOrb_Device_389999633556-if00:/dev/triorb"
   ],
+
+  "containerEnv": {
+    "DISPLAY": "${localEnv:DISPLAY}",
+  },
 
   "remoteUser": "vscode",
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/mc_rtc_interface,type=bind",
