@@ -101,6 +101,23 @@ if [ -f "${MCFLEET_BIN}" ]; then
   sudo setcap -r "${MCFLEET_BIN}" 2>/dev/null || true
 fi
 
+if [ "${BUILD_KORTEX_DRIVER}" = "ON" ]; then
+  echo "==> Building kortex_driver"
+
+  rm -rf "${PROJECT_DIR}/kortex_driver/build"
+
+  cmake -S "${PROJECT_DIR}/kortex_driver" \
+        -B "${PROJECT_DIR}/kortex_driver/build" \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_PREFIX_PATH="${PROJECT_DIR}/build/install;${WORKSPACE_DIR}/install;${EXTRA_DEPS_PREFIX}" \
+        -DCMAKE_INSTALL_PREFIX="${PROJECT_DIR}/build/install"
+
+  cmake --build "${PROJECT_DIR}/kortex_driver/build" \
+        --parallel "${BUILD_JOBS}"
+
+  cmake --install "${PROJECT_DIR}/kortex_driver/build"
+fi
+
 if [ "${BUILD_RTDE_DRIVER}" = "ON" ]; then
   echo "==> Installing UR Client Library"
 
@@ -183,22 +200,5 @@ grep -qxF "${ENV_SOURCE_LINE}" "${HOME}/.profile"
 
 test -x "${PROJECT_DIR}/build/bin/MCFleetControl"
 test -x "${PROJECT_DIR}/build/bin/RobotInterface"
-
-if [ "${BUILD_KORTEX_DRIVER}" = "ON" ]; then
-  echo "==> Building kortex_driver"
-
-  rm -rf "${PROJECT_DIR}/kortex_driver/build"
-
-  cmake -S "${PROJECT_DIR}/kortex_driver" \
-        -B "${PROJECT_DIR}/kortex_driver/build" \
-        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-        -DCMAKE_PREFIX_PATH="${PROJECT_DIR}/build/install;${WORKSPACE_DIR}/install;${EXTRA_DEPS_PREFIX}" \
-        -DCMAKE_INSTALL_PREFIX="${PROJECT_DIR}/build/install"
-
-  cmake --build "${PROJECT_DIR}/kortex_driver/build" \
-        --parallel "${BUILD_JOBS}"
-
-  cmake --install "${PROJECT_DIR}/kortex_driver/build"
-fi
 
 echo "==> Done. The environment will be loaded automatically in new Bash sessions."
