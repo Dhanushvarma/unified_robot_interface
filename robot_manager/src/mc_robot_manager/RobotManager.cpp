@@ -289,6 +289,8 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   }
 
   /* Send init query to each robot_interface process (query/reply: waits for driver load confirmation). */
+  // TODO: adding wait time like this might be a bad fix. Need a better robot-is-ready detection
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   std::vector<std::string> failed_robots;
   for(auto & [robot_name, interface] : interfaces_)
   {
