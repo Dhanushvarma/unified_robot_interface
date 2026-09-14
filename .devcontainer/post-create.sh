@@ -55,7 +55,7 @@ cat > "${SUPERBUILD_DIR}/CMakeUserPresets.json" <<'EOF'
   "buildPresets": [
     {
       "name": "mc_rtc_interface",
-      "displayName": "RelWithDebInfo (noble, no ROS)",
+      "displayName": "RelWithDebInfo",
       "configurePreset": "mc_rtc_interface",
       "configuration": "RelWithDebInfo",
       "targets": ["install"]
@@ -81,13 +81,24 @@ source "${WORKSPACE_DIR}/install/setup_mc_rtc.sh"
 set -u
 # export LD_LIBRARY_PATH="${WORKSPACE_DIR}/install/lib:${EXTRA_DEPS_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 
-echo "==> Configuring mc_rtc_interface"
+echo "==> Building mc_rtc_interface with ${BUILD_JOBS} jobs"
+
+rm -rf "${PROJECT_DIR}/build"
+
 cmake -S "${PROJECT_DIR}" -B "${PROJECT_DIR}/build" \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_PREFIX_PATH="${WORKSPACE_DIR}/install;${EXTRA_DEPS_PREFIX}"
 
-echo "==> Building mc_rtc_interface with ${BUILD_JOBS} jobs"
 cmake --build "${PROJECT_DIR}/build" --parallel "${BUILD_JOBS}"
+
+cmake --install "${PROJECT_DIR}/build"
+
+echo "==> Removing MCFleetControl file capability"
+
+MCFLEET_BIN="${PROJECT_DIR}/build/bin/MCFleetControl"
+if [ -f "${MCFLEET_BIN}" ]; then
+  sudo setcap -r "${MCFLEET_BIN}" 2>/dev/null || true
+fi
 
 if [ "${BUILD_RTDE_DRIVER}" = "ON" ]; then
   echo "==> Installing UR Client Library"
@@ -97,6 +108,8 @@ if [ "${BUILD_RTDE_DRIVER}" = "ON" ]; then
   sudo apt-get install -y ros-$ROS_DISTRO-ur-client-library
 
   echo "==> Building rtde_driver"
+
+  rm -rf "${PROJECT_DIR}/rtde_driver/build"
 
   cmake -S "${PROJECT_DIR}/rtde_driver" \
         -B "${PROJECT_DIR}/rtde_driver/build" \
@@ -116,6 +129,8 @@ if [ "${BUILD_TRIORB_DRIVER}" = "ON" ]; then
   if [ "${BUILD_TRIORB_TEST_CONTROLLERS}" = "ON" ]; then
     echo "===> With test_controllers"
   fi
+
+  rm -rf "${PROJECT_DIR}/triorb_driver/build"
 
   cmake -S "${PROJECT_DIR}/triorb_driver" \
         -B "${PROJECT_DIR}/triorb_driver/build" \
