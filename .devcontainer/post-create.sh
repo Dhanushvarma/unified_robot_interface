@@ -44,10 +44,10 @@ cat > "${SUPERBUILD_DIR}/CMakeUserPresets.json" <<'EOF'
   "configurePresets": [
     {
       "name": "mc_rtc_interface",
-      "displayName": "RelWithDebInfo (noble, no ROS)",
+      "displayName": "RelWithDebInfo",
       "inherits": ["relwithdebinfo-noble"],
       "cacheVariables": {
-        "WITH_ROS_SUPPORT": "OFF",
+        "WITH_ROS_SUPPORT": "ON",
         "BUILD_TESTING": "OFF"
       }
     }
