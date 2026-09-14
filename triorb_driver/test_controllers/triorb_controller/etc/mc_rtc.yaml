@@ -13,6 +13,6 @@ Robots:
       protocol: zenoh
     robot_interface:
       driver: RobotDriverTriOrb
-      ip: /dev/ttyACM0
+      ip: /dev/triorb
       port: 0
       autostart: true

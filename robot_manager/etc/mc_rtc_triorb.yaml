@@ -1,4 +1,4 @@
-MainRobot: triorb
+MainRobot: TriOrb
 Enabled: Posture
 Timestep: 0.001
 
@@ -14,7 +14,7 @@ Default:
 
 Robots:
   triorb:
-    module: triorb            # mc_rtc RobotModule name (as installed by mc_ur5e)
+    module: TriOrb            # mc_rtc RobotModule name (as installed by mc_ur5e)
     interface: interface_template   # [optional] manager-side interface implementation, default to interface_template
     # protocol left unset: robot_interface.autostart below defaults it to zenoh/shm
     network_interface:

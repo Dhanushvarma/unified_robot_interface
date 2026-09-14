@@ -22,6 +22,12 @@ void CallMController::reset(const mc_control::ControllerResetData & reset_data)
 {
   mc_control::MCController::reset(reset_data);
 
+  robots().robot("ur5e").posW(sva::PTransformd(Eigen::Vector3d(0.0, 0.0, 0.6)));
+  addContact({"triorb", "ur5e", "Base", "Base"});
+
+  triorbPostureTask_ = std::make_shared<mc_tasks::PostureTask>(solver(), 1, 1, 1);
+  solver().addTask(triorbPostureTask_);
+
   const auto baseXIndex = robot("triorb").jointIndexByName("base_x");
   const auto baseYIndex = robot("triorb").jointIndexByName("base_y");
 
