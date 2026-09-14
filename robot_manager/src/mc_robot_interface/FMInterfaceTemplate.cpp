@@ -52,9 +52,11 @@ void FMInterfaceTemplate::updateSensors(robot_controller::Controller & gc)
 
   if(!gc_initialized_ && !s->position.empty())
   {
-    gc.initialize(s->position);
+    gc.initializeRobot(name(), s->position);
+
     gc_initialized_ = true;
-    fmt::print("[FMInterfaceTemplate] '{}' controller initialized\n", name());
+
+    fmt::print("[FMInterfaceTemplate] '{}' robot initialized\n", name());
   }
 }
 
