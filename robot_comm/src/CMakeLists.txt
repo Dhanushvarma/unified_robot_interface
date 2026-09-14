@@ -56,6 +56,8 @@ add_serializer(
 
 target_link_libraries(robot_comm_flatbuffers PUBLIC mc_rtc_flatbuffers)
 
+add_dependencies(robot_comm_flatbuffers GENERATE_mc_rtc_flatbuffers)
+
 if(TARGET proto-mc-rtc)
   add_serializer(
     robot_comm_protobuf serialization/ProtobufSerializer.cpp
