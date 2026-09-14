@@ -37,6 +37,7 @@
   "containerEnv": {
     "DISPLAY": "${localEnv:DISPLAY}",
 
+    "BUILD_KORTEX_DRIVER": "OFF",
     "BUILD_RTDE_DRIVER": "OFF",
     "BUILD_TRIORB_DRIVER": "OFF",
     "BUILD_TRIORB_TEST_CONTROLLER": "OFF"

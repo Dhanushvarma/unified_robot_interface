@@ -112,7 +112,7 @@ mc_robot_interface::RobotDriver * create(const std::string & name,
 void destroy(mc_robot_interface::RobotDriver * ptr);
 ```
 
-Configure it in `robot_manager/etc/mc_rtc.yaml` under the `robot_interface` key of the
+Configure it in `robot_manager/etc/mc_rtc_rtde.yaml` under the `robot_interface` key of the
 relevant robot entry:
 
 ```yaml

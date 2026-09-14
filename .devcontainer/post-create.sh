@@ -4,6 +4,7 @@
 # builds this project (mc_rtc_interface) against that install prefix.
 set -euo pipefail
 
+BUILD_KORTEX_DRIVER="${BUILD_KORTEX_DRIVER:-ON}"
 BUILD_RTDE_DRIVER="${BUILD_RTDE_DRIVER:-ON}"
 BUILD_TRIORB_DRIVER="${BUILD_TRIORB_DRIVER:-ON}"
 BUILD_TRIORB_TEST_CONTROLLERS="${BUILD_TRIORB_TEST_CONTROLLERS:-ON}"
@@ -182,5 +183,22 @@ grep -qxF "${ENV_SOURCE_LINE}" "${HOME}/.profile"
 
 test -x "${PROJECT_DIR}/build/bin/MCFleetControl"
 test -x "${PROJECT_DIR}/build/bin/RobotInterface"
+
+if [ "${BUILD_KORTEX_DRIVER}" = "ON" ]; then
+  echo "==> Building kortex_driver"
+
+  rm -rf "${PROJECT_DIR}/kortex_driver/build"
+
+  cmake -S "${PROJECT_DIR}/kortex_driver" \
+        -B "${PROJECT_DIR}/kortex_driver/build" \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_PREFIX_PATH="${PROJECT_DIR}/build/install;${WORKSPACE_DIR}/install;${EXTRA_DEPS_PREFIX}" \
+        -DCMAKE_INSTALL_PREFIX="${PROJECT_DIR}/build/install"
+
+  cmake --build "${PROJECT_DIR}/kortex_driver/build" \
+        --parallel "${BUILD_JOBS}"
+
+  cmake --install "${PROJECT_DIR}/kortex_driver/build"
+fi
 
 echo "==> Done. The environment will be loaded automatically in new Bash sessions."

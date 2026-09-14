@@ -1,0 +1,31 @@
+MainRobot: Kinova
+Enabled: Posture
+Timestep: 0.005
+
+LogPolicy : threaded
+
+# used to override system default for all robots
+Default:
+  module: default_module
+  control_mode: position   # velocity or torque [optional] default to position
+  driver: RobotDriverKortex   # [optional] default to driver defined in module
+  time_step: 0.00025          # [optional] default to controller frequency (Hz)
+  network_interface: tcp   # [optional] default to tcp
+
+Robots:
+  kinova:
+    module: Kinova            # mc_rtc RobotModule name (as installed by mc_ur5e)
+    interface: interface_template   # [optional] manager-side interface implementation, default to interface_template
+    # protocol left unset: robot_interface.autostart below defaults it to zenoh/shm
+    network_interface:
+      protocol: zenoh
+    robot_interface:
+      driver: RobotDriverKortex
+      control_mode: position
+      ip: 192.168.1.10
+      # port: 0
+      # Set to true when this robot is directly plugged into the control
+      # computer (no separate robot-side PC): MCFleetControl will spawn and
+      # manage the RobotInterface process itself, so it no longer needs to
+      # be started manually before running MCFleetControl.
+      autostart: true
