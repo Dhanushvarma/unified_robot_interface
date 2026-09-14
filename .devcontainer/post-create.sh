@@ -4,6 +4,8 @@
 # builds this project (mc_rtc_interface) against that install prefix.
 set -euo pipefail
 
+BUILD_KORTEX_DRIVER="${BUILD_KORTEX_DRIVER:-ON}"
+
 SUPERBUILD_DIR="${HOME}/superbuild"
 WORKSPACE_DIR="${HOME}/workspace"
 PROJECT_DIR="${HOME}/mc_rtc_interface"
@@ -69,5 +71,22 @@ cmake -S "${PROJECT_DIR}" -B "${PROJECT_DIR}/build" \
 
 echo "==> Building mc_rtc_interface"
 cmake --build "${PROJECT_DIR}/build" --parallel "$(nproc)"
+
+if [ "${BUILD_KORTEX_DRIVER}" = "ON" ]; then
+  echo "==> Building kortex_driver"
+
+  rm -rf "${PROJECT_DIR}/kortex_driver/build"
+
+  cmake -S "${PROJECT_DIR}/kortex_driver" \
+        -B "${PROJECT_DIR}/kortex_driver/build" \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_PREFIX_PATH="${PROJECT_DIR}/build/install;${WORKSPACE_DIR}/install;${EXTRA_DEPS_PREFIX}" \
+        -DCMAKE_INSTALL_PREFIX="${PROJECT_DIR}/build/install"
+
+  cmake --build "${PROJECT_DIR}/kortex_driver/build" \
+        --parallel "${BUILD_JOBS}"
+
+  cmake --install "${PROJECT_DIR}/kortex_driver/build"
+fi
 
 echo "==> Done. Source ${WORKSPACE_DIR}/install/setup_mc_rtc.sh in new shells to pick up mc_rtc's environment."

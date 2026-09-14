@@ -26,6 +26,10 @@
     "--ulimit=memlock=100000000000:100000000000"
   ],
 
+  "containerEnv": {
+      "BUILD_KORTEX_DRIVER": "OFF",
+    },
+
   "remoteUser": "vscode",
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/mc_rtc_interface,type=bind",
   "workspaceFolder": "/home/vscode/mc_rtc_interface",
