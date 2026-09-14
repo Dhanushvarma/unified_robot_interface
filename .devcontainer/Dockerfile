@@ -23,7 +23,20 @@ RUN --mount=type=cache,target=/var/cache/apt \
       libboost-thread-dev \
       pkg-config \
       curl \
+      openssh-server \
+      xauth \
+      x11-apps \
+      mesa-utils \
     && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /run/sshd /etc/ssh/sshd_config.d \
+    && chmod 0755 /run/sshd \
+    && printf '%s\n' \
+         'X11Forwarding yes' \
+         'X11UseLocalhost yes' \
+         'XAuthLocation /usr/bin/xauth' \
+       > /etc/ssh/sshd_config.d/60-x11-forwarding.conf \
+    && sshd -t
 
 USER vscode
 

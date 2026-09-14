@@ -1,0 +1,26 @@
+MainRobot: triorb
+Enabled: CallMTest
+Timestep: 0.001
+
+LogPolicy : threaded
+
+# used to override system default for all robots
+Default:
+  control_mode: position
+  time_step: 0.001
+  network_interface: zenoh
+
+Robots:
+  triorb:
+    module: triorb
+    robot_interface:
+      driver: RobotDriverTriOrb
+      ip: /dev/ttyACM0
+      # port: 0
+      autostart: true
+  ur5e:
+    module: UR5e
+    robot_interface:
+      driver: RobotDriverRTDE
+      ip: 150.18.227.205
+      autostart: true

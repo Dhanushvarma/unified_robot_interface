@@ -55,12 +55,38 @@ void RobotInterface::run(const std::atomic<bool> & interrupt)
   // reverse interface gets servoJ right away and the URScript doesn't time out
   // while waiting for the first command from the manager.
   driver_->sync();
-  auto init_q = driver_->getActualQ();
-  if(!init_q.empty())
+
+  robot_comm::Command hold;
+
+  if(control_mode_ == "position")
   {
-    robot_comm::Command hold;
-    hold.position = init_q;
+    const auto init_q = driver_->getActualQ();
+
+    if(!init_q.empty())
+    {
+      hold.position = init_q;
+      last_cmd_ = std::move(hold);
+    }
+  }
+  else if(control_mode_ == "velocity")
+  {
+    const auto init_q = driver_->getActualQ();
+
+    hold.velocity.assign(init_q.size(), 0.0);
+
     last_cmd_ = std::move(hold);
+  }
+  else if(control_mode_ == "torque")
+  {
+    const auto init_q = driver_->getActualQ();
+
+    hold.torque.assign(init_q.size(), 0.0);
+
+    last_cmd_ = std::move(hold);
+  }
+  else
+  {
+    throw std::runtime_error("[RobotInterface] Unsupported controller mode: " + control_mode_);
   }
 
   // Control loop: run at driver's natural rate (spin freely, driver sync() paces us).
@@ -100,10 +126,11 @@ robot_comm::ByteBuffer RobotInterface::handleInitQuery(const robot_comm::ByteBuf
   try
   {
     robot_config.loadData(*config_opt);
+    control_mode_ = robot_config("controller")("mode", std::string{"position"});
   }
   catch(const std::exception & e)
   {
-    std::string err = std::string("Invalid config YAML: ") + e.what();
+    std::string err = std::string{"Invalid config YAML: "} + e.what();
     mc_rtc::log::error("[RobotInterface] '{}' init query: {}", name_, err);
     std::lock_guard<std::mutex> lock(init_mutex_);
     init_error_ = err;

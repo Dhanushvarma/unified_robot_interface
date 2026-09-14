@@ -71,6 +71,9 @@ private:
   std::condition_variable init_cv_;
   bool initialized_ = false;
   std::string init_error_;
+
+  // TODO: wip passing control mode to interface
+  std::string control_mode_{};
 };
 
 } // namespace mc_robot_interface

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cerrno>
 #include <chrono>
 #include <csignal>
 #include <cstdlib>
@@ -44,7 +45,7 @@ RobotManager::RobotManager(const std::string & mc_config_path, const std::atomic
 : gconfig_(mc_control::MCGlobalController::GlobalConfiguration(mc_config_path))
 {
   processGConfig(gconfig_);
-  fmt::print(gconfig_.config("Robots").dump(true, true));
+  fmt::print("{}\n", gconfig_.config("Robots").dump(true, true));
 
   const std::string backend = gconfig_.config("Controller", std::string{"mc_rtc"});
   controller_ = controller_loader_.create(backend, gconfig_.config.dump());
@@ -101,11 +102,11 @@ bool RobotManager::autostartEnabled(const mc_rtc::Configuration & robot_config)
 
 pid_t RobotManager::spawnRobotInterface(const std::string & robot_name, const mc_rtc::Configuration & robot_config)
 {
-  // robot_interface only needs its own name plus the network/robot_interface sections.
   mc_rtc::Configuration iface_config;
   iface_config.add("name", robot_name);
   iface_config.add("network_interface", robot_config("network_interface"));
   iface_config.add("robot_interface", robot_config("robot_interface"));
+  iface_config.add("controller", robot_config("controller"));
 
   const auto config_path = std::filesystem::temp_directory_path() / ("mc_fleet_" + robot_name + "_interface.yaml");
   iface_config.save(config_path.string());
@@ -391,8 +392,8 @@ void RobotManager::launchZenohRouter()
 
   fmt::print("[mc_fleet] launchZenohRouter start\n");
 
-  zenoh::Config config =
-      zenoh::Config::from_file("/home/vscode/workspace/sandbox/mc_rtc_interface/robot_comm/tests/zenoh/router.json5");
+  // TODO: remove hardcoded path
+  zenoh::Config config = zenoh::Config::from_file("/home/vscode/mc_rtc_interface/robot_comm/tests/zenoh/router.json5");
 
   zenoh_router_ = std::make_unique<zenoh::Session>(zenoh::Session::open(std::move(config)));
 

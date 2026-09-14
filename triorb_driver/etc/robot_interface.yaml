@@ -1,0 +1,8 @@
+
+robot_interface:
+  driver: RobotDriverTriOrb
+  ip: 192.168.x.x
+  port: 8080
+
+network_interface:
+  protocol: zenoh
