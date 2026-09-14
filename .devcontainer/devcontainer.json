@@ -36,6 +36,9 @@
 
   "containerEnv": {
     "DISPLAY": "${localEnv:DISPLAY}",
+    "BUILD_RTDE_DRIVER": "ON",
+    "BUILD_TRIORB_DRIVER": "ON",
+    "BUILD_TRIORB_TEST_CONTROLLER": "ON"
   },
 
   "remoteUser": "vscode",
