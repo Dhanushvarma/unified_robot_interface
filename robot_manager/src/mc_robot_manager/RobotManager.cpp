@@ -1,5 +1,4 @@
 #include <mc_robot_manager/RobotManager.h>
-#include <robot_comm/CommunicationZenoh.h>
 
 #include <fmt/core.h>
 
@@ -8,13 +7,10 @@
 #include <cerrno>
 #include <chrono>
 #include <csignal>
-#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <spawn.h>
 #include <stdexcept>
-#include <sys/ipc.h>
-#include <sys/shm.h>
 #include <sys/wait.h>
 #include <thread>
 #include <unistd.h>
@@ -418,7 +414,7 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
   {
     mc_rtc::Configuration dc = gconfig.config("Default");
     user_default_.module = dc("module", std::string(user_default_.module));
-    user_default_.communication_protocol = dc("network_interface", std::string(user_default_.communication_protocol));
+    user_default_.network_protocol = dc("network_interface", std::string(user_default_.network_protocol));
     user_default_.driver = dc("driver", std::string(user_default_.driver));
     user_default_.time_step = dc("time_step", double(user_default_.time_step));
     user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
@@ -440,9 +436,18 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
       robot_config.load(base_config);
     }
 
-    if(!robot_config.has("module"))
+    if(robot_config.has("module"))
+    {
+      // Do nothing
+    }
+    else if(!user_default_.module.empty())
     {
       robot_config.add("module", user_default_.module);
+    }
+    else
+    {
+      throw std::runtime_error(
+          fmt::format("Missing 'module' configuration for robot '{}' and no default value is available\n", robot_name));
     }
 
     if(!robot_config.has("controller"))
@@ -465,31 +470,52 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
 
     // robot_interface section carries the driver name and robot-side ip/port.
     // Fill in a default driver only if the whole section is absent.
-    if(!robot_config.has("robot_interface"))
+    if(robot_config.has("robot_interface"))
     {
-      robot_config.add("robot_interface");
-      robot_config("robot_interface").add("driver", user_default_.driver);
-    }
-    else if(!robot_config("robot_interface").has("driver"))
-    {
-      robot_config("robot_interface").add("driver", user_default_.driver);
-    }
-
-    if(robot_config.has("network_interface"))
-    {
-      if(!robot_config("network_interface").has("protocol"))
+      if(robot_config("robot_interface").has("driver"))
       {
-        // A co-located robot_interface is guaranteed to share this host, so it can
-        // use Zenoh's shared-memory transport by default instead of the network stack.
-        const std::string default_protocol =
-            autostartEnabled(robot_config) ? std::string{"zenoh/shm"} : user_default_.communication_protocol;
-        robot_config("network_interface").add("protocol", default_protocol);
+        // Do nothing
+      }
+      else if(!user_default_.driver.empty())
+      {
+        robot_config("robot_interface").add("driver", user_default_.driver);
+      }
+      else
+      {
+        throw std::runtime_error(fmt::format(
+            "Missing 'robot_interface.driver' configuration for robot '{}' and no default value is available\n",
+            robot_name));
+      }
+
+      // TODO: are all robots required ip and port
+      if(!robot_config("robot_interface").has("ip"))
+      {
+        throw std::runtime_error(
+            fmt::format("Missing 'robot_interface.ip' configuration for robot '{}'\n", robot_name));
+      }
+      if(!robot_config("robot_interface").has("port"))
+      {
+        throw std::runtime_error(
+            fmt::format("Missing 'robot_interface.port' configuration for robot '{}'\n", robot_name));
       }
     }
     else
     {
-      throw std::runtime_error(
-          fmt::format("No `network_interface` section in the configuration of robot {}\n", robot_name));
+      throw std::runtime_error(fmt::format("Missing 'robot_interface' configuration for robot '{}'\n", robot_name));
+    }
+
+    // TODO: is "network_interface" only include "protocol"?
+    if(!robot_config.has("network_interface"))
+    {
+      robot_config.add("network_interface");
+    }
+    if(!robot_config("network_interface").has("protocol"))
+    {
+      // A co-located robot_interface is guaranteed to share this host, so it can
+      // use Zenoh's shared-memory transport by default instead of the network stack.
+      const std::string default_protocol =
+          autostartEnabled(robot_config) ? std::string{"zenoh/shm"} : user_default_.network_protocol;
+      robot_config("network_interface").add("protocol", default_protocol);
     }
   }
 

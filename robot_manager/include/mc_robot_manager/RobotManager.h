@@ -81,7 +81,7 @@ private:
     std::string control_mode{"position"};
     std::string driver{};
     double time_step{0.001};
-    std::string communication_protocol{"zenoh"};
+    std::string network_protocol{"zenoh/shm"};
   };
   DefaultConfig user_default_;
 
