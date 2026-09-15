@@ -104,18 +104,18 @@ fi
 if [ "${BUILD_KORTEX_DRIVER}" = "ON" ]; then
   echo "==> Building kortex_driver"
 
-  rm -rf "${PROJECT_DIR}/kortex_driver/build"
+  rm -rf "${PROJECT_DIR}/robot_driver/kortex_driver/build"
 
-  cmake -S "${PROJECT_DIR}/kortex_driver" \
-        -B "${PROJECT_DIR}/kortex_driver/build" \
+  cmake -S "${PROJECT_DIR}/robot_driver/kortex_driver" \
+        -B "${PROJECT_DIR}/robot_driver/kortex_driver/build" \
         -DCMAKE_BUILD_TYPE=RelWithDebInfo \
         -DCMAKE_PREFIX_PATH="${PROJECT_DIR}/build/install;${WORKSPACE_DIR}/install;${EXTRA_DEPS_PREFIX}" \
         -DCMAKE_INSTALL_PREFIX="${PROJECT_DIR}/build/install"
 
-  cmake --build "${PROJECT_DIR}/kortex_driver/build" \
+  cmake --build "${PROJECT_DIR}/robot_driver/kortex_driver/build" \
         --parallel "${BUILD_JOBS}"
 
-  cmake --install "${PROJECT_DIR}/kortex_driver/build"
+  cmake --install "${PROJECT_DIR}/robot_driver/kortex_driver/build"
 fi
 
 if [ "${BUILD_RTDE_DRIVER}" = "ON" ]; then
@@ -127,18 +127,18 @@ if [ "${BUILD_RTDE_DRIVER}" = "ON" ]; then
 
   echo "==> Building rtde_driver"
 
-  rm -rf "${PROJECT_DIR}/rtde_driver/build"
+  rm -rf "${PROJECT_DIR}/robot_driver/rtde_driver/build"
 
-  cmake -S "${PROJECT_DIR}/rtde_driver" \
-        -B "${PROJECT_DIR}/rtde_driver/build" \
+  cmake -S "${PROJECT_DIR}/robot_driver/rtde_driver" \
+        -B "${PROJECT_DIR}/robot_driver/rtde_driver/build" \
         -DCMAKE_BUILD_TYPE=RelWithDebInfo \
         -DCMAKE_PREFIX_PATH="${PROJECT_DIR}/build/install;${WORKSPACE_DIR}/install;${EXTRA_DEPS_PREFIX}" \
         -DCMAKE_INSTALL_PREFIX="${PROJECT_DIR}/build/install"
 
-  cmake --build "${PROJECT_DIR}/rtde_driver/build" \
+  cmake --build "${PROJECT_DIR}/robot_driver/rtde_driver/build" \
         --parallel "${BUILD_JOBS}"
 
-  cmake --install "${PROJECT_DIR}/rtde_driver/build"
+  cmake --install "${PROJECT_DIR}/robot_driver/rtde_driver/build"
 fi
 
 if [ "${BUILD_TRIORB_DRIVER}" = "ON" ]; then
@@ -148,19 +148,19 @@ if [ "${BUILD_TRIORB_DRIVER}" = "ON" ]; then
     echo "===> With test_controllers"
   fi
 
-  rm -rf "${PROJECT_DIR}/triorb_driver/build"
+  rm -rf "${PROJECT_DIR}/robot_driver/triorb_driver/build"
 
-  cmake -S "${PROJECT_DIR}/triorb_driver" \
-        -B "${PROJECT_DIR}/triorb_driver/build" \
+  cmake -S "${PROJECT_DIR}/robot_driver/triorb_driver" \
+        -B "${PROJECT_DIR}/robot_driver/triorb_driver/build" \
         -DCMAKE_BUILD_TYPE=RelWithDebInfo \
         -DBUILD_CONTROLLER="${BUILD_TRIORB_TEST_CONTROLLERS}" \
         -DCMAKE_PREFIX_PATH="${PROJECT_DIR}/build/install;${WORKSPACE_DIR}/install;${EXTRA_DEPS_PREFIX}" \
         -DCMAKE_INSTALL_PREFIX="${PROJECT_DIR}/build/install"
 
-  cmake --build "${PROJECT_DIR}/triorb_driver/build" \
+  cmake --build "${PROJECT_DIR}/robot_driver/triorb_driver/build" \
         --parallel "${BUILD_JOBS}"
 
-  cmake --install "${PROJECT_DIR}/triorb_driver/build"
+  cmake --install "${PROJECT_DIR}/robot_driver/triorb_driver/build"
 fi
 
 echo "==> Registering mc_rtc shared libraries"

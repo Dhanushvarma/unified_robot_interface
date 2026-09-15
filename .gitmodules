@@ -1,0 +1,6 @@
+[submodule "robot_driver/kortex_driver"]
+	path = robot_driver/kortex_driver
+	url = https://github.com/isri-aist/kortex_driver.git
+[submodule "robot_driver/triorb_driver"]
+	path = robot_driver/triorb_driver
+	url = https://github.com/isri-aist/triorb_driver.git
