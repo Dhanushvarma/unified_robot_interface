@@ -29,6 +29,7 @@
     "seccomp=unconfined",
     "--ulimit=rtprio=99:99",
     "--ulimit=memlock=100000000000:100000000000",
+    "--device=/dev/dri"
 
     // Foward device path for triorb. Uncomment if needed.
     // "--device=/dev/serial/by-id/usb-TriOrb_TriOrb_Device_389999633556-if00:/dev/triorb"
