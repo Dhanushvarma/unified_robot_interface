@@ -8,6 +8,7 @@ BUILD_KORTEX_DRIVER="${BUILD_KORTEX_DRIVER:-ON}"
 BUILD_RTDE_DRIVER="${BUILD_RTDE_DRIVER:-ON}"
 BUILD_TRIORB_DRIVER="${BUILD_TRIORB_DRIVER:-ON}"
 BUILD_TRIORB_TEST_CONTROLLERS="${BUILD_TRIORB_TEST_CONTROLLERS:-ON}"
+BUILD_XARM_DRIVER="${BUILD_XARM_DRIVER:-ON}"
 
 PROJECT_DIR="${HOME}/mc_rtc_interface"
 SUPERBUILD_DIR="${HOME}/superbuild"
@@ -161,6 +162,23 @@ if [ "${BUILD_TRIORB_DRIVER}" = "ON" ]; then
         --parallel "${BUILD_JOBS}"
 
   cmake --install "${PROJECT_DIR}/robot_driver/triorb_driver/build"
+fi
+
+if [ "${BUILD_XARM_DRIVER}" = "ON" ]; then
+  echo "==> Building xarm_driver"
+
+  rm -rf "${PROJECT_DIR}/robot_driver/xarm_driver/build"
+
+  cmake -S "${PROJECT_DIR}/robot_driver/xarm_driver" \
+        -B "${PROJECT_DIR}/robot_driver/xarm_driver/build" \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_PREFIX_PATH="${PROJECT_DIR}/build/install;${WORKSPACE_DIR}/install;${EXTRA_DEPS_PREFIX}" \
+        -DCMAKE_INSTALL_PREFIX="${PROJECT_DIR}/build/install"
+
+  cmake --build "${PROJECT_DIR}/robot_driver/xarm_driver/build" \
+        --parallel "${BUILD_JOBS}"
+
+  cmake --install "${PROJECT_DIR}/robot_driver/xarm_driver/build"
 fi
 
 echo "==> Registering mc_rtc shared libraries"

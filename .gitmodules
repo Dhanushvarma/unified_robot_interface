@@ -4,3 +4,6 @@
 [submodule "robot_driver/triorb_driver"]
 	path = robot_driver/triorb_driver
 	url = https://github.com/isri-aist/triorb_driver.git
+[submodule "robot_driver/xarm_driver"]
+	path = robot_driver/xarm_driver
+	url = https://github.com/isri-aist/xarm_driver.git
