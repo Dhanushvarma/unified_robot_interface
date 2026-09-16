@@ -59,7 +59,7 @@ int main(int argc, char * argv[])
   }
 
   /* Initialize callback (non real-time yet) */
-  void * raw = mc_fleet::init(argc, argv, cycle_ns, interrupt);
+  void * raw = robot_manager::init(argc, argv, cycle_ns, interrupt);
   if(raw == nullptr)
   {
     fmt::print("[error] Initialization failed\n");
@@ -67,7 +67,7 @@ int main(int argc, char * argv[])
   }
 
   // Automatically free data if schedSetattr fails
-  std::unique_ptr<mc_fleet::RobotManager> robot_manager{static_cast<mc_fleet::RobotManager *>(raw)};
+  std::unique_ptr<robot_manager::RobotManager> robot_manager{static_cast<robot_manager::RobotManager *>(raw)};
 
   /* Time reservation */
   struct sched_attr attr = {};
@@ -86,7 +86,7 @@ int main(int argc, char * argv[])
   }
 
   /* Run */
-  mc_fleet::run(robot_manager.get(), interrupt);
+  robot_manager::run(robot_manager.get(), interrupt);
 
   return 0;
 }

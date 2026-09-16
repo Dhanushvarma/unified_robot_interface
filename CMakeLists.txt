@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-set(PROJECT_NAME robot_manager_project)
+set(PROJECT_NAME unified_robot_interface)
 set(PROJECT_VERSION 1.0.0)
 project(
   ${PROJECT_NAME}

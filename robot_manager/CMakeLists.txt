@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-set(PROJECT_NAME mc_fleet)
+set(PROJECT_NAME robot_manager)
 set(PROJECT_VERSION 1.0.0)
 project(
   ${PROJECT_NAME}

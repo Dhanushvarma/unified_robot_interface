@@ -1,5 +1,5 @@
 # Extends the official mc-rtc-superbuild devcontainer image (Ubuntu 24.04 / noble)
-# with mc_rtc_interface's own extra dependencies that are outside the superbuild's
+# with URI's own extra dependencies that are outside the superbuild's
 # scope: zenoh-c / zenoh-cpp (zenohcxx), FlatBuffers, Protobuf, and GTest.
 #
 # The base image already provides: build tooling, ccache pre-populated for
@@ -8,7 +8,7 @@ FROM ghcr.io/mc-rtc/mc-rtc-superbuild:noble-devcontainer-latest
 
 USER root
 
-# ── Extra system dependencies specific to mc_rtc_interface ──────────────────
+# ── Extra system dependencies specific to URI ──────────────────
 # Note: FlatBuffers is NOT installed via apt here - Ubuntu 24.04 ships 2.0.8
 # (2021), which lacks the flatbuffers_generate_headers() CMake helper this
 # project's build relies on. Built from source below instead.
@@ -48,7 +48,7 @@ ARG ZENOH_C_VERSION=1.9.0
 ARG ZENOH_CPP_VERSION=1.9.0
 ARG FLATBUFFERS_VERSION=25.12.19
 # Shared install prefix for this project's from-source dependencies.
-ARG EXTRA_DEPS_PREFIX=/home/vscode/.local/mc_rtc_interface-deps
+ARG EXTRA_DEPS_PREFIX=/home/vscode/.local/unified_robot_interface-deps
 ARG ZENOH_INSTALL_PREFIX=${EXTRA_DEPS_PREFIX}
 
 # ── FlatBuffers: build a current release from source (see note above) ──────
@@ -90,4 +90,4 @@ RUN git clone --branch ${ZENOH_CPP_VERSION} --depth 1 https://github.com/eclipse
 ENV CMAKE_PREFIX_PATH="${ZENOH_INSTALL_PREFIX}:${CMAKE_PREFIX_PATH}"
 ENV LD_LIBRARY_PATH="${ZENOH_INSTALL_PREFIX}/lib:${LD_LIBRARY_PATH}"
 
-WORKDIR /home/vscode/mc_rtc_interface
+WORKDIR /home/vscode/unified_robot_interface

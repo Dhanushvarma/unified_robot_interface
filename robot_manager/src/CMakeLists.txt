@@ -43,23 +43,23 @@ install(
 )
 
 # Executable
-add_executable(MCFleetControl mc_robot_manager/main.cpp)
+add_executable(uri mc_robot_manager/main.cpp)
 
 target_include_directories(
-  MCFleetControl PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../../third_party
+  uri PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../../third_party
 )
 target_link_libraries(
-  MCFleetControl PRIVATE mc_robot_manager mc_robot_interface robot_comm
+  uri PRIVATE mc_robot_manager mc_robot_interface robot_comm
 )
 
 # Installed executable and libraries use the same custom installation prefix.
-# Use an absolute RPATH because MCFleetControl receives file capabilities.
+# Use an absolute RPATH because uri receives file capabilities.
 set_target_properties(
-  mc_robot_interface mc_robot_manager MCFleetControl
+  mc_robot_interface mc_robot_manager uri
   PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}"
 )
 
-set(PROGRAM_NAME MCFleetControl)
+set(PROGRAM_NAME uri)
 
 set(JOB_POOL_OPTION)
 if(CMAKE_VERSION VERSION_GREATER "3.14")

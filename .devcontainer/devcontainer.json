@@ -1,11 +1,11 @@
 {
-  "name": "mc_rtc_interface",
+  "name": "unified_robot_interface",
 
   // Published by .github/workflows/devcontainer-image.yaml on every push to
   // main that touches .devcontainer/**. To build locally instead (e.g. while
   // iterating on the Dockerfile), replace this with:
-    "build": { "dockerfile": "Dockerfile" },
-  // "image": "ghcr.io/thomasduvinage/mc_rtc_interface-devcontainer:latest",
+  "build": { "dockerfile": "Dockerfile" },
+  // "image": "ghcr.io/thomasduvinage/unified_robot_interface-devcontainer:latest",
 
   // Persist the mc-rtc-superbuild checkout and its build/install output
   // across container rebuilds, so rebuilding this devcontainer image doesn't
@@ -15,8 +15,8 @@
     // "type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix,consistency=cached",
     "source=${localEnv:HOME}/.Xauthority,target=/home/vscode/.Xauthority,type=bind",
 
-    "source=mc-rtc-interface-superbuild,target=/home/vscode/superbuild,type=volume",
-    "source=mc-rtc-interface-workspace,target=/home/vscode/workspace,type=volume",
+    "source=uri-superbuild,target=/home/vscode/superbuild,type=volume",
+    "source=uri-workspace,target=/home/vscode/workspace,type=volume",
     // Forward your git identity: mc-rtc-superbuild creates a meta-repository
     // with submodules and needs user.name/user.email to be set.
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/vscode/.gitconfig,type=bind"
@@ -46,8 +46,8 @@
   },
 
   "remoteUser": "vscode",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/mc_rtc_interface,type=bind",
-  "workspaceFolder": "/home/vscode/mc_rtc_interface",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/unified_robot_interface,type=bind",
+  "workspaceFolder": "/home/vscode/unified_robot_interface",
 
   "postCreateCommand": "bash .devcontainer/post-create.sh",
 

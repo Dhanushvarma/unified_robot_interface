@@ -9,6 +9,6 @@ find_dependency(Threads REQUIRED)
 find_dependency(zenoh-c REQUIRED)
 find_dependency(zenoh-cpp REQUIRED)
 
-include("${CMAKE_CURRENT_LIST_DIR}/mc_fleetTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/robot_managerTargets.cmake")
 
-check_required_components(mc_fleet)
+check_required_components(robot_manager)

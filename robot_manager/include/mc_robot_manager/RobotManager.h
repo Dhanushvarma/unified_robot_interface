@@ -18,7 +18,7 @@
 #include <thread>
 #include <unordered_map>
 
-namespace mc_fleet
+namespace robot_manager
 {
 
 void run(void * data, const std::atomic<bool> & interrupt);
@@ -114,4 +114,4 @@ private:
   // Warning should be set in case the dt outreach protocol capacities
 };
 
-} // namespace mc_fleet
+} // namespace robot_manager

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs once when the devcontainer is created: builds mc_rtc + its dependency
 # chain via mc-rtc-superbuild (ROS support disabled), then configures and
-# builds this project (mc_rtc_interface) against that install prefix.
+# builds this project (unified_robot_interface) against that install prefix.
 set -euo pipefail
 
 BUILD_KORTEX_DRIVER="${BUILD_KORTEX_DRIVER:-ON}"
@@ -10,10 +10,10 @@ BUILD_TRIORB_DRIVER="${BUILD_TRIORB_DRIVER:-ON}"
 BUILD_TRIORB_TEST_CONTROLLERS="${BUILD_TRIORB_TEST_CONTROLLERS:-ON}"
 BUILD_XARM_DRIVER="${BUILD_XARM_DRIVER:-ON}"
 
-PROJECT_DIR="${HOME}/mc_rtc_interface"
+PROJECT_DIR="${HOME}/unified_robot_interface"
 SUPERBUILD_DIR="${HOME}/superbuild"
 WORKSPACE_DIR="${HOME}/workspace"
-EXTRA_DEPS_PREFIX="${HOME}/.local/mc_rtc_interface-deps"
+EXTRA_DEPS_PREFIX="${HOME}/.local/unified_robot_interface-deps"
 
 BUILD_JOBS="${BUILD_JOBS:-4}"
 export CMAKE_BUILD_PARALLEL_LEVEL="${BUILD_JOBS}"
@@ -28,8 +28,8 @@ sudo chown -R "$(id -u):$(id -g)" "${SUPERBUILD_DIR}" "${WORKSPACE_DIR}"
 # git identity. Fall back to a placeholder if none was forwarded from the host
 # (see the .gitconfig mount in devcontainer.json).
 if [ -z "$(git config --global user.email || true)" ]; then
-  git config --global user.name "mc_rtc_interface devcontainer"
-  git config --global user.email "devcontainer@mc_rtc_interface.local"
+  git config --global user.name "unified_robot_interface devcontainer"
+  git config --global user.email "devcontainer@unified_robot_interface.local"
 fi
 
 if [ ! -d "${SUPERBUILD_DIR}/.git" ]; then
@@ -45,7 +45,7 @@ cat > "${SUPERBUILD_DIR}/CMakeUserPresets.json" <<'EOF'
   "version": 10,
   "configurePresets": [
     {
-      "name": "mc_rtc_interface",
+      "name": "unified_robot_interface",
       "displayName": "RelWithDebInfo",
       "inherits": ["relwithdebinfo-noble"],
       "cacheVariables": {
@@ -56,9 +56,9 @@ cat > "${SUPERBUILD_DIR}/CMakeUserPresets.json" <<'EOF'
   ],
   "buildPresets": [
     {
-      "name": "mc_rtc_interface",
+      "name": "unified_robot_interface",
       "displayName": "RelWithDebInfo",
-      "configurePreset": "mc_rtc_interface",
+      "configurePreset": "unified_robot_interface",
       "configuration": "RelWithDebInfo",
       "targets": ["install"]
     }
@@ -70,8 +70,8 @@ echo "==> Building mc_rtc + dependencies via mc-rtc-superbuild with ${BUILD_JOBS
 cd "${SUPERBUILD_DIR}"
 # mc-rtc-superbuild pip-installs pre-commit for its own git hooks; Ubuntu
 # 24.04's system Python rejects system-wide pip installs (PEP 668) otherwise.
-PIP_BREAK_SYSTEM_PACKAGES=1 cmake --preset mc_rtc_interface
-cmake --build --preset mc_rtc_interface --parallel "${BUILD_JOBS}"
+PIP_BREAK_SYSTEM_PACKAGES=1 cmake --preset unified_robot_interface
+cmake --build --preset unified_robot_interface --parallel "${BUILD_JOBS}"
 
 echo "==> Loading installed mc_rtc environment"
 if [ ! -f "${WORKSPACE_DIR}/install/setup_mc_rtc.sh" ]; then
@@ -83,7 +83,7 @@ source "${WORKSPACE_DIR}/install/setup_mc_rtc.sh"
 set -u
 # export LD_LIBRARY_PATH="${WORKSPACE_DIR}/install/lib:${EXTRA_DEPS_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
 
-echo "==> Building mc_rtc_interface with ${BUILD_JOBS} jobs"
+echo "==> Building URI with ${BUILD_JOBS} jobs"
 
 rm -rf "${PROJECT_DIR}/build"
 
@@ -95,11 +95,11 @@ cmake --build "${PROJECT_DIR}/build" --parallel "${BUILD_JOBS}"
 
 cmake --install "${PROJECT_DIR}/build"
 
-echo "==> Removing MCFleetControl file capability"
+echo "==> Removing uri file capability"
 
-MCFLEET_BIN="${PROJECT_DIR}/build/bin/MCFleetControl"
-if [ -f "${MCFLEET_BIN}" ]; then
-  sudo setcap -r "${MCFLEET_BIN}" 2>/dev/null || true
+URI_BIN="${PROJECT_DIR}/build/bin/uri"
+if [ -f "${URI_BIN}" ]; then
+  sudo setcap -r "${URI_BIN}" 2>/dev/null || true
 fi
 
 if [ "${BUILD_KORTEX_DRIVER}" = "ON" ]; then
@@ -216,7 +216,7 @@ echo "==> Verifying shell startup configuration"
 grep -qxF "${ENV_SOURCE_LINE}" "${HOME}/.bashrc"
 grep -qxF "${ENV_SOURCE_LINE}" "${HOME}/.profile"
 
-test -x "${PROJECT_DIR}/build/bin/MCFleetControl"
+test -x "${PROJECT_DIR}/build/bin/uri"
 test -x "${PROJECT_DIR}/build/bin/RobotInterface"
 
 echo "==> Done. The environment will be loaded automatically in new Bash sessions."

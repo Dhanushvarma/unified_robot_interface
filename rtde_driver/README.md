@@ -37,10 +37,10 @@ install it system-wide, or pass the prefix explicitly:
 
 ```bash
 # ROS install
-cmake -DCMAKE_PREFIX_PATH="/path/to/mc_rtc_interface/install;/opt/ros/humble" ..
+cmake -DCMAKE_PREFIX_PATH="/path/to/unified_robot_interface/install;/opt/ros/humble" ..
 
 # Source / system install
-cmake -DCMAKE_PREFIX_PATH="/path/to/mc_rtc_interface/install;/usr/local" ..
+cmake -DCMAKE_PREFIX_PATH="/path/to/unified_robot_interface/install;/usr/local" ..
 ```
 
 ## Build

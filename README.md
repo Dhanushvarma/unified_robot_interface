@@ -1,4 +1,4 @@
-# mc_robot_interface
+# Unified Robot Interface - URI
 
 ## Goals
 
@@ -24,7 +24,7 @@ Ideas :
 
 A devcontainer is provided (`.devcontainer/`) for a clean, reproducible build environment: Ubuntu 24.04, `mc_rtc` and its dependency chain built via [mc-rtc-superbuild](https://github.com/mc-rtc/mc-rtc-superbuild) (ROS support disabled), plus this project's own extra dependencies (`zenoh-c`/`zenoh-cpp`, FlatBuffers, Protobuf, GTest).
 
-On first start, `postCreateCommand` builds `mc_rtc` + dependencies (this can take a while the first time; a persistent Docker volume is used so this only happens once) and then configures/builds `mc_rtc_interface` itself.
+On first start, `postCreateCommand` builds `mc_rtc` + dependencies (this can take a while the first time; a persistent Docker volume is used so this only happens once) and then configures/builds `unified_robot_interface` itself.
 
 ### Using VSCode
 
@@ -45,7 +45,7 @@ See [Developing inside a Container](https://code.visualstudio.com/docs/devcontai
   ```
 - Connect over SSH:
   ```sh
-  ssh mc_rtc_interface.devpod
+  ssh unified_robot_interface.devpod
   ```
 - Or use VSCode through DevPod: `devpod up . --ide=vscode`
 

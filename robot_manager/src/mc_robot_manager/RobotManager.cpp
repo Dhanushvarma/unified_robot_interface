@@ -17,13 +17,13 @@
 
 extern char ** environ;
 
-namespace mc_fleet
+namespace robot_manager
 {
 
 namespace
 {
 
-// Directory containing the currently running MCFleetControl executable, so the
+// Directory containing the currently running uri executable, so the
 // co-located RobotInterface binary can be found without relying on PATH.
 std::filesystem::path selfDir()
 {
@@ -104,7 +104,7 @@ pid_t RobotManager::spawnRobotInterface(const std::string & robot_name, const mc
   iface_config.add("robot_interface", robot_config("robot_interface"));
   iface_config.add("controller", robot_config("controller"));
 
-  const auto config_path = std::filesystem::temp_directory_path() / ("mc_fleet_" + robot_name + "_interface.yaml");
+  const auto config_path = std::filesystem::temp_directory_path() / ("robot_manager_" + robot_name + "_interface.yaml");
   iface_config.save(config_path.string());
 
   auto bin_path = selfDir() / "RobotInterface";
@@ -291,7 +291,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   std::vector<std::string> failed_robots;
   for(auto & [robot_name, interface] : interfaces_)
   {
-    fmt::print("[mc_fleet] Querying robot_interface '{}' (waiting up to 10 s)…\n", robot_name);
+    fmt::print("[robot_manager] Querying robot_interface '{}' (waiting up to 10 s)…\n", robot_name);
 
     const std::string init_topic = robot_name + "/init";
     auto config_payload = interface->communication().serializer()->serialize(interface->config().dump());
@@ -386,17 +386,15 @@ void RobotManager::launchZenohRouter()
 {
   if(zenoh_router_) return;
 
-  fmt::print("[mc_fleet] launchZenohRouter start\n");
-
   // TODO: remove hardcoded path
-  zenoh::Config config = zenoh::Config::from_file("/home/vscode/mc_rtc_interface/robot_comm/tests/zenoh/router.json5");
+  std::string zenoh_config_path{"/home/vscode/unified_robot_interface/robot_comm/tests/zenoh/router.json5"};
+  zenoh::Config config = zenoh::Config::from_file(zenoh_config_path);
+  fmt::print("[robot_manager] Lauching Zenoh Rounter from path {}\n", zenoh_config_path);
 
   zenoh_router_ = std::make_unique<zenoh::Session>(zenoh::Session::open(std::move(config)));
 
   // Let the router fully start before clients try to connect
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-  fmt::print("[mc_fleet] launchZenohRouter done\n");
 }
 
 void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig)
@@ -414,7 +412,7 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
   {
     mc_rtc::Configuration dc = gconfig.config("Default");
     user_default_.module = dc("module", std::string(user_default_.module));
-    user_default_.network_protocol = dc("network_interface", std::string(user_default_.network_protocol));
+    user_default_.network_protocol = dc("network_protocol", std::string(user_default_.network_protocol));
     user_default_.driver = dc("driver", std::string(user_default_.driver));
     user_default_.time_step = dc("time_step", double(user_default_.time_step));
     user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
@@ -566,4 +564,4 @@ void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interr
   }
 }
 
-} // namespace mc_fleet
+} // namespace robot_manager
