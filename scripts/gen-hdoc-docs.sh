@@ -126,34 +126,91 @@ if [ -n "${REPO_URL}" ]; then
   sed -i "s|<body>|<body>${GITHUB_LINK}|" hdoc-output/*.html
 fi
 
-# Add a sidebar sub-entry for every "## " section of the pages below.
+# Anchor every "## " section of the hand-written pages, add a sidebar sub-entry
+# for each section of the pages below, and add every section to the search
+# index (hdoc only indexes code symbols).
 SUBTAB_PAGES="GettingStarted CommandLine Simulation"
 python3 - hdoc-output ${SUBTAB_PAGES} <<'PY'
-import glob, html, re, sys
+import glob, html, json, os, re, sys
 
-out_dir, pages = sys.argv[1], sys.argv[2:]
+out_dir, subtab_pages = sys.argv[1], sys.argv[2:]
+PAGE_TYPE = 7  # search index "type" of a documentation section (hdoc uses 0-6)
 
 def slug(text):
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
 
+def to_text(fragment):
+    return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", fragment)).split())
+
 menus = {}
-for page in pages:
-    path = f"{out_dir}/doc{page}.html"
+entries = []
+for path in [f"{out_dir}/index.html"] + sorted(glob.glob(f"{out_dir}/doc*.html")):
+    name = os.path.basename(path)
     with open(path) as f:
         doc = f.read()
     sections = []
 
     def add_id(m):
-        title = html.unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip()
-        anchor = slug(title)
+        title = to_text(m.group(1))
+        anchor = base = slug(title)
+        n = 1
+        while any(a == anchor for a, _ in sections):
+            n += 1
+            anchor = f"{base}-{n}"
         sections.append((anchor, title))
         return f'<h2 id="{anchor}">{m.group(1)}</h2>'
 
-    doc = re.sub(r"<h2>(.*?)</h2>", add_id, doc, flags=re.S)
+    doc = re.sub(r'<h2(?: id="[^"]*")?>(.*?)</h2>', add_id, doc, flags=re.S)
     with open(path, "w") as f:
         f.write(doc)
-    menus[page] = "<ul>" + "".join(
-        f'<li><a href="doc{page}.html#{a}">{html.escape(t)}</a></li>' for a, t in sections) + "</ul>"
+
+    page = name[len("doc"):-len(".html")] if name.startswith("doc") else None
+    if page in subtab_pages:
+        menus[page] = "<ul>" + "".join(
+            f'<li><a href="{name}#{a}">{html.escape(t)}</a></li>' for a, t in sections) + "</ul>"
+
+    # One search entry for the page intro, then one per "## " section.
+    main = re.search(r'<main class="content">(.*?)</main>', doc, flags=re.S)
+    if not main:
+        continue
+    h1 = re.search(r"<h1[^>]*>(.*?)</h1>", main.group(1), flags=re.S)
+    page_title = to_text(h1.group(1)) if h1 else name
+    parts = re.split(r'<h2 id="([^"]*)">(.*?)</h2>', main.group(1), flags=re.S)
+    entries.append({"sid": name, "name": page_title, "decl": page_title,
+                    "text": to_text(parts[0]), "type": PAGE_TYPE})
+    for anchor, title, body in zip(parts[1::3], parts[2::3], parts[3::3]):
+        title = to_text(title)
+        entries.append({"sid": f"{name}#{anchor}", "name": title,
+                        "decl": f"{page_title} › {title}", "text": to_text(body),
+                        "type": PAGE_TYPE})
+
+index_path = f"{out_dir}/index.json"
+with open(index_path) as f:
+    index = [e for e in json.load(f) if e.get("type") != PAGE_TYPE]
+with open(index_path, "w") as f:
+    json.dump(index + entries, f, separators=(",", ":"))
+
+# Make hdoc's search also match the section text and link "page" results.
+def patch(path, old, new):
+    with open(path) as f:
+        js = f.read()
+    if new not in js:
+        if old not in js:
+            sys.exit(f"error: cannot patch {path}: '{old}' not found (hdoc version changed?)")
+        js = js.replace(old, new, 1)
+    with open(path, "w") as f:
+        f.write(js)
+
+for js in ("worker.js", "search.js"):
+    patch(f"{out_dir}/{js}", "fields: ['name', 'decl'],", "fields: ['name', 'decl', 'text'],")
+patch(f"{out_dir}/search.js", "    case 6:\n        return \"enum val\";",
+      "    case 6:\n        return \"enum val\";\n    case 7:\n        return \"page\";")
+patch(f"{out_dir}/search.js", "        // Enum or enum val\n",
+      "        // Documentation page section\n"
+      "        if (obj.type === 7) {\n"
+      "            a.setAttribute(\"href\", obj.id);\n"
+      "        }\n"
+      "        // Enum or enum val\n")
 
 for path in glob.glob(f"{out_dir}/*.html"):
     with open(path) as f:
