@@ -1,5 +1,7 @@
 # Unified Robot Interface - URI
 
+📖 **Documentation:** https://isri-aist.github.io/unified_robot_interface/
+
 ## Goals
 
 The goal here with this interface is to standardise robot interface creation.
@@ -13,12 +15,6 @@ Ideas :
 * Define / create driver which means that users can create different interface quickly and experiment while keeping exisint one working
 * Repect robot timestep and control command
 * Consider the case where we may had robot in the loop dynamically
-
-## Tasks
-- [ ] Pseudo network to communicate between robot manager and robot interface
-- [ ] Scale to multi-thread system
-- [ ] Integrated with `mc_rtc` and sample robot interface
-- [x] Parse and send information from config `yaml`
 
 ## Installation
 
@@ -94,6 +90,9 @@ install prefix. The generator script ([`robot_interface/tools/create_new_driver.
 is embedded in the `uri` binary at build time. Run `uri create_new_driver --help` for details.
 
 ## API documentation
+
+The documentation is published at
+<https://isri-aist.github.io/unified_robot_interface/> on every push to `main`.
 
 [hdoc](https://hdoc.io) generates static HTML documentation from
 `build/compile_commands.json` (API reference) and the hand-written pages in
