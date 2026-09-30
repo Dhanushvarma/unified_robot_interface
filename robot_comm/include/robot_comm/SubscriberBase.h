@@ -7,6 +7,7 @@
 namespace robot_comm
 {
 
+/// Type-erased subscriber, receiving raw payloads for one topic.
 class SubscriberBase
 {
 public:

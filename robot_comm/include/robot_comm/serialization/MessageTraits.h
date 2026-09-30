@@ -6,6 +6,7 @@
 namespace robot_comm
 {
 
+/// Maps a message type to its MessageType tag. Specialize it for new messages.
 template<typename T>
 struct MessageTraits;
 

@@ -11,6 +11,8 @@
 namespace robot_comm
 {
 
+/// Converts messages to and from bytes. Implement serializeImpl() and
+/// deserializeImpl() to add a serialization backend.
 class ISerializer
 {
 protected:

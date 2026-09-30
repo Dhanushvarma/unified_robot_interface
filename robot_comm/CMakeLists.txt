@@ -45,16 +45,27 @@ flatbuffers_generate_headers(
 target_link_libraries(mc_rtc_flatbuffers INTERFACE flatbuffers::flatbuffers)
 
 # ── Protobuf code generation (optional) ──────────────────────────────────────
-if(protobuf_FOUND AND WITH_PROTOBUF)
+if(Protobuf_FOUND AND WITH_PROTOBUF)
   add_library(
     proto-mc-rtc OBJECT
     "${CMAKE_CURRENT_SOURCE_DIR}/include/robot_comm/serialization/protobuf/mc_rtc_msgs.proto"
   )
   target_link_libraries(proto-mc-rtc PUBLIC protobuf::libprotobuf)
   set_target_properties(proto-mc-rtc PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  set(PROTOBUF_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/protobuf_gen")
+  file(MAKE_DIRECTORY "${PROTOBUF_GEN_DIR}/robot_comm/serialization/protobuf")
+  # APPEND_PATH is required for CMake < 3.29.
   protobuf_generate(
-    TARGET proto-mc-rtc IMPORT_DIRS
+    TARGET
+    proto-mc-rtc
+    APPEND_PATH
+    IMPORT_DIRS
     "${CMAKE_CURRENT_LIST_DIR}/include/robot_comm/serialization/protobuf"
+    PROTOC_OUT_DIR
+    "${PROTOBUF_GEN_DIR}/robot_comm/serialization/protobuf"
+  )
+  target_include_directories(
+    proto-mc-rtc PUBLIC $<BUILD_INTERFACE:${PROTOBUF_GEN_DIR}>
   )
   install(
     TARGETS proto-mc-rtc

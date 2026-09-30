@@ -55,6 +55,7 @@ add_serializer(
 )
 
 target_link_libraries(robot_comm_flatbuffers PUBLIC mc_rtc_flatbuffers)
+add_dependencies(robot_comm_flatbuffers GENERATE_mc_rtc_flatbuffers)
 
 target_include_directories(
   robot_comm_flatbuffers
@@ -68,7 +69,7 @@ if(TARGET proto-mc-rtc)
     robot_comm_protobuf serialization/ProtobufSerializer.cpp
     ../include/robot_comm/serialization/ProtobufSerializer.h
   )
-  target_link_libraries(robot_comm_protobuf PRIVATE proto-mc-rtc)
+  target_link_libraries(robot_comm_protobuf PUBLIC proto-mc-rtc)
 endif()
 
 ###  Communication Interface
@@ -83,8 +84,13 @@ add_library(
 add_library(${PROJECT_NAME}::robot_comm_interface ALIAS robot_comm_interface)
 
 target_link_libraries(
-  robot_comm_interface PUBLIC mc_rtc::mc_control robot_comm_serializer
+  robot_comm_interface PUBLIC mc_rtc::mc_rtc_utils robot_comm_serializer
 )
+
+if(TARGET robot_comm_protobuf)
+  target_link_libraries(robot_comm_interface PRIVATE robot_comm_protobuf)
+  target_compile_definitions(robot_comm_interface PRIVATE WITH_PROTOBUF)
+endif()
 
 target_include_directories(
   robot_comm_interface
@@ -102,7 +108,7 @@ add_library(robot_comm SHARED ${COMMUNICATION_FACTORY_SRC})
 add_library(${PROJECT_NAME}::robot_comm ALIAS robot_comm)
 
 target_link_libraries(
-  robot_comm PUBLIC mc_rtc::mc_control robot_comm_serializer
+  robot_comm PUBLIC mc_rtc::mc_rtc_utils robot_comm_serializer
 )
 
 target_include_directories(

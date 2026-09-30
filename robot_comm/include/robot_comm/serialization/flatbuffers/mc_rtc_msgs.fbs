@@ -4,10 +4,26 @@ table MessageConfig {
     config:string;
 }
 
+table MessageBodySensor {
+    name:string;
+    orientation:[double];       // quaternion, (w, x, y, z)
+    angular_velocity:[double];  // (x, y, z)
+    linear_acceleration:[double]; // (x, y, z)
+}
+
+table MessageForceSensor {
+    name:string;
+    force:[double];  // (x, y, z), sensor frame
+    torque:[double]; // (x, y, z), sensor frame
+}
+
 table MessageState {
     position:[double];
     velocity:[double];
     torque:[double];
+    body_sensors:[MessageBodySensor];
+    force_sensors:[MessageForceSensor];
+    stamp:uint64;       // sender steady clock [ns], echoed in MessageCommand.state_stamp
 }
 
 table MessageCommand {
@@ -16,6 +32,8 @@ table MessageCommand {
     position:[double];
     velocity:[double];
     torque:[double];
+    state_stamp:uint64; // MessageState.stamp of the latest state received
+    state_hold:uint64;  // [ns] that state was held before this command was sent
 }
 
 union Payload {

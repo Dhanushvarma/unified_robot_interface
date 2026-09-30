@@ -8,6 +8,8 @@
 namespace robot_comm
 {
 
+/// Deserializes messages of type T received on a topic and passes them to a
+/// callback. Created by Communication::subscribe().
 template<typename T>
 class Subscriber : public SubscriberBase
 {

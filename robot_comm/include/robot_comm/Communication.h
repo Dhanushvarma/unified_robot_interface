@@ -18,25 +18,36 @@
 namespace robot_comm
 {
 
+/// Messaging endpoint of one robot: typed pub/sub, query/reply, and a
+/// role-based state/command channel. Create it with CommunicationFactory.
+/// See docs/Communication.md.
 class Communication
 {
 public:
+  /// \param name Robot name, used as the prefix of the role-based topics.
+  /// \param config The `network_interface` configuration.
+  /// \param backend Serializer used for typed messages.
   Communication(std::string name,
                 const mc_rtc::Configuration & config,
                 SerializationBackend backend = SerializationBackend::Flatbuffer);
 
   virtual ~Communication();
 
+  /// Start the transport.
   void start();
+  /// Stop the transport.
   void stop();
 
   // -------------------------------------------------------
   // Typed pub/sub
   // -------------------------------------------------------
 
+  /// Serialize and publish `msg` on `topic`.
   template<typename T>
   bool publish(const std::string & topic, const T & msg);
 
+  /// Call `cb(const T &)` for every message received on `topic`. Keep the
+  /// returned subscriber alive for as long as you need the callback.
   template<typename T, typename Callback>
   std::shared_ptr<Subscriber<T>> subscribe(const std::string & topic, Callback && cb);
 
@@ -52,10 +63,11 @@ public:
   // Query / reply
   // -------------------------------------------------------
 
-  // Register a synchronous query handler on this communication object.
+  /// Answer queries on `topic` with `handler`.
   void handleQuery(const std::string & topic, QueryHandler handler);
 
-  // Send a blocking query; returns reply payload or nullopt on timeout.
+  /// Send a blocking query. Returns the reply, or nullopt if there is none
+  /// within `timeout`.
   std::optional<ByteBuffer> query(const std::string & topic,
                                   const ByteBuffer & payload,
                                   std::chrono::milliseconds timeout = std::chrono::seconds(5));
@@ -66,23 +78,28 @@ public:
   // Call setupServer() or setupClient() once before use.
   // -------------------------------------------------------
 
-  void setupServer(); // RobotManager side
-  void setupClient(); // robot_interface side
+  /// Manager role: send on {name}/command, receive on {name}/state.
+  void setupServer();
+  /// Robot role: send on {name}/state, receive on {name}/command.
+  void setupClient();
 
+  /// Serialize `msg` for send().
   template<typename T>
   ByteBuffer encode(const T & msg);
 
-  // Publish to the role's TX topic.
+  /// Publish `buffer` on the role's send topic.
   bool send(const ByteBuffer & buffer);
 
-  // Return the latest buffer received on the role's RX topic (non-blocking).
-  // Returns nullopt on error, empty ByteBuffer if no new data yet.
-  std::optional<ByteBuffer> receive();
+  /// Latest buffer received on the role's receive topic, without blocking.
+  /// Returns an empty buffer if nothing new arrived, nullopt on error. If
+  /// `arrival` is set, it receives the arrival time (steady clock).
+  std::optional<ByteBuffer> receive(std::chrono::steady_clock::time_point * arrival = nullptr);
 
   // -------------------------------------------------------
   // Accessors
   // -------------------------------------------------------
 
+  /// Serializer used by this endpoint.
   inline std::shared_ptr<ISerializer> serializer() const
   {
     return serializer_;
@@ -113,13 +130,14 @@ private:
   std::string tx_topic_;
   std::string rx_topic_;
   std::optional<ByteBuffer> latest_rx_;
+  std::chrono::steady_clock::time_point latest_rx_time_;
   std::mutex rx_mutex_;
   std::shared_ptr<SubscriberBase> rx_subscriber_;
 };
 
-///------------------------------------------------------------
-/// Typed publish
-///------------------------------------------------------------
+//------------------------------------------------------------
+// Typed publish
+//------------------------------------------------------------
 
 template<typename T>
 bool Communication::publish(const std::string & topic, const T & msg)
@@ -129,9 +147,9 @@ bool Communication::publish(const std::string & topic, const T & msg)
   return transport_->publish(topic, payload);
 }
 
-///------------------------------------------------------------
-/// Subscriber creation
-///------------------------------------------------------------
+//------------------------------------------------------------
+// Subscriber creation
+//------------------------------------------------------------
 
 template<typename T, typename Callback>
 std::shared_ptr<Subscriber<T>> Communication::subscribe(const std::string & topic, Callback && cb)
@@ -159,9 +177,9 @@ std::shared_ptr<Subscriber<T>> Communication::subscribe(const std::string & topi
   return subscriber;
 }
 
-///------------------------------------------------------------
-/// Encode convenience
-///------------------------------------------------------------
+//------------------------------------------------------------
+// Encode convenience
+//------------------------------------------------------------
 
 template<typename T>
 ByteBuffer Communication::encode(const T & msg)

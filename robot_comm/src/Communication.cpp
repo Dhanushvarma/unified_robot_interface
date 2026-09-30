@@ -44,7 +44,14 @@ Communication::Communication(std::string name, const mc_rtc::Configuration & con
   mc_rtc::log::info("[Communication] Initialized '{}' with backend '{}'", name_, parsed_config("backend"));
 }
 
-Communication::~Communication() {}
+Communication::~Communication()
+{
+  if(transport_)
+  {
+    transport_->stop();
+    transport_.reset();
+  }
+}
 
 mc_rtc::Configuration Communication::parseConfig(const mc_rtc::Configuration & config)
 {
@@ -157,8 +164,10 @@ void Communication::setupServer()
   transport_->subscribe(rx_topic_,
                         [this](const std::string & /*topic*/, const ByteBuffer & payload)
                         {
+                          const auto now = std::chrono::steady_clock::now();
                           std::lock_guard<std::mutex> lock(rx_mutex_);
                           latest_rx_ = payload;
+                          latest_rx_time_ = now;
                         });
 
   mc_rtc::log::info("[Communication] '{}' configured as server (rx={}, tx={})", name_, rx_topic_, tx_topic_);
@@ -172,8 +181,10 @@ void Communication::setupClient()
   transport_->subscribe(rx_topic_,
                         [this](const std::string & /*topic*/, const ByteBuffer & payload)
                         {
+                          const auto now = std::chrono::steady_clock::now();
                           std::lock_guard<std::mutex> lock(rx_mutex_);
                           latest_rx_ = payload;
+                          latest_rx_time_ = now;
                         });
 
   mc_rtc::log::info("[Communication] '{}' configured as client (rx={}, tx={})", name_, rx_topic_, tx_topic_);
@@ -189,7 +200,7 @@ bool Communication::send(const ByteBuffer & buffer)
   return transport_->publish(tx_topic_, buffer);
 }
 
-std::optional<ByteBuffer> Communication::receive()
+std::optional<ByteBuffer> Communication::receive(std::chrono::steady_clock::time_point * arrival)
 {
   if(rx_topic_.empty())
   {
@@ -197,6 +208,7 @@ std::optional<ByteBuffer> Communication::receive()
     return std::nullopt;
   }
   std::lock_guard<std::mutex> lock(rx_mutex_);
+  if(arrival) *arrival = latest_rx_time_;
   return latest_rx_.value_or(ByteBuffer{});
 }
 

@@ -6,10 +6,26 @@ message MessageConfig {
   string config = 1;
 }
 
+message MessageBodySensor {
+  string name = 1;
+  repeated double orientation = 2;         // quaternion, (w, x, y, z)
+  repeated double angular_velocity = 3;    // (x, y, z)
+  repeated double linear_acceleration = 4; // (x, y, z)
+}
+
+message MessageForceSensor {
+  string name = 1;
+  repeated double force = 2;  // (x, y, z), sensor frame
+  repeated double torque = 3; // (x, y, z), sensor frame
+}
+
 message MessageState {
   repeated double position = 1;
   repeated double velocity = 2;
   repeated double torque = 3;
+  repeated MessageBodySensor body_sensors = 4;
+  repeated MessageForceSensor force_sensors = 5;
+  uint64 stamp = 6; // sender steady clock [ns], echoed in MessageCommand.state_stamp
 }
 
 message MessageCommand {
@@ -19,6 +35,8 @@ message MessageCommand {
   repeated double position = 3;
   repeated double velocity = 4;
   repeated double torque = 5;
+  uint64 state_stamp = 6; // MessageState.stamp of the latest state received
+  uint64 state_hold = 7;  // [ns] that state was held before this command was sent
 }
 
 message MessageEnvelope {
