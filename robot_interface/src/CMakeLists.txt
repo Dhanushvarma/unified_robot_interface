@@ -2,9 +2,7 @@ set(MC_ROBOT_INTERFACE_INSTALL_PREFIX
     "${CMAKE_INSTALL_PREFIX}/lib/robot_interface"
 )
 
-macro(add_robot_driver NAME)
-
-endmacro()
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AddRobotDriver.cmake)
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/../include/robot_interface/config.in.h
@@ -45,9 +43,11 @@ target_include_directories(
 # -----------------------------------------------------------------------
 find_package(robot_comm QUIET)
 
-add_library(mc_robot_interface_lib SHARED RobotInterface.cpp)
+add_library(
+  mc_robot_interface_lib SHARED RobotInterface.cpp RobotStateViewer.cpp
+)
 target_link_libraries(
-  mc_robot_interface_lib PUBLIC robot_driver_loader mc_rtc::mc_control
+  mc_robot_interface_lib PUBLIC robot_driver_loader mc_rtc::mc_rtc_utils
 )
 
 if(robot_comm_FOUND)
@@ -63,17 +63,6 @@ target_include_directories(
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../include>
          $<INSTALL_INTERFACE:include>
 )
-
-# -----------------------------------------------------------------------
-# RobotInterface executable
-# -----------------------------------------------------------------------
-add_executable(RobotInterface main.cpp)
-target_include_directories(
-  RobotInterface PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../../third_party
-)
-target_link_libraries(RobotInterface PRIVATE mc_robot_interface_lib)
-
-install(TARGETS RobotInterface DESTINATION bin)
 
 # robot_driver_api and robot_driver_loader are exported so that driver packages
 # (rtde_driver, mc_dummy, etc.) can find_package(mc_robot_interface).

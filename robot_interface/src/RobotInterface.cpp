@@ -5,18 +5,24 @@
 
 #include <mc_rtc/logging.h>
 #include <robot_interface/config.h>
+#include <robot_interface/driver/GripperInfo.h>
 
 #include <chrono>
+#include <sys/prctl.h>
 
 namespace mc_robot_interface
 {
 
 RobotInterface::RobotInterface(const std::string & name, const mc_rtc::Configuration & comm_config)
 : name_(name), comm_config_(comm_config),
-  driver_loader_("MC_RTC_ROBOT_DRIVER", {mc_robot_interface::MC_ROBOT_INTERFACE_INSTALL_PREFIX}, true)
+  driver_loader_("MC_RTC_ROBOT_DRIVER",
+                 {mc_robot_interface::MC_ROBOT_INTERFACE_INSTALL_PREFIX},
+                 true,
+                 PluginAbi{MC_ROBOT_DRIVER_ABI_SYMBOL, MC_ROBOT_DRIVER_ABI_VERSION})
 {
   comm_ = robot_comm::CommunicationFactory::makeCommunication(name_, comm_config_);
   comm_->setupClient();
+  latency_stats_ = comm_config_("latency_stats", false);
 }
 
 void RobotInterface::run(const std::atomic<bool> & interrupt)
@@ -108,6 +114,16 @@ void RobotInterface::run(const std::atomic<bool> & interrupt)
 
 robot_comm::ByteBuffer RobotInterface::handleInitQuery(const robot_comm::ByteBuffer & payload)
 {
+  // RobotManager may retry the init query: don't load the driver twice.
+  {
+    std::lock_guard<std::mutex> lock(init_mutex_);
+    if(initialized_)
+    {
+      static const std::string ok = "OK";
+      return robot_comm::ByteBuffer(ok.begin(), ok.end());
+    }
+  }
+
   // Deserialize config string from payload.
   auto config_opt =
       comm_->serializer()->deserialize<std::string>(robot_comm::MessageType::CONFIG, payload.data(), payload.size());
@@ -151,7 +167,7 @@ robot_comm::ByteBuffer RobotInterface::handleInitQuery(const robot_comm::ByteBuf
 
   try
   {
-    loadDriver(driver_name, robot_config("robot_interface"));
+    loadDriver(driver_name, robot_config("robot_interface"), robot_config("grippers", mc_rtc::Configuration{}));
   }
   catch(const std::exception & e)
   {
@@ -173,14 +189,27 @@ robot_comm::ByteBuffer RobotInterface::handleInitQuery(const robot_comm::ByteBuf
   return robot_comm::ByteBuffer(ok.begin(), ok.end());
 }
 
-void RobotInterface::loadDriver(const std::string & driver_name, const mc_rtc::Configuration & driver_config)
+void RobotInterface::loadDriver(const std::string & driver_name,
+                                const mc_rtc::Configuration & driver_config,
+                                const mc_rtc::Configuration & grippers_config)
 {
   const std::string ip = driver_config("ip", std::string{"127.0.0.1"});
   const uint16_t port = driver_config("port", uint16_t{0});
+  const std::string config_path = driver_config("config_path", std::string{});
 
-  mc_rtc::log::info("[RobotInterface] '{}' loading driver '{}' ({}:{})", name_, driver_name, ip, port);
+  std::vector<GripperInfo> grippers;
+  for(const auto & gripper_name : grippers_config.keys())
+  {
+    GripperInfo info;
+    info.name = gripper_name;
+    info.joints = grippers_config(gripper_name);
+    grippers.push_back(std::move(info));
+  }
 
-  driver_ = driver_loader_.load(driver_name, ip, port);
+  mc_rtc::log::info("[RobotInterface] '{}' loading driver '{}' ({}:{}), config_path: '{}', {} gripper(s)", name_,
+                    driver_name, ip, port, config_path, grippers.size());
+
+  driver_ = driver_loader_.load(driver_name, ip, port, config_path, grippers);
 
   mc_rtc::log::success("[RobotInterface] '{}' driver '{}' loaded", name_, driver_name);
 }
@@ -194,20 +223,43 @@ void RobotInterface::updateSensors()
   state.velocity = driver_->getActualQd();
   state.torque = driver_->getJointTorques();
 
+  for(const auto & [sensorName, imu] : driver_->getIMUs())
+  {
+    robot_comm::BodySensorData bs;
+    bs.name = sensorName;
+    bs.orientation = imu.orientation;
+    bs.angularVelocity = imu.angularVelocity;
+    bs.linearAcceleration = imu.linearAcceleration;
+    state.bodySensors.push_back(std::move(bs));
+  }
+
+  for(const auto & [sensorName, wrench] : driver_->getForceSensors())
+  {
+    robot_comm::ForceSensorData fs;
+    fs.name = sensorName;
+    fs.force = wrench.force;
+    fs.torque = wrench.torque;
+    state.forceSensors.push_back(std::move(fs));
+  }
+
   if(state.position.empty()) return;
 
+  state.stamp = static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());
   comm_->send(comm_->encode(state));
 }
 
 void RobotInterface::updateControl()
 {
-  auto rx = comm_->receive();
+  std::chrono::steady_clock::time_point arrival;
+  auto rx = comm_->receive(&arrival);
   if(rx && !rx->empty())
   {
     auto cmd_opt =
         comm_->serializer()->deserialize<robot_comm::Command>(robot_comm::MessageType::COMMAND, rx->data(), rx->size());
     if(cmd_opt)
     {
+      if(latency_stats_) recordLatency(*cmd_opt, arrival);
       last_cmd_ = std::move(cmd_opt);
     }
   }
@@ -218,6 +270,65 @@ void RobotInterface::updateControl()
     driver_->servoJ(last_cmd_->position);
   else if(!last_cmd_->velocity.empty())
     driver_->speedJ(last_cmd_->velocity);
+  else if(!last_cmd_->torque.empty())
+    driver_->tauJ(last_cmd_->torque);
+}
+
+void RobotInterface::recordLatency(const robot_comm::Command & cmd, std::chrono::steady_clock::time_point arrival)
+{
+  // Count each echo once.
+  if(cmd.stateStamp != 0 && (cmd.stateStamp != last_echo_stamp_ || cmd.stateHold != last_echo_hold_))
+  {
+    last_echo_stamp_ = cmd.stateStamp;
+    last_echo_hold_ = cmd.stateHold;
+    const auto arrival_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(arrival.time_since_epoch()).count();
+    const double rtt_us =
+        static_cast<double>(arrival_ns - static_cast<int64_t>(cmd.stateStamp) - static_cast<int64_t>(cmd.stateHold))
+        * 1e-3;
+    if(rtt_count_ == 0 || rtt_us < rtt_min_us_) rtt_min_us_ = rtt_us;
+    if(rtt_count_ == 0 || rtt_us > rtt_max_us_) rtt_max_us_ = rtt_us;
+    rtt_sum_us_ += rtt_us;
+    ++rtt_count_;
+  }
+
+  const auto now = std::chrono::steady_clock::now();
+  if(now - last_latency_report_ < std::chrono::seconds(1)) return;
+  last_latency_report_ = now;
+  if(rtt_count_ == 0) return;
+
+  const double avg_us = rtt_sum_us_ / static_cast<double>(rtt_count_);
+  mc_rtc::log::info("[RobotInterface] '{}' robot_comm round trip ({} samples): min {:.1f} us | avg {:.1f} us | max "
+                    "{:.1f} us (one-way ~ {:.1f} us)",
+                    name_, rtt_count_, rtt_min_us_, avg_us, rtt_max_us_, avg_us / 2.0);
+  rtt_count_ = 0;
+  rtt_sum_us_ = 0.0;
+}
+
+int runRobotInterface(const std::string & config_path, std::string name, const std::atomic<bool> & interrupt)
+{
+  mc_rtc::Configuration config(config_path);
+
+  if(name.empty())
+  {
+    if(config.has("name"))
+      name = static_cast<std::string>(config("name"));
+    else
+      mc_rtc::log::error_and_throw("'name' must be provided via --name or in the config file");
+  }
+
+  // Shown as "uri:<name>" in ps/top.
+  const std::string thread_name = "uri:" + name;
+  prctl(PR_SET_NAME, thread_name.c_str(), 0, 0, 0);
+
+  mc_rtc::Configuration comm_config = config("network_interface");
+
+  mc_rtc::log::info("[robot_interface] Starting '{}' from config '{}'", name, config_path);
+
+  RobotInterface iface(name, comm_config);
+  iface.run(interrupt);
+
+  mc_rtc::log::info("[robot_interface] '{}' exited cleanly", name);
+  return 0;
 }
 
 } // namespace mc_robot_interface

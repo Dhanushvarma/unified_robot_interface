@@ -41,9 +41,12 @@ typename std::conditional<std::is_same<std::string, T>::value, const std::string
 
 } // namespace details
 
+/// Static loader for RobotDriver plugins. RobotInterface uses
+/// PluginLoader<RobotDriver> instead.
 struct MC_ROBOT_DRIVER_DLLAPI RobotDriverLoader
 {
 public:
+  /// Create the driver registered as `name`, forwarding `args` to its create().
   template<typename... Args>
   static mc_robot_interface::RobotDriverPtr get_robot_driver(const std::string & name, const Args &... args)
   {
@@ -58,6 +61,7 @@ public:
     return rd;
   }
 
+  /// Names of all driver plugins found.
   static std::vector<std::string> available_interfaces();
 
 private:

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-set(PROJECT_NAME mc_robot_interface)
+set(PROJECT_NAME unified_robot_interface)
 set(PROJECT_VERSION 1.0.0)
 project(
   ${PROJECT_NAME}
@@ -30,7 +30,6 @@ jrl_find_package(mc_rtc REQUIRED)
 
 # ── Build ─────────────────────────────────────────────────────────────────────
 add_subdirectory(src)
-add_subdirectory(utils)
 
 if(BUILD_TESTING)
   jrl_include_ctest()
@@ -39,12 +38,18 @@ endif()
 
 # ── Install ───────────────────────────────────────────────────────────────────
 install(DIRECTORY include/ DESTINATION include)
-
-jrl_add_export_component(
-  NAME mc_robot_interface TARGETS robot_driver_api robot_driver_loader
+install(FILES cmake/AddRobotDriver.cmake
+        DESTINATION lib/cmake/unified_robot_interface
 )
 
-jrl_export_package()
+jrl_add_export_component(
+  NAME unified_robot_interface TARGETS robot_driver_api robot_driver_loader
+)
+
+jrl_export_package(
+  PACKAGE_CONFIG_EXTRA_CONTENT
+  "include(\"\${CMAKE_CURRENT_LIST_DIR}/AddRobotDriver.cmake\")"
+)
 
 jrl_print_dependencies_summary()
 jrl_print_options_summary()

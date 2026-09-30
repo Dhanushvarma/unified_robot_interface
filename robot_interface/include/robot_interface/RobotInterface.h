@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -17,29 +18,27 @@
 namespace mc_robot_interface
 {
 
-// Always-running robot-side process.
-//
-// Lifecycle:
-//   1. Starts and connects via Zenoh (client role).
-//   2. Registers a queryable on "{name}/init".
-//   3. Blocks until RobotManager sends an init query (robot config as YAML).
-//   4. Loads the requested RobotDriver plugin.
-//   5. Replies "OK" or "ERROR: <reason>" to the init query.
-//   6. Runs the real-time control loop:
-//        updateSensors() -> publish state on "{name}/state"
-//        updateControl() -> apply latest command from "{name}/command" to driver
-//
-// Hot-plug tools (future):
-//   Register a queryable on "{name}/tool". The same PluginLoader<T> pattern
-//   is used to load tool plugins at runtime.
+/// Robot-side process of one robot (`uri interface`).
+///
+/// Lifecycle:
+///   1. Connects via robot_comm (client role).
+///   2. Registers a queryable on "{name}/init".
+///   3. Blocks until RobotManager sends an init query (robot config as YAML).
+///   4. Loads the requested RobotDriver plugin.
+///   5. Replies "OK" or "ERROR: <reason>" to the init query.
+///   6. Runs the control loop: publishes the driver state on "{name}/state"
+///      and applies the latest command from "{name}/command".
 class RobotInterface
 {
 public:
+  /// \param name Robot name, used as the prefix of its topics.
+  /// \param comm_config The `network_interface` configuration.
   RobotInterface(const std::string & name, const mc_rtc::Configuration & comm_config);
 
-  // Block until interrupt is set. Handles init handshake then runs control loop.
+  /// Handle the init handshake, then run the control loop until interrupt is set.
   void run(const std::atomic<bool> & interrupt);
 
+  /// Robot name.
   const std::string & name() const
   {
     return name_;
@@ -50,7 +49,9 @@ private:
   // Payload: serialized config string (YAML). Returns "OK" or "ERROR: <reason>".
   robot_comm::ByteBuffer handleInitQuery(const robot_comm::ByteBuffer & payload);
 
-  void loadDriver(const std::string & driver_name, const mc_rtc::Configuration & driver_config);
+  void loadDriver(const std::string & driver_name,
+                  const mc_rtc::Configuration & driver_config,
+                  const mc_rtc::Configuration & grippers_config);
 
   void updateSensors();
   void updateControl();
@@ -74,6 +75,22 @@ private:
 
   // TODO: wip passing control mode to interface
   std::string control_mode_{};
+
+  // Round-trip latency stats (network_interface.latency_stats: true).
+  void recordLatency(const robot_comm::Command & cmd, std::chrono::steady_clock::time_point arrival);
+  bool latency_stats_ = false;
+  uint64_t last_echo_stamp_ = 0;
+  uint64_t last_echo_hold_ = 0;
+  size_t rtt_count_ = 0;
+  double rtt_sum_us_ = 0.0;
+  double rtt_min_us_ = 0.0;
+  double rtt_max_us_ = 0.0;
+  std::chrono::steady_clock::time_point last_latency_report_;
 };
+
+/// Entry point of `uri interface`: loads the config file at config_path, then
+/// runs a RobotInterface until interrupt is set. A non-empty name overrides the
+/// config's 'name'. Returns the process exit code.
+int runRobotInterface(const std::string & config_path, std::string name, const std::atomic<bool> & interrupt);
 
 } // namespace mc_robot_interface
