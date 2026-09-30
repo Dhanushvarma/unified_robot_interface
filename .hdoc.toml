@@ -1,0 +1,40 @@
+[project]
+name = "unified_robot_interface"
+version = "1.0.0"
+git_repo_url = "https://github.com/isri-aist/unified_robot_interface/"
+git_default_branch = "main"
+
+[paths]
+compile_commands = "build/compile_commands.json"
+output_dir = "hdoc-output"
+
+# Substring-matched against each declaration's path RELATIVE to the repo root
+# (e.g. "third_party/CLI/CLI.hpp"), so top-level dirs must not start with "/".
+[ignore]
+paths = [
+  "tests/",
+  "third_party/",
+  "build/",
+  "install/",
+  "subprojects/",
+  "_generated.h",
+  ".pb.h",
+  ".pb.cc",
+]
+
+# Hand-written pages (docs/). Each is published as doc<FileStem>.html and the
+# file stem is its sidebar title, so keep file names short and readable.
+# Images referenced from them live in docs/images/ and are copied into the
+# output by scripts/gen-hdoc-docs.sh (hdoc does not copy assets itself).
+[pages]
+homepage = "docs/index.md"
+paths = [
+  "docs/GettingStarted.md",
+  "docs/CommandLine.md",
+  "docs/Communication.md",
+  "docs/RobotManager.md",
+  "docs/RobotInterface.md",
+  "docs/NewRobotDriver.md",
+  "docs/SupportedRobots.md",
+  "docs/Simulation.md",
+]

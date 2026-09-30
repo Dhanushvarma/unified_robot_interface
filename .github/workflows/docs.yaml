@@ -1,0 +1,89 @@
+name: Documentation
+
+# Generates the hdoc documentation (scripts/gen-hdoc-docs.sh) and publishes it
+# to the gh-pages branch. hdoc parses the sources through
+# build/compile_commands.json, so the project is configured and built first
+# (the FlatBuffers headers are generated at build time).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs
+  cancel-in-progress: true
+
+env:
+  FLATBUFFERS_VERSION: 25.12.19
+  ZENOH_VERSION: 1.9.0
+  # Outside the checkout, so hdoc does not document their headers
+  DEPS_PREFIX: /home/runner/deps
+
+jobs:
+  docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          # mc_rtc from its official apt repository
+          curl -1sLf 'https://dl.cloudsmith.io/public/mc-rtc/stable/setup.deb.sh' | sudo -E bash
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build meson libcap2-bin \
+            libmc-rtc-dev \
+            llvm-14-dev libclang-14-dev clang-14
+
+      - name: Cache FlatBuffers and Zenoh
+        id: deps-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.DEPS_PREFIX }}
+          key: deps-noble-flatbuffers-${{ env.FLATBUFFERS_VERSION }}-zenoh-${{ env.ZENOH_VERSION }}
+
+      - name: Build FlatBuffers and Zenoh
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: |
+          build() { # <repo> <tag> [cmake args...]
+            local src="${RUNNER_TEMP}/$(basename "$1")"
+            git clone --branch "$2" --depth 1 "https://github.com/$1.git" "${src}"
+            cmake -S "${src}" -B "${src}/build" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX="${DEPS_PREFIX}" -DCMAKE_PREFIX_PATH="${DEPS_PREFIX}" "${@:3}"
+            cmake --build "${src}/build"
+            cmake --install "${src}/build"
+          }
+          build google/flatbuffers "v${FLATBUFFERS_VERSION}" -DFLATBUFFERS_BUILD_TESTS=OFF
+          build eclipse-zenoh/zenoh-c "${ZENOH_VERSION}" -DZENOHC_BUILD_WITH_SHARED_MEMORY=ON
+          build eclipse-zenoh/zenoh-cpp "${ZENOH_VERSION}" \
+            -DZENOHCXX_ZENOHC=ON -DZENOHCXX_ZENOHPICO=OFF -DZENOHCXX_EXAMPLES=OFF
+
+      - name: Build URI
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_PREFIX_PATH="${DEPS_PREFIX}" \
+            -DBUILD_TESTING=OFF \
+            -DWITH_PROTOBUF=OFF
+          cmake --build build
+
+      - name: Cache hdoc
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/hdoc-build
+          key: hdoc-noble-${{ hashFiles('scripts/gen-hdoc-docs.sh') }}
+
+      - name: Generate documentation
+        run: scripts/gen-hdoc-docs.sh
+
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./hdoc-output
+          force_orphan: true

@@ -11,3 +11,6 @@ compile_commands.json
 # FlatBuffers/Protobuf generated files
 *generated.h
 *.pb.*
+
+# hdoc output
+hdoc-output

@@ -20,11 +20,19 @@ Ideas :
 - [ ] Integrated with `mc_rtc` and sample robot interface
 - [x] Parse and send information from config `yaml`
 
+## Installation
+
+URI currently installs next to [mc_rtc](https://jrl-umi3218.github.io/mc_rtc/),
+its only controller backend so far; support for other controllers is planned.
+The simplest way is [mc-rtc-superbuild](https://github.com/mc-rtc/mc-rtc-superbuild)
+with `-DWITH_URI=ON`. See [`docs/GettingStarted.md`](docs/GettingStarted.md) for
+all installation options.
+
 ## Development environment
 
-A devcontainer is provided (`.devcontainer/`) for a clean, reproducible build environment: Ubuntu 24.04, `mc_rtc` and its dependency chain built via [mc-rtc-superbuild](https://github.com/mc-rtc/mc-rtc-superbuild) (ROS support disabled), plus this project's own extra dependencies (`zenoh-c`/`zenoh-cpp`, FlatBuffers, Protobuf, GTest).
+A devcontainer is provided (`.devcontainer/`) for a clean, reproducible build environment: Ubuntu 24.04 with ROS Jazzy, `mc_rtc` installed from the mc-rtc `head` apt repository (with ROS support), plus this project's own extra dependencies (`zenoh-c`/`zenoh-cpp`, FlatBuffers, Protobuf, GTest).
 
-On first start, `postCreateCommand` builds `mc_rtc` + dependencies (this can take a while the first time; a persistent Docker volume is used so this only happens once) and then configures/builds `unified_robot_interface` itself.
+On first start, `postCreateCommand` configures, builds and installs `unified_robot_interface` and the enabled drivers into `build/install`.
 
 ### Using VSCode
 
@@ -59,3 +67,52 @@ contexts:
         userProvided: true
         value: "true"
 ```
+## Supported robots
+
+Existing drivers: UR (`rtde_driver`), Kinova (`kortex_driver`), xArm
+(`xarm_driver`), TriOrb (`triorb_driver`), any ros2_control robot
+(`ros2_control_driver`) and Mirokai (`miroki_driver`). See
+[`docs/SupportedRobots.md`](docs/SupportedRobots.md).
+Simulators are connected the same way, as drivers: see
+[`docs/Simulation.md`](docs/Simulation.md).
+
+## Creating a new robot driver
+
+`robot_interface` drivers are standalone plugin projects implementing
+`mc_robot_interface::RobotDriver` (see
+[`robot_interface/include/robot_interface/RobotDriverTemplate.h`](robot_interface/include/robot_interface/RobotDriverTemplate.h)),
+loaded at runtime as shared libraries (full guide: [`docs/NewRobotDriver.md`](docs/NewRobotDriver.md)).
+Scaffold a new one with:
+
+```bash
+uri create_new_driver <DriverName> [folder]   # e.g. uri create_new_driver Franka ~/devel
+```
+
+This generates a `<name>_driver/` project (CMakeLists, header/source skeleton,
+example config, README) ready to fill in and build against this repository's
+install prefix. The generator script ([`robot_interface/tools/create_new_driver.sh`](robot_interface/tools/create_new_driver.sh))
+is embedded in the `uri` binary at build time. Run `uri create_new_driver --help` for details.
+
+## API documentation
+
+[hdoc](https://hdoc.io) generates static HTML documentation from
+`build/compile_commands.json` (API reference) and the hand-written pages in
+[`docs/`](docs/) (context and architecture, communication, robot manager,
+robot interface, running examples, supported robots, creating a new driver), configured via
+[`.hdoc.toml`](.hdoc.toml).
+This project uses the self-hosted, open-source hdoc (AGPLv3) -- no account or
+external upload required. Generate it with:
+
+```bash
+cmake -S . -B build   # if not already configured, see Development environment above
+scripts/gen-hdoc-docs.sh
+```
+
+The first run builds and caches the `hdoc` binary itself (under
+`~/.cache/hdoc-build` by default; override with `$HDOC_CACHE_DIR`), which
+takes a few minutes; later runs reuse it. Output goes to `hdoc-output/`
+(gitignored) -- open `hdoc-output/index.html` in a browser.
+
+hdoc pins LLVM/Clang 14; install it with
+`sudo apt-get install llvm-14-dev libclang-14-dev clang-14` if the build
+script reports it's missing.
