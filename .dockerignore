@@ -1,0 +1,11 @@
+.git
+.cache
+.vscode
+graphify-out
+hdoc-output
+compile_commands.json
+
+build
+install
+**/build
+**/install

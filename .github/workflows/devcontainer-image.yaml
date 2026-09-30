@@ -1,11 +1,16 @@
-name: Build and publish devcontainer image
+name: Build and publish docker images
 
+# Publishes, from .devcontainer/Dockerfile:
+#   ghcr.io/<owner>/<repo>-devcontainer  (target "devcontainer"): all dependencies
+#   ghcr.io/<owner>/<repo>               (target "uri"): + URI installed in /opt/uri,
+#                                         base image for driver images
+# The uri image depends on the sources, so this runs on every push to main;
+# unchanged stages come from the GitHub Actions cache.
 on:
   push:
     branches: [main]
-    paths:
-      - .devcontainer/**
-      - .github/workflows/devcontainer-image.yaml
+  # Build (without publishing) on PRs, to catch breakage early.
+  pull_request:
   workflow_dispatch: {}
 
 permissions:
@@ -19,26 +24,45 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Compute lowercase image name
-        run: echo "IMAGE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')-devcontainer" >> "$GITHUB_ENV"
+        run: echo "IMAGE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to ghcr.io
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build and push devcontainer image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: .devcontainer/Dockerfile
-          push: true
+          target: devcontainer
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.IMAGE }}-devcontainer:latest
+            ${{ env.IMAGE }}-devcontainer:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push uri image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: .devcontainer/Dockerfile
+          target: uri
+          push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

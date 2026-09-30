@@ -1,24 +1,18 @@
 {
   "name": "unified_robot_interface",
 
-  // Published by .github/workflows/devcontainer-image.yaml on every push to
-  // main that touches .devcontainer/**. To build locally instead (e.g. while
-  // iterating on the Dockerfile), replace this with:
-  "build": { "dockerfile": "Dockerfile" },
-  // "image": "ghcr.io/thomasduvinage/unified_robot_interface-devcontainer:latest",
+  // Builds the image locally. A prebuilt one is published by
+  // .github/workflows/devcontainer-image.yaml on every push to main that
+  // touches .devcontainer/**; to use it instead, replace "build" with:
+  // "image": "ghcr.io/isri-aist/unified_robot_interface-devcontainer:latest",
+  "build": { "dockerfile": "Dockerfile", "target": "devcontainer" },
 
-  // Persist the mc-rtc-superbuild checkout and its build/install output
-  // across container rebuilds, so rebuilding this devcontainer image doesn't
-  // force a multi-hour mc_rtc rebuild every time.
   "mounts": [
     // TODO: check and delete
     // "type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix,consistency=cached",
     "source=${localEnv:HOME}/.Xauthority,target=/home/vscode/.Xauthority,type=bind",
 
-    "source=uri-superbuild,target=/home/vscode/superbuild,type=volume",
-    "source=uri-workspace,target=/home/vscode/workspace,type=volume",
-    // Forward your git identity: mc-rtc-superbuild creates a meta-repository
-    // with submodules and needs user.name/user.email to be set.
+    // Forward your git identity.
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/vscode/.gitconfig,type=bind"
   ],
 
@@ -37,12 +31,7 @@
 
   "containerEnv": {
     "DISPLAY": "${localEnv:DISPLAY}",
-
-    "BUILD_KORTEX_DRIVER": "OFF",
-    "BUILD_RTDE_DRIVER": "OFF",
-    "BUILD_TRIORB_DRIVER": "OFF",
-    "BUILD_TRIORB_TEST_CONTROLLER": "OFF",
-    "BUILD_XARM_DRIVER": "OFF",
+    "ROS_DISTRO": "jazzy"
   },
 
   "remoteUser": "vscode",
