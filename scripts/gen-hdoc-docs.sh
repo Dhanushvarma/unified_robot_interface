@@ -34,13 +34,15 @@ find_llvm_config() {
   return 1
 }
 
-# LLVM 14 headers don't compile against libstdc++ >= 12 in C++20: use an older GCC toolchain.
+# LLVM 14 headers don't compile against libstdc++ >= 12 in C++20: use GCC <= 11's
+# libstdc++ (e.g. `sudo apt-get install libstdc++-11-dev` on Ubuntu 24.04).
 try_gcc_toolchain_workaround() {
-  local current_gcc newer_gcc
+  local current_gcc older
   current_gcc="$(clang-14 -v 2>&1 | grep -oP 'Selected GCC installation: \K.*' || true)"
-  local older
-  older="$(ls -d /usr/lib/gcc/x86_64-linux-gnu/*/ 2>/dev/null | sed 's:/$::' | sort -V | head -1)"
+  older="$(ls -d /usr/lib/gcc/x86_64-linux-gnu/*/ 2>/dev/null | sed 's:/$::' \
+    | awk -F/ '$NF + 0 <= 11' | sort -V | tail -1)"
   if [ -z "${older}" ] || [ "${older}" = "${current_gcc}" ]; then
+    echo "==> No GCC <= 11 toolchain found for the LLVM-14/libstdc++ workaround" >&2
     return 1
   fi
 
@@ -89,8 +91,7 @@ build_hdoc() {
     return 0
   fi
 
-  if grep -q "forward declaration of 'llvm::json::Value'" "${log}" \
-      && try_gcc_toolchain_workaround; then
+  if try_gcc_toolchain_workaround; then
     rm -rf "${HDOC_SRC_DIR}/build"
     ( cd "${HDOC_SRC_DIR}" && meson setup build )
     ( cd "${HDOC_SRC_DIR}" && ninja -C build hdoc )
