@@ -1,0 +1,30 @@
+MainRobot: Miroki
+Enabled: Posture
+Timestep: 0.005 # Depends on the network latency between the robot and the controller.
+
+ObserverPipelines:
+  - name: MirokiEncoder
+    gui: true
+    observers:
+      - type: Encoder
+        robot: miroki
+        updateRobot: miroki
+
+Robots:
+  miroki:
+    module: Miroki
+    network_interface:
+      protocol: zenoh
+    controller:
+      mode: velocity
+    robot_interface:
+      driver: RobotDriverMirokai
+      # Unused by this driver (topics/joints come from config_path below),
+      # but required by RobotManager::processGConfig's validation.
+      ip: localhost
+      port: 0
+      # Driver-specific YAML (see miroki_driver/etc/miroki.yaml).
+      config_path: /path/to/miroki.yaml
+      # Co-located: no separate robot-side PC, the vokarina ROS2 bridge
+      # runs against the live sim on this same machine.
+      autostart: true
