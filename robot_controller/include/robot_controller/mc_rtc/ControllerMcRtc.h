@@ -3,11 +3,6 @@
 #include <robot_controller/Controller.h>
 
 #include <mc_control/mc_global_controller.h>
-
-#include <memory>
-#include <string>
-#include <vector>
-
 namespace robot_controller
 {
 
@@ -26,6 +21,17 @@ public:
   void setEncoderValues(const std::string & robot, const std::vector<double> & values) override;
   void setEncoderVelocities(const std::string & robot, const std::vector<double> & values) override;
   void setJointTorques(const std::string & robot, const std::vector<double> & values) override;
+
+  void setBodySensor(const std::string & robot,
+                     const std::string & sensorName,
+                     const std::array<double, 4> & orientation,
+                     const std::array<double, 3> & angularVelocity,
+                     const std::array<double, 3> & linearAcceleration) override;
+
+  void setForceSensor(const std::string & robot,
+                      const std::string & sensorName,
+                      const std::array<double, 3> & force,
+                      const std::array<double, 3> & torque) override;
 
   void initializeRobots() override;
 

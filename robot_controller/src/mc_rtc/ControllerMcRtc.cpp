@@ -61,6 +61,33 @@ void ControllerMcRtc::setJointTorques(const std::string & robot, const std::vect
   impl_->setJointTorques(robot, values);
 }
 
+void ControllerMcRtc::setBodySensor(const std::string & robot,
+                                    const std::string & sensorName,
+                                    const std::array<double, 4> & orientation,
+                                    const std::array<double, 3> & angularVelocity,
+                                    const std::array<double, 3> & linearAcceleration)
+{
+  const Eigen::Quaterniond quat(orientation[0], orientation[1], orientation[2], orientation[3]);
+  const Eigen::Vector3d angVel(angularVelocity[0], angularVelocity[1], angularVelocity[2]);
+  const Eigen::Vector3d linAcc(linearAcceleration[0], linearAcceleration[1], linearAcceleration[2]);
+
+  impl_->setSensorOrientations(robot, {{sensorName, quat}});
+  impl_->setSensorAngularVelocities(robot, {{sensorName, angVel}});
+  impl_->setSensorLinearAccelerations(robot, {{sensorName, linAcc}});
+}
+
+void ControllerMcRtc::setForceSensor(const std::string & robot,
+                                     const std::string & sensorName,
+                                     const std::array<double, 3> & force,
+                                     const std::array<double, 3> & torque)
+{
+  // sva::ForceVecd takes (couple, force), in that order.
+  const Eigen::Vector3d f(force[0], force[1], force[2]);
+  const Eigen::Vector3d t(torque[0], torque[1], torque[2]);
+
+  impl_->setWrenches(robot, {{sensorName, sva::ForceVecd(t, f)}});
+}
+
 void ControllerMcRtc::initializeRobot(const std::string & robotName, const std::vector<double> & encoderValues)
 {
   auto & controller = impl_->controller();

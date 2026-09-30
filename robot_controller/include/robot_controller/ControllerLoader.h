@@ -8,6 +8,7 @@
 namespace robot_controller
 {
 
+/// Loads a Controller backend plugin from `<libdir>/robot_controller/`.
 class ControllerLoader
 {
 public:
@@ -26,6 +27,7 @@ public:
     }
   };
 
+  /// Owning pointer that destroys the controller through its plugin.
   using ControllerPtr = std::unique_ptr<Controller, ControllerDeleter>;
 
   ControllerLoader();
@@ -37,6 +39,8 @@ public:
   ControllerLoader(ControllerLoader &&) = delete;
   ControllerLoader & operator=(ControllerLoader &&) = delete;
 
+  /// Create a controller of the given backend (e.g. "mc_rtc"), passing it the
+  /// configuration as a YAML string. Throws if the backend cannot be loaded.
   [[nodiscard]] ControllerPtr create(const std::string & backend, const std::string & config_data);
 
 private:
