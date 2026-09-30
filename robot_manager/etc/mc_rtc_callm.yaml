@@ -4,11 +4,6 @@ Timestep: 0.001
 
 LogPolicy : threaded
 
-Default:
-  control_mode: position
-  time_step: 0.001
-  network_protocol: zenoh
-
 Robots:
   triorb:
     module: triorb

@@ -4,14 +4,6 @@ Timestep: 0.005
 
 LogPolicy : threaded
 
-# used to override system default for all robots
-Default:
-  module: default_module
-  control_mode: position   # velocity or torque [optional] default to position
-  driver: RobotDriverRTDE
-  time_step: 0.00025          # [optional] default to controller frequency (Hz)
-  network_protocol: tcp   # [optional] default to zenoh/shm
-
 Robots:
   ur5e:
     module: UR5e            # mc_rtc RobotModule name (as installed by mc_ur5e)
@@ -24,6 +16,6 @@ Robots:
       port: 0
       # Set to true when this robot is directly plugged into the control
       # computer (no separate robot-side PC): uri will spawn and
-      # manage the RobotInterface process itself, so it no longer needs to
+      # manage the `uri interface` process itself, so it no longer needs to
       # be started manually before running uri.
       autostart: true

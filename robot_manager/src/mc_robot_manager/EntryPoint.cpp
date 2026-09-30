@@ -4,7 +4,6 @@
 #include <mc_control/Configuration.h>
 // #include "zenoh.hxx"
 
-#include <CLI/CLI.hpp>
 #include <sys/shm.h>
 
 #include <iostream>
@@ -24,25 +23,8 @@ void run(void * data, const std::atomic<bool> & interrupt)
   }
 }
 
-void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool> & interrupt)
+void * init(const std::string & mc_config_path, uint64_t & /*cycle_ns*/, const std::atomic<bool> & interrupt)
 {
-  CLI::App app{"uri options"};
-
-  std::string mc_config_path;
-  // TODO: remove `required()`
-  // There should be a default path where RobotManager looks in first
-  app.add_option("-f,--config", mc_config_path, "Path to mc_rtc configuration file")->required();
-  app.footer("see etc/mc_rtc.yaml for example configuration");
-
-  try
-  {
-    app.parse(argc, argv);
-  }
-  catch(const CLI::ParseError & e)
-  {
-    std::exit(app.exit(e));
-  }
-
   /* Initialize robot manager */
   std::unique_ptr<RobotManager> robot_manager;
   robot_manager = std::make_unique<RobotManager>(mc_config_path, interrupt);

@@ -3,6 +3,7 @@
 #include <mc_robot_interface/RobotInterfaceBase.h>
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -10,6 +11,8 @@
 namespace mc_interface_template
 {
 
+/// Default manager-side proxy: joint state and sensors in, one command type
+/// (`controller.mode`) out.
 class FMInterfaceTemplate : public mc_robot::RobotInterfaceBase
 {
 public:
@@ -28,6 +31,10 @@ public:
 
 private:
   bool gc_initialized_ = false;
+
+  // Echoed in each Command for latency measurement.
+  uint64_t last_state_stamp_ = 0;
+  std::chrono::steady_clock::time_point last_state_arrival_;
 };
 
 } // namespace mc_interface_template

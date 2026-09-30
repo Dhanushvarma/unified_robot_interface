@@ -9,7 +9,9 @@ add_library(mc_robot_interface SHARED ${INTERFACE_SRC})
 add_library(${PROJECT_NAME}::robot_interface ALIAS mc_robot_interface)
 
 target_link_libraries(
-  mc_robot_interface PUBLIC robot_controller::core robot_comm
+  mc_robot_interface
+  PUBLIC robot_controller::core robot_comm
+  PRIVATE mc_rtc::mc_control
 )
 
 target_include_directories(
@@ -19,14 +21,16 @@ target_include_directories(
 )
 
 # Robot Manager
-set(ROBOT_MANAGER_SRC mc_robot_manager/Fleet.cpp
+set(ROBOT_MANAGER_SRC mc_robot_manager/EntryPoint.cpp
                       mc_robot_manager/RobotManager.cpp
 )
 
 add_library(mc_robot_manager SHARED ${ROBOT_MANAGER_SRC})
 add_library(${PROJECT_NAME}::robot_manager ALIAS mc_robot_manager)
 
-target_link_libraries(mc_robot_manager PUBLIC robot_controller::core robot_comm)
+target_link_libraries(
+  mc_robot_manager PUBLIC robot_controller::core robot_comm mc_rtc::mc_control
+)
 
 target_include_directories(
   mc_robot_manager
@@ -47,16 +51,40 @@ add_executable(uri mc_robot_manager/main.cpp)
 
 target_include_directories(
   uri PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../../third_party
+              ${CMAKE_CURRENT_BINARY_DIR}/include
+)
+
+# Embed robot_interface/tools/create_new_driver.sh for `uri create_new_driver`.
+set(CREATE_NEW_DRIVER_SCRIPT
+    ${CMAKE_CURRENT_LIST_DIR}/../../robot_interface/tools/create_new_driver.sh
+)
+set_property(
+  DIRECTORY
+  APPEND
+  PROPERTY CMAKE_CONFIGURE_DEPENDS ${CREATE_NEW_DRIVER_SCRIPT}
+)
+file(READ ${CREATE_NEW_DRIVER_SCRIPT} CREATE_NEW_DRIVER_SCRIPT_CONTENT)
+file(
+  WRITE ${CMAKE_CURRENT_BINARY_DIR}/CreateNewDriverScript.h.tmp
+  "#pragma once\n\n// Generated from robot_interface/tools/create_new_driver.sh, do not edit.\n"
+  "inline constexpr const char * CREATE_NEW_DRIVER_SCRIPT = R\"__uri_script__(${CREATE_NEW_DRIVER_SCRIPT_CONTENT})__uri_script__\";\n"
+)
+configure_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/CreateNewDriverScript.h.tmp
+  ${CMAKE_CURRENT_BINARY_DIR}/include/CreateNewDriverScript.h COPYONLY
 )
 target_link_libraries(
   uri PRIVATE mc_robot_manager mc_robot_interface robot_comm
+              mc_robot_interface_lib mc_rtc::mc_rtc_loader
 )
 
 # Installed executable and libraries use the same custom installation prefix.
 # Use an absolute RPATH because uri receives file capabilities.
 set_target_properties(
   mc_robot_interface mc_robot_manager uri
-  PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}"
+  PROPERTIES
+    INSTALL_RPATH
+    "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_PREFIX}/lib"
 )
 
 set(PROGRAM_NAME uri)

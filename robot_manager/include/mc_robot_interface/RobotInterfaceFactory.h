@@ -10,11 +10,13 @@
 namespace mc_robot
 {
 
+/// Creates the manager-side proxy of a robot.
 struct RobotInterfaceFactory
 {
 public:
   void checkCompatibility();
 
+  /// Create the proxy of robot `name` from its configuration entry.
   static std::unique_ptr<RobotInterfaceBase> makeInterface(const std::string & name,
                                                            const mc_rtc::Configuration & config,
                                                            const uint8_t & buffer_size = 0);

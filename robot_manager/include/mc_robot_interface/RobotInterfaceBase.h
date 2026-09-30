@@ -18,11 +18,17 @@ enum ControlMode
   TORQUE
 };
 
+/// Manager-side proxy of one robot: turns its State messages into controller
+/// inputs and the controller output into Command messages. Subclass it for
+/// robots that need custom behavior (see docs/RobotManager.md).
 class RobotInterfaceBase
 {
 public:
   RobotInterfaceBase() = default;
 
+  /// \param name Robot name (its key under `Robots:`).
+  /// \param config The robot's configuration entry.
+  /// \param buffer_size Size of the state buffer.
   RobotInterfaceBase(std::string name, mc_rtc::Configuration config, uint8_t buffer_size)
   : name_(std::move(name)), config_(std::move(config)), dt_(config_("controller")("time_step")),
     buffer_size_(buffer_size) {};
@@ -37,11 +43,13 @@ public:
   virtual void reset() = 0;
   virtual void stop() = 0;
 
+  /// Pass the latest robot state to the controller.
   virtual void updateSensors(robot_controller::Controller & gc) = 0;
+  /// Send the controller's command to the robot.
   virtual void updateControl(robot_controller::Controller & gc) = 0;
 
-  // Returns true once the interface has fed initial sensor values into mc_rtc
-  // and called gc.init(). mainThread uses this to gate the first controller.run().
+  /// True once the robot's first state has been passed to the controller.
+  /// The controller only runs once every robot is initialized.
   [[nodiscard]] virtual bool isInitialized() const
   {
     return true;
@@ -68,19 +76,23 @@ public:
   // TODO: use loadConfig instead of constructor to process
   void loadConfig(const mc_rtc::Configuration & config);
 
+  /// Set the communication used to talk to the robot.
   void setCommunication(std::unique_ptr<robot_comm::Communication> communication)
   {
     communication_ = std::move(communication);
   }
 
+  /// Robot name.
   [[nodiscard]] const std::string & name() const
   {
     return name_;
   }
+  /// The robot's configuration entry.
   [[nodiscard]] const mc_rtc::Configuration & config() const
   {
     return config_;
   }
+  /// Robot control period [s] (`controller.time_step`).
   [[nodiscard]] double dt() const
   {
     return dt_;
@@ -90,6 +102,7 @@ public:
     return buffer_size_;
   }
 
+  /// Communication used to talk to the robot.
   [[nodiscard]] robot_comm::Communication & communication()
   {
     return *communication_;

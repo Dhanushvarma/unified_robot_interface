@@ -21,15 +21,26 @@
 namespace robot_manager
 {
 
+/// Run the manager returned by init() until the controller stops or
+/// interrupt is set.
 void run(void * data, const std::atomic<bool> & interrupt);
 
-void * init(int argc, char ** argv, uint64_t & cycle_ns, const std::atomic<bool> & interrupt);
+/// Create a RobotManager from an mc_rtc.yaml file. Returns an owning pointer
+/// to it.
+void * init(const std::string & mc_config_path, uint64_t & cycle_ns, const std::atomic<bool> & interrupt);
 
+/// Core of `uri manager`: runs the controller and one proxy per robot.
+///
+/// Reads the `Robots:` section of mc_rtc.yaml, starts the co-located
+/// interfaces (`autostart`), sends each robot its init query, then exchanges
+/// states and commands with every robot. See docs/RobotManager.md.
 class RobotManager
 {
 public:
   RobotManager();
 
+  /// Load `mc_config_path` and initialize every robot. Returns once all
+  /// robots are initialized or interrupt is set.
   RobotManager(const std::string & mc_config_path, const std::atomic<bool> & interrupt);
 
   ~RobotManager();
@@ -39,16 +50,19 @@ public:
   RobotManager(RobotManager &&) = delete;
   RobotManager & operator=(RobotManager &&) = delete;
 
+  /// The controller backend.
   [[nodiscard]] robot_controller::Controller & controller()
   {
     return *controller_;
   }
 
+  /// Robot name -> manager-side proxy.
   [[nodiscard]] const auto & interfaces()
   {
     return interfaces_;
   }
 
+  /// Wake the main thread for the next control step.
   void notify()
   {
     cv_.notify_one();
@@ -75,15 +89,6 @@ private:
   /* Process configuration */
   void processGConfig(mc_control::MCGlobalController::GlobalConfiguration & gconfig);
   mc_control::MCGlobalController::GlobalConfiguration gconfig_;
-  struct DefaultConfig
-  {
-    std::string module{};
-    std::string control_mode{"position"};
-    std::string driver{};
-    double time_step{0.001};
-    std::string network_protocol{"zenoh/shm"};
-  };
-  DefaultConfig user_default_;
 
   /* Start */
   // Start with main thread

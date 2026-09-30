@@ -1,0 +1,32 @@
+MainRobot: UR5e
+Enabled: Posture
+Timestep: 0.005
+
+LogPolicy: threaded
+
+ObserverPipelines:
+  - name: UR5eEncoder
+    gui: true
+    observers:
+      - type: Encoder
+        robot: ur5e
+        updateRobot: ur5e
+
+Robots:
+  ur5e:
+    module: UR5e            # mc_rtc RobotModule name (as installed by mc_ur5e)
+    network_interface:
+      protocol: zenoh
+    robot_interface:
+      driver: RobotDriverROS2Control
+      control_mode: position
+      # Unused by this driver (topics/joints come from config_path below),
+      # but required by RobotManager::processGConfig's validation.
+      ip: 127.0.0.1
+      port: 0
+      # Driver-specific YAML, forwarded as-is to the driver's create()/constructor
+      # (see ros2_control_driver/etc/ur5e.yaml).
+      config_path: /home/tduvinage/devel/sandbox/ros2_control_driver/etc/ur5e.yaml
+      # Co-located: no separate robot-side PC, controller_manager runs on
+      # this same machine against the live Gazebo sim.
+      autostart: false

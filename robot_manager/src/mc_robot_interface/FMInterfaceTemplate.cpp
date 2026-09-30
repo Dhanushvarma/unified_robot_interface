@@ -39,16 +39,28 @@ FMInterfaceTemplate::FMInterfaceTemplate(const std::string & name,
 
 void FMInterfaceTemplate::updateSensors(robot_controller::Controller & gc)
 {
-  auto rx = communication().receive();
+  std::chrono::steady_clock::time_point arrival;
+  auto rx = communication().receive(&arrival);
   if(!rx || rx->empty()) return;
 
   auto s = communication().serializer()->deserialize<robot_comm::State>(robot_comm::MessageType::STATE, rx->data(),
                                                                         rx->size());
   if(!s) return;
 
+  if(s->stamp != 0 && s->stamp != last_state_stamp_)
+  {
+    last_state_stamp_ = s->stamp;
+    last_state_arrival_ = arrival;
+  }
+
   if(!s->position.empty()) gc.setEncoderValues(name(), s->position);
   if(!s->velocity.empty()) gc.setEncoderVelocities(name(), s->velocity);
   if(!s->torque.empty()) gc.setJointTorques(name(), s->torque);
+
+  for(const auto & bs : s->bodySensors)
+    gc.setBodySensor(name(), bs.name, bs.orientation, bs.angularVelocity, bs.linearAcceleration);
+
+  for(const auto & fs : s->forceSensors) gc.setForceSensor(name(), fs.name, fs.force, fs.torque);
 
   if(!gc_initialized_ && !s->position.empty())
   {
@@ -79,6 +91,14 @@ void FMInterfaceTemplate::updateControl(robot_controller::Controller & gc)
     case mc_robot::TORQUE:
       command.torque = gc.command(name(), robot_controller::ControlMode::TORQUE);
       break;
+  }
+
+  if(last_state_stamp_ != 0)
+  {
+    command.stateStamp = last_state_stamp_;
+    command.stateHold = static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - last_state_arrival_)
+            .count());
   }
 
   if(!communication().send(communication().encode(command)))

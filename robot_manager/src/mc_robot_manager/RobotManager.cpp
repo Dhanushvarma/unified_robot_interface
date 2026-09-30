@@ -1,5 +1,7 @@
 #include <mc_robot_manager/RobotManager.h>
 
+#include <mc_rbdyn/RobotLoader.h>
+
 #include <fmt/core.h>
 
 #include <algorithm>
@@ -23,14 +25,12 @@ namespace robot_manager
 namespace
 {
 
-// Directory containing the currently running uri executable, so the
-// co-located RobotInterface binary can be found without relying on PATH.
-std::filesystem::path selfDir()
+std::filesystem::path selfExe()
 {
   std::error_code ec;
   auto exe = std::filesystem::read_symlink("/proc/self/exe", ec);
   if(ec) return {};
-  return exe.parent_path();
+  return exe;
 }
 
 } // namespace
@@ -107,13 +107,14 @@ pid_t RobotManager::spawnRobotInterface(const std::string & robot_name, const mc
   const auto config_path = std::filesystem::temp_directory_path() / ("robot_manager_" + robot_name + "_interface.yaml");
   iface_config.save(config_path.string());
 
-  auto bin_path = selfDir() / "RobotInterface";
-  if(!std::filesystem::exists(bin_path))
+  auto bin_path = selfExe();
+  if(bin_path.empty() || !std::filesystem::exists(bin_path))
   {
-    bin_path = "RobotInterface"; // fall back to PATH lookup
+    bin_path = "uri"; // fall back to PATH lookup
   }
 
-  fmt::print("[RobotManager] Spawning co-located robot_interface for '", robot_name, "' (", bin_path.string(), ")\n");
+  fmt::print("[RobotManager] Spawning co-located robot_interface for '{}': {} interface -c {} -n {}\n", robot_name,
+             bin_path.string(), config_path.string(), robot_name);
 
   // posix_spawn (rather than fork()+exec()) avoids duplicating this process's
   // other threads (GUI server, ROS, ...) into the child: fork() in a
@@ -123,9 +124,13 @@ pid_t RobotManager::spawnRobotInterface(const std::string & robot_name, const mc
   // main.cpp, makes plain fork() doubly unsafe (see fork(2)/mlockall(2)).
   const std::string bin_path_str = bin_path.string();
   const std::string config_path_str = config_path.string();
-  std::array<char *, 6> argv{const_cast<char *>(bin_path_str.c_str()),    const_cast<char *>("-c"),
-                             const_cast<char *>(config_path_str.c_str()), const_cast<char *>("-n"),
-                             const_cast<char *>(robot_name.c_str()),      nullptr};
+  std::array<char *, 7> argv{const_cast<char *>(bin_path_str.c_str()),
+                             const_cast<char *>("interface"),
+                             const_cast<char *>("-c"),
+                             const_cast<char *>(config_path_str.c_str()),
+                             const_cast<char *>("-n"),
+                             const_cast<char *>(robot_name.c_str()),
+                             nullptr};
 
   pid_t pid = 0;
   int err = posix_spawnp(&pid, bin_path_str.c_str(), nullptr, nullptr, argv.data(), environ);
@@ -270,6 +275,28 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
 
     mc_rtc::Configuration robot_config{robots_config(robot_name)};
 
+    if(robot_config.has("module"))
+    {
+      const std::string module_name = robot_config("module");
+      try
+      {
+        auto rm = mc_rbdyn::RobotLoader::get_robot_module(module_name);
+        if(!rm->grippers().empty())
+        {
+          mc_rtc::Configuration grippers_config = robot_config.add("grippers");
+          for(const auto & gripper : rm->grippers())
+          {
+            grippers_config.add(gripper.name, gripper.joints);
+          }
+        }
+      }
+      catch(const std::exception & e)
+      {
+        fmt::print("[RobotManager][warning] Could not load module '{}' for robot '{}' to check for grippers: {}\n",
+                   module_name, robot_name, e.what());
+      }
+    }
+
     if(autostartEnabled(robot_config))
     {
       spawnRobotInterface(robot_name, robot_config);
@@ -291,18 +318,32 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
   std::vector<std::string> failed_robots;
   for(auto & [robot_name, interface] : interfaces_)
   {
-    fmt::print("[robot_manager] Querying robot_interface '{}' (waiting up to 10 s)…\n", robot_name);
-
+    // Driver constructors may block for a while.
+    constexpr auto init_query_timeout = std::chrono::seconds(60);
     const std::string init_topic = robot_name + "/init";
     auto config_payload = interface->communication().serializer()->serialize(interface->config().dump());
 
-    auto reply = interface->communication().query(init_topic, config_payload, std::chrono::seconds(10));
+    // The first reply may be lost while Zenoh discovers a freshly spawned peer.
+    constexpr int max_attempts = 5;
+    std::optional<robot_comm::ByteBuffer> reply;
+    for(int attempt = 0; attempt < max_attempts && !reply; ++attempt)
+    {
+      if(attempt > 0)
+      {
+        fmt::print("[robot_manager] Retrying init query to '{}' (attempt {}/{})…\n", robot_name, attempt + 1,
+                   max_attempts);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      }
+      fmt::print("[robot_manager] Querying robot_interface '{}' (waiting up to {} s)…\n", robot_name,
+                 init_query_timeout.count());
+      reply = interface->communication().query(init_topic, config_payload, init_query_timeout);
+    }
 
     if(!reply)
     {
-      fmt::print("[RobotManager][error] Init query to robot_interface '{}' timed out — is the process running? "
-                 "Skipping this robot.\n",
-                 robot_name);
+      fmt::print("[RobotManager][error] Init query to robot_interface '{}' timed out after {} attempts — is the "
+                 "process running? Skipping this robot.\n",
+                 robot_name, max_attempts);
       failed_robots.push_back(robot_name);
       continue;
     }
@@ -387,7 +428,7 @@ void RobotManager::launchZenohRouter()
   if(zenoh_router_) return;
 
   // TODO: remove hardcoded path
-  std::string zenoh_config_path{"/home/vscode/unified_robot_interface/robot_comm/tests/zenoh/router.json5"};
+  std::string zenoh_config_path{"/home/tduvinage/devel/sandbox/mc_rtc_interface/robot_comm/tests/zenoh/router.json5"};
   zenoh::Config config = zenoh::Config::from_file(zenoh_config_path);
   fmt::print("[robot_manager] Lauching Zenoh Rounter from path {}\n", zenoh_config_path);
 
@@ -407,19 +448,6 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
 
   fmt::print("manager processGConfig 1\n");
 
-  // Extract default value
-  if(gconfig.config.has("Default"))
-  {
-    mc_rtc::Configuration dc = gconfig.config("Default");
-    user_default_.module = dc("module", std::string(user_default_.module));
-    user_default_.network_protocol = dc("network_protocol", std::string(user_default_.network_protocol));
-    user_default_.driver = dc("driver", std::string(user_default_.driver));
-    user_default_.time_step = dc("time_step", double(user_default_.time_step));
-    user_default_.control_mode = dc("control_mode", std::string(user_default_.control_mode));
-  }
-
-  fmt::print("manager processGConfig 2\n");
-
   mc_rtc::Configuration robots_config = gconfig.config("Robots");
   for(auto & robot_name : robots_config.keys())
   {
@@ -434,55 +462,32 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
       robot_config.load(base_config);
     }
 
-    if(robot_config.has("module"))
+    if(!robot_config.has("module"))
     {
-      // Do nothing
-    }
-    else if(!user_default_.module.empty())
-    {
-      robot_config.add("module", user_default_.module);
-    }
-    else
-    {
-      throw std::runtime_error(
-          fmt::format("Missing 'module' configuration for robot '{}' and no default value is available\n", robot_name));
+      throw std::runtime_error(fmt::format("Missing 'module' configuration for robot '{}'\n", robot_name));
     }
 
+    // Defaults to the mc_rtc Timestep.
     if(!robot_config.has("controller"))
     {
       robot_config.add("controller");
-      robot_config("controller").add("mode", user_default_.control_mode);
-      robot_config("controller").add("time_step", user_default_.time_step);
     }
-    else
+    if(!robot_config("controller").has("mode"))
     {
-      if(!robot_config("controller").has("mode"))
-      {
-        robot_config("controller").add("mode", user_default_.control_mode);
-      }
-      if(!robot_config("controller").has("time_step"))
-      {
-        robot_config("controller").add("time_step", user_default_.time_step);
-      }
+      robot_config("controller").add("mode", std::string{"position"});
+    }
+    if(!robot_config("controller").has("time_step"))
+    {
+      robot_config("controller").add("time_step", gconfig.timestep);
     }
 
     // robot_interface section carries the driver name and robot-side ip/port.
-    // Fill in a default driver only if the whole section is absent.
     if(robot_config.has("robot_interface"))
     {
-      if(robot_config("robot_interface").has("driver"))
+      if(!robot_config("robot_interface").has("driver"))
       {
-        // Do nothing
-      }
-      else if(!user_default_.driver.empty())
-      {
-        robot_config("robot_interface").add("driver", user_default_.driver);
-      }
-      else
-      {
-        throw std::runtime_error(fmt::format(
-            "Missing 'robot_interface.driver' configuration for robot '{}' and no default value is available\n",
-            robot_name));
+        throw std::runtime_error(
+            fmt::format("Missing 'robot_interface.driver' configuration for robot '{}'\n", robot_name));
       }
 
       // TODO: are all robots required ip and port
@@ -509,11 +514,7 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
     }
     if(!robot_config("network_interface").has("protocol"))
     {
-      // A co-located robot_interface is guaranteed to share this host, so it can
-      // use Zenoh's shared-memory transport by default instead of the network stack.
-      const std::string default_protocol =
-          autostartEnabled(robot_config) ? std::string{"zenoh/shm"} : user_default_.network_protocol;
-      robot_config("network_interface").add("protocol", default_protocol);
+      robot_config("network_interface").add("protocol", std::string{"zenoh/shm"});
     }
   }
 
