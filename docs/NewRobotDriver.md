@@ -177,11 +177,11 @@ Check that the four plugin symbols are exported:
 
 ```bash
 nm -D --defined-only /path/to/uri/install/lib/robot_interface/libRobotDriverFranka.so \
-  | grep -E ' (MC_RTC_ROBOT_DRIVER|create|destroy|mc_robot_driver_abi_version)$'
+  | grep -E ' (ROBOT_DRIVER_PLUGIN|create|destroy|robot_driver_abi_version)$'
 ```
 
-The generated source already contains `MC_ROBOT_DRIVER_EXPORT_ABI_VERSION()`,
-which exports `mc_robot_driver_abi_version`. Keep it: without it, the driver is
+The generated source already contains `ROBOT_DRIVER_EXPORT_ABI_VERSION()`,
+which exports `robot_driver_abi_version`. Keep it: without it, the driver is
 refused at load time. Rebuild and reinstall the driver whenever URI is updated,
 and it fails to load with "built against an incompatible interface". See
 [Robot interface, ABI version](docRobotInterface.html).
@@ -259,7 +259,7 @@ and start `uri interface` there instead. See
   `Timestep` is a multiple of it
 - The driver is installed in URI's `<prefix>/lib/robot_interface`
 - ROS 2 drivers export `LOAD_GLOBAL`
-- The driver source keeps `MC_ROBOT_DRIVER_EXPORT_ABI_VERSION()`
+- The driver source keeps `ROBOT_DRIVER_EXPORT_ABI_VERSION()`
 
 ---
 

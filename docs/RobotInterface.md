@@ -110,12 +110,12 @@ A driver `.so` exports four C functions. `mc_rtc::ObjectLoader` uses them to
 discover and create the driver:
 
 ```cpp
-// Exports mc_robot_driver_abi_version(), see "ABI version" below.
-MC_ROBOT_DRIVER_EXPORT_ABI_VERSION()
+// Exports robot_driver_abi_version(), see "ABI version" below.
+ROBOT_DRIVER_EXPORT_ABI_VERSION()
 
 extern "C" {
 // Lists the class names this library provides (used as robot_interface.driver).
-void MC_RTC_ROBOT_DRIVER(std::vector<std::string> & classes);
+void ROBOT_DRIVER_PLUGIN(std::vector<std::string> & classes);
 
 // Must have EXACTLY this signature: the loader calls every driver through
 // one fixed function-pointer type.
@@ -143,8 +143,8 @@ older header would then call the wrong function, typically a segfault on the
 first new call.
 
 To turn that into a clear error, the header defines
-`MC_ROBOT_DRIVER_ABI_VERSION`, and each driver embeds it with
-`MC_ROBOT_DRIVER_EXPORT_ABI_VERSION()`. When `uri interface` or `uri viewer`
+`ROBOT_DRIVER_ABI_VERSION`, and each driver embeds it with
+`ROBOT_DRIVER_EXPORT_ABI_VERSION()`. When `uri interface` or `uri viewer`
 scans the plugin directory, it reads that value from every library.
 `load()` refuses a driver whose version differs, or that has none:
 
@@ -155,7 +155,7 @@ scans the plugin directory, it reads that value from every library.
 With autostart, the manager receives that message as the init reply and drops
 the robot. The fix is always to rebuild and reinstall the driver.
 
-**When you change `RobotDriver`**, increase `MC_ROBOT_DRIVER_ABI_VERSION` in
+**When you change `RobotDriver`**, increase `ROBOT_DRIVER_ABI_VERSION` in
 `RobotDriverTemplate.h` in the same commit.
 
 ### Plugin lookup

@@ -16,7 +16,7 @@ void RobotDriverLoader::init(bool skip_default_path)
       {
         default_path.push_back(ROBOT_INTERFACE_INSTALL_PREFIX);
       }
-      robot_driver_loader_.reset(new mc_rtc::ObjectLoader<RobotDriver>("MC_RTC_ROBOT_DRIVER", default_path, verbose_));
+      robot_driver_loader_.reset(new mc_rtc::ObjectLoader<RobotDriver>("ROBOT_DRIVER_PLUGIN", default_path, verbose_));
       // TODO consider aliases if needed
     }
     catch(const mc_rtc::LoaderException & e)

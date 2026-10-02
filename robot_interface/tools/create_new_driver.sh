@@ -208,16 +208,16 @@ private:
 
 extern "C"
 {
-  MC_ROBOT_DRIVER_DLLAPI void MC_RTC_ROBOT_DRIVER(std::vector<std::string> & classes);
+  ROBOT_DRIVER_DLLAPI void ROBOT_DRIVER_PLUGIN(std::vector<std::string> & classes);
 
   // grippers: gripper name -> joint names, resolved from the RobotModule by
   // RobotManager and forwarded via the init query. Ignore it (as below) if
   // this robot has no grippers.
-  MC_ROBOT_DRIVER_DLLAPI robot_interface::RobotDriver * create(
+  ROBOT_DRIVER_DLLAPI robot_interface::RobotDriver * create(
       const std::string & name, const std::string & ip, const uint16_t & port, const std::string & config_path,
       const std::vector<robot_interface::GripperInfo> & grippers);
 
-  MC_ROBOT_DRIVER_DLLAPI void destroy(robot_interface::RobotDriver * ptr);
+  ROBOT_DRIVER_DLLAPI void destroy(robot_interface::RobotDriver * ptr);
 }
 TEMPLATE
 
@@ -287,11 +287,11 @@ void __CLASS__::tauJ(const std::vector<double> & tau)
 
 // Lets robot_interface refuse this plugin (instead of crashing) once the
 // RobotDriver interface changes and the plugin needs a rebuild.
-MC_ROBOT_DRIVER_EXPORT_ABI_VERSION()
+ROBOT_DRIVER_EXPORT_ABI_VERSION()
 
 extern "C"
 {
-  void MC_RTC_ROBOT_DRIVER(std::vector<std::string> & classes)
+  void ROBOT_DRIVER_PLUGIN(std::vector<std::string> & classes)
   {
     classes.push_back("__CLASS__");
   }
@@ -387,14 +387,14 @@ its joint state.
 The shared library exports four C symbols consumed by `robot_interface`'s plugin loader:
 
 ```cpp
-void MC_RTC_ROBOT_DRIVER(std::vector<std::string> & classes);  // registers "__CLASS__"
+void ROBOT_DRIVER_PLUGIN(std::vector<std::string> & classes);  // registers "__CLASS__"
 robot_interface::RobotDriver * create(const std::string & name,
                                          const std::string & ip,
                                          const uint16_t & port,
                                          const std::string & config_path,
                                          const std::vector<robot_interface::GripperInfo> & grippers);
 void destroy(robot_interface::RobotDriver * ptr);
-unsigned int mc_robot_driver_abi_version();  // from MC_ROBOT_DRIVER_EXPORT_ABI_VERSION()
+unsigned int robot_driver_abi_version();  // from ROBOT_DRIVER_EXPORT_ABI_VERSION()
 ```
 
 `robot_interface` refuses to load a plugin whose ABI version differs from the

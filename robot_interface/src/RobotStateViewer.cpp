@@ -152,8 +152,8 @@ int runRobotStateViewer(const std::string & config_path,
   mc_rtc::log::info("[robot_state_viewer] Loading driver '{}' ({}:{})", driver_name, ip, port);
 
   robot_interface::PluginLoader<robot_interface::RobotDriver> loader(
-      "MC_RTC_ROBOT_DRIVER", {robot_interface::ROBOT_INTERFACE_INSTALL_PREFIX}, false,
-      robot_interface::PluginAbi{MC_ROBOT_DRIVER_ABI_SYMBOL, MC_ROBOT_DRIVER_ABI_VERSION});
+      "ROBOT_DRIVER_PLUGIN", {robot_interface::ROBOT_INTERFACE_INSTALL_PREFIX}, false,
+      robot_interface::PluginAbi{ROBOT_DRIVER_ABI_SYMBOL, ROBOT_DRIVER_ABI_VERSION});
   std::shared_ptr<robot_interface::RobotDriver> driver;
 
   try

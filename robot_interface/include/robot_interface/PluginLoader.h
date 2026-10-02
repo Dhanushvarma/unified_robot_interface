@@ -27,7 +27,7 @@ struct PluginAbi
 /// Generic plugin loader wrapping mc_rtc::ObjectLoader<T>.
 ///
 /// \param symbol The C discovery symbol exported by each plugin shared library
-///        (e.g. "MC_RTC_ROBOT_DRIVER").
+///        (e.g. "ROBOT_DRIVER_PLUGIN").
 /// \param paths Directories to search for plugin libraries, typically set at
 ///        compile time via ROBOT_INTERFACE_INSTALL_PREFIX (config.h).
 /// \param abi If set, plugins whose ABI version differs (or is missing) are

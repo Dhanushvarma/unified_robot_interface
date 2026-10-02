@@ -43,7 +43,7 @@ typename std::conditional<std::is_same<std::string, T>::value, const std::string
 
 /// Static loader for RobotDriver plugins. RobotInterface uses
 /// PluginLoader<RobotDriver> instead.
-struct MC_ROBOT_DRIVER_DLLAPI RobotDriverLoader
+struct ROBOT_DRIVER_DLLAPI RobotDriverLoader
 {
 public:
   /// Create the driver registered as `name`, forwarding `args` to its create().
