@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 
 /// ABI check applied to every plugin library: `symbol` names an exported
@@ -29,7 +29,7 @@ struct PluginAbi
 /// \param symbol The C discovery symbol exported by each plugin shared library
 ///        (e.g. "MC_RTC_ROBOT_DRIVER").
 /// \param paths Directories to search for plugin libraries, typically set at
-///        compile time via MC_ROBOT_INTERFACE_INSTALL_PREFIX (config.h).
+///        compile time via ROBOT_INTERFACE_INSTALL_PREFIX (config.h).
 /// \param abi If set, plugins whose ABI version differs (or is missing) are
 ///        refused by load() instead of being created.
 template<typename T>
@@ -124,4 +124,4 @@ private:
   std::recursive_mutex mtx_;
 };
 
-} // namespace mc_robot_interface
+} // namespace robot_interface

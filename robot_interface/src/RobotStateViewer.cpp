@@ -16,7 +16,7 @@
 #include <sstream>
 #include <vector>
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 
 namespace
@@ -151,16 +151,16 @@ int runRobotStateViewer(const std::string & config_path,
 
   mc_rtc::log::info("[robot_state_viewer] Loading driver '{}' ({}:{})", driver_name, ip, port);
 
-  mc_robot_interface::PluginLoader<mc_robot_interface::RobotDriver> loader(
-      "MC_RTC_ROBOT_DRIVER", {mc_robot_interface::MC_ROBOT_INTERFACE_INSTALL_PREFIX}, false,
-      mc_robot_interface::PluginAbi{MC_ROBOT_DRIVER_ABI_SYMBOL, MC_ROBOT_DRIVER_ABI_VERSION});
-  std::shared_ptr<mc_robot_interface::RobotDriver> driver;
+  robot_interface::PluginLoader<robot_interface::RobotDriver> loader(
+      "MC_RTC_ROBOT_DRIVER", {robot_interface::ROBOT_INTERFACE_INSTALL_PREFIX}, false,
+      robot_interface::PluginAbi{MC_ROBOT_DRIVER_ABI_SYMBOL, MC_ROBOT_DRIVER_ABI_VERSION});
+  std::shared_ptr<robot_interface::RobotDriver> driver;
 
   try
   {
     // Must match create()'s full signature (see RobotInterface::loadDriver):
     // the loader dispatches through one fixed function-pointer type.
-    const std::vector<mc_robot_interface::GripperInfo> grippers;
+    const std::vector<robot_interface::GripperInfo> grippers;
     driver = loader.load(driver_name, ip, port, driver_config_path, grippers);
   }
   catch(const std::exception & e)
@@ -207,4 +207,4 @@ int runRobotStateViewer(const std::string & config_path,
   return 0;
 }
 
-} // namespace mc_robot_interface
+} // namespace robot_interface

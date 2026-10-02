@@ -26,7 +26,7 @@
     return MC_ROBOT_DRIVER_ABI_VERSION;                                           \
   }
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 /// Interface a robot driver plugin implements to connect a robot to URI.
 ///
@@ -83,4 +83,4 @@ struct MC_ROBOT_DRIVER_DLLAPI RobotDriver
 
 typedef std::shared_ptr<RobotDriver> RobotDriverPtr;
 
-} // namespace mc_robot_interface
+} // namespace robot_interface

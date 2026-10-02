@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 
 /// One force/torque sensor reading, in the sensor frame, as reported by
@@ -20,4 +20,4 @@ struct WrenchData
 /// Force sensor name (as in the RobotModule, e.g. "EEForceSensor") -> latest reading.
 using WrenchMap = std::map<std::string, WrenchData>;
 
-} // namespace mc_robot_interface
+} // namespace robot_interface

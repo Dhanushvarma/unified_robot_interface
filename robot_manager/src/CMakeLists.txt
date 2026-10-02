@@ -1,21 +1,21 @@
 include(GNUInstallDirs)
 
 # Robot Interface
-set(INTERFACE_SRC mc_robot_interface/RobotInterfaceFactory.cpp
-                  mc_robot_interface/FMInterfaceTemplate.cpp
+set(INTERFACE_SRC robot_interface/RobotInterfaceFactory.cpp
+                  robot_interface/FMInterfaceTemplate.cpp
 )
 
-add_library(mc_robot_interface SHARED ${INTERFACE_SRC})
-add_library(${PROJECT_NAME}::robot_interface ALIAS mc_robot_interface)
+add_library(robot_interface SHARED ${INTERFACE_SRC})
+add_library(${PROJECT_NAME}::robot_interface ALIAS robot_interface)
 
 target_link_libraries(
-  mc_robot_interface
+  robot_interface
   PUBLIC robot_controller::core robot_comm
   PRIVATE mc_rtc::mc_control
 )
 
 target_include_directories(
-  mc_robot_interface
+  robot_interface
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
          $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
@@ -40,7 +40,7 @@ target_include_directories(
 )
 
 install(
-  TARGETS mc_robot_interface mc_robot_manager
+  TARGETS robot_interface mc_robot_manager
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -74,14 +74,14 @@ configure_file(
   ${CMAKE_CURRENT_BINARY_DIR}/include/CreateNewDriverScript.h COPYONLY
 )
 target_link_libraries(
-  uri PRIVATE mc_robot_manager mc_robot_interface robot_comm
-              mc_robot_interface_lib mc_rtc::mc_rtc_loader
+  uri PRIVATE mc_robot_manager robot_interface robot_comm robot_interface_lib
+              mc_rtc::mc_rtc_loader
 )
 
 # Installed executable and libraries use the same custom installation prefix.
 # Use an absolute RPATH because uri receives file capabilities.
 set_target_properties(
-  mc_robot_interface mc_robot_manager uri
+  robot_interface mc_robot_manager uri
   PROPERTIES
     INSTALL_RPATH
     "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR};${CMAKE_INSTALL_PREFIX}/lib"

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <mc_robot_interface/RobotInterfaceFactory.h>
 #include <robot_comm/CommunicationFactory.h>
 #include <robot_controller/ControllerLoader.h>
+#include <robot_interface/RobotInterfaceFactory.h>
 
 #include <mc_control/mc_global_controller.h>
 #include <mc_rtc/SignalSlot.h>

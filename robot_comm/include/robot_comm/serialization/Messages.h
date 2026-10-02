@@ -36,7 +36,7 @@ enum class MessageType : uint16_t
   ENVELOPE
 };
 
-/// One IMU reading (see mc_robot_interface::IMUData).
+/// One IMU reading (see robot_interface::IMUData).
 struct BodySensorData
 {
   /// RobotModule body sensor name, e.g. "Accelerometer".
@@ -49,7 +49,7 @@ struct BodySensorData
   std::array<double, 3> linearAcceleration = {0.0, 0.0, 0.0};
 };
 
-/// One force/torque reading in the sensor frame (see mc_robot_interface::WrenchData).
+/// One force/torque reading in the sensor frame (see robot_interface::WrenchData).
 struct ForceSensorData
 {
   /// RobotModule force sensor name, e.g. "EEForceSensor".

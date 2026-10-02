@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-set(PROJECT_NAME unified_robot_interface)
+set(PROJECT_NAME robot_interface)
 set(PROJECT_VERSION 1.0.0)
 project(
   ${PROJECT_NAME}
@@ -38,12 +38,10 @@ endif()
 
 # ── Install ───────────────────────────────────────────────────────────────────
 install(DIRECTORY include/ DESTINATION include)
-install(FILES cmake/AddRobotDriver.cmake
-        DESTINATION lib/cmake/unified_robot_interface
-)
+install(FILES cmake/AddRobotDriver.cmake DESTINATION lib/cmake/robot_interface)
 
 jrl_add_export_component(
-  NAME unified_robot_interface TARGETS robot_driver_api robot_driver_loader
+  NAME robot_interface TARGETS robot_driver_api robot_driver_loader
 )
 
 jrl_export_package(

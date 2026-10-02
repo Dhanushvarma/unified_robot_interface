@@ -1,7 +1,7 @@
 # Robot interface (`uri interface`)
 
 `uri interface` is the generic robot-side process (implemented by the
-`mc_robot_interface::RobotInterface` class). There is one per robot.
+`robot_interface::RobotInterface` class). There is one per robot.
 It contains no robot-specific code: at runtime it loads the `RobotDriver`
 plugin that the manager asks for, then shuttles data between that driver and
 `robot_comm`.
@@ -83,7 +83,7 @@ network_interface:
 
 ## The `RobotDriver` interface
 
-`mc_robot_interface::RobotDriver`, in
+`robot_interface::RobotDriver`, in
 `robot_interface/include/robot_interface/RobotDriverTemplate.h`, is the whole
 contract between URI and a robot:
 
@@ -119,13 +119,13 @@ void MC_RTC_ROBOT_DRIVER(std::vector<std::string> & classes);
 
 // Must have EXACTLY this signature: the loader calls every driver through
 // one fixed function-pointer type.
-mc_robot_interface::RobotDriver * create(const std::string & name,         // class name
+robot_interface::RobotDriver * create(const std::string & name,         // class name
                                          const std::string & ip,
                                          const uint16_t & port,
                                          const std::string & config_path,
-                                         const std::vector<mc_robot_interface::GripperInfo> & grippers);
+                                         const std::vector<robot_interface::GripperInfo> & grippers);
 
-void destroy(mc_robot_interface::RobotDriver * ptr);
+void destroy(robot_interface::RobotDriver * ptr);
 }
 ```
 
@@ -161,7 +161,7 @@ the robot. The fix is always to rebuild and reinstall the driver.
 ### Plugin lookup
 
 Drivers are searched **only** in `<CMAKE_INSTALL_PREFIX>/lib/robot_interface`,
-using the prefix `robot_interface` was built with (`MC_ROBOT_INTERFACE_INSTALL_PREFIX`
+using the prefix `robot_interface` was built with (`ROBOT_INTERFACE_INSTALL_PREFIX`
 in the generated `robot_interface/config.h`). No environment variable adds
 extra paths. A driver installed elsewhere is not found. When a driver is
 missing, the loader logs the searched path and the drivers it did find:

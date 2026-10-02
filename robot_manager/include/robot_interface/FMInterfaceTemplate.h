@@ -1,6 +1,6 @@
 #pragma once
 
-#include <mc_robot_interface/RobotInterfaceBase.h>
+#include <robot_interface/RobotInterfaceBase.h>
 
 #include <atomic>
 #include <chrono>

@@ -75,7 +75,7 @@ Simulators are connected the same way, as drivers: see
 ## Creating a new robot driver
 
 `robot_interface` drivers are standalone plugin projects implementing
-`mc_robot_interface::RobotDriver` (see
+`robot_interface::RobotDriver` (see
 [`robot_interface/include/robot_interface/RobotDriverTemplate.h`](robot_interface/include/robot_interface/RobotDriverTemplate.h)),
 loaded at runtime as shared libraries (full guide: [`docs/NewRobotDriver.md`](docs/NewRobotDriver.md)).
 Scaffold a new one with:

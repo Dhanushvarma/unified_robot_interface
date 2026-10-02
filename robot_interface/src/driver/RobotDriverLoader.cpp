@@ -3,7 +3,7 @@
 
 #include <robot_interface/config.h>
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 void RobotDriverLoader::init(bool skip_default_path)
 {
@@ -14,7 +14,7 @@ void RobotDriverLoader::init(bool skip_default_path)
       std::vector<std::string> default_path = {};
       if(!skip_default_path)
       {
-        default_path.push_back(MC_ROBOT_INTERFACE_INSTALL_PREFIX);
+        default_path.push_back(ROBOT_INTERFACE_INSTALL_PREFIX);
       }
       robot_driver_loader_.reset(new mc_rtc::ObjectLoader<RobotDriver>("MC_RTC_ROBOT_DRIVER", default_path, verbose_));
       // TODO consider aliases if needed
@@ -34,4 +34,4 @@ std::vector<std::string> RobotDriverLoader::available_interfaces()
   auto ret = robot_driver_loader_->objects();
   return ret;
 }
-} // namespace mc_robot_interface
+} // namespace robot_interface

@@ -15,7 +15,7 @@
 #include <robot_interface/PluginLoader.h>
 #include <robot_interface/RobotDriverTemplate.h>
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 
 /// Robot-side process of one robot (`uri interface`).
@@ -93,4 +93,4 @@ private:
 /// config's 'name'. Returns the process exit code.
 int runRobotInterface(const std::string & config_path, std::string name, const std::atomic<bool> & interrupt);
 
-} // namespace mc_robot_interface
+} // namespace robot_interface
