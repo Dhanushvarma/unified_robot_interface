@@ -19,7 +19,7 @@ uri manager -c /path/to/mc_rtc.yaml
 
 | Class | File | Role |
 |---|---|---|
-| `robot_manager::RobotManager` | `robot_manager/src/mc_robot_manager/RobotManager.cpp` | Config processing, autostart, init handshake, main loop |
+| `robot_manager::RobotManager` | `robot_manager/src/robot_manager/RobotManager.cpp` | Config processing, autostart, init handshake, main loop |
 | `mc_robot::RobotInterfaceBase` | `robot_manager/include/robot_interface/RobotInterfaceBase.h` | Abstract manager-side proxy of one robot (`updateSensors`, `updateControl`) |
 | `mc_interface_template::FMInterfaceTemplate` | `robot_manager/src/robot_interface/FMInterfaceTemplate.cpp` | Default proxy: forwards `State` to mc_rtc and mc_rtc's output as `Command` |
 | `mc_robot::RobotInterfaceFactory` | `robot_manager/src/robot_interface/RobotInterfaceFactory.cpp` | Picks the proxy implementation from the robot's `interface:` key |

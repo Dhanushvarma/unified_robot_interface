@@ -1,4 +1,4 @@
-#include <mc_robot_manager/RobotManager.h>
+#include <robot_manager/RobotManager.h>
 
 #include <mc_rbdyn/RobotLoader.h>
 

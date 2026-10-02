@@ -1,5 +1,5 @@
-#include <mc_robot_manager/RobotManager.h>
 #include <robot_controller/Controller.h>
+#include <robot_manager/RobotManager.h>
 
 #include <mc_control/Configuration.h>
 // #include "zenoh.hxx"
