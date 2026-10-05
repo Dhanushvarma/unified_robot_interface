@@ -3,7 +3,7 @@
 
 #include <fmt/core.h>
 
-namespace mc_robot
+namespace robot_manager
 {
 
 std::unique_ptr<RobotInterfaceBase> RobotInterfaceFactory::makeInterface(const std::string & name,
@@ -24,4 +24,4 @@ std::unique_ptr<RobotInterfaceBase> RobotInterfaceFactory::makeInterface(const s
   return nullptr;
 }
 
-} // namespace mc_robot
+} // namespace robot_manager

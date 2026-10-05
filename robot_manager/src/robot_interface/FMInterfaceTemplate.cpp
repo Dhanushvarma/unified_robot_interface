@@ -10,11 +10,11 @@ namespace robot_manager
 
 namespace
 {
-mc_robot::ControlMode parseModeString(const std::string & mode)
+ControlMode parseModeString(const std::string & mode)
 {
-  if(mode == "velocity") return mc_robot::VELOCITY;
-  if(mode == "torque") return mc_robot::TORQUE;
-  return mc_robot::POSITION;
+  if(mode == "velocity") return VELOCITY;
+  if(mode == "torque") return TORQUE;
+  return POSITION;
 }
 } // namespace
 
@@ -80,15 +80,15 @@ void FMInterfaceTemplate::updateControl(robot_controller::Controller & gc)
 
   switch(control_mode_)
   {
-    case mc_robot::POSITION:
+    case POSITION:
       command.position = gc.command(name(), robot_controller::ControlMode::POSITION);
       break;
 
-    case mc_robot::VELOCITY:
+    case VELOCITY:
       command.velocity = gc.command(name(), robot_controller::ControlMode::VELOCITY);
       break;
 
-    case mc_robot::TORQUE:
+    case TORQUE:
       command.torque = gc.command(name(), robot_controller::ControlMode::TORQUE);
       break;
   }

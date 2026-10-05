@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 
-namespace mc_robot
+namespace robot_manager
 {
 
 /// Creates the manager-side proxy of a robot.
@@ -22,4 +22,4 @@ public:
                                                            const uint8_t & buffer_size = 0);
 };
 
-} // namespace mc_robot
+} // namespace robot_manager

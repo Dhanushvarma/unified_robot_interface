@@ -13,7 +13,7 @@ namespace robot_manager
 
 /// Default manager-side proxy: joint state and sensors in, one command type
 /// (`controller.mode`) out.
-class FMInterfaceTemplate : public mc_robot::RobotInterfaceBase
+class FMInterfaceTemplate : public RobotInterfaceBase
 {
 public:
   FMInterfaceTemplate(const std::string & name, const mc_rtc::Configuration & config, uint8_t buffer_size = 6);

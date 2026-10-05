@@ -8,7 +8,7 @@
 
 #include <condition_variable>
 
-namespace mc_robot
+namespace robot_manager
 {
 
 enum ControlMode
@@ -126,4 +126,4 @@ protected:
   ControlMode control_mode_ = POSITION;
 };
 
-} // namespace mc_robot
+} // namespace robot_manager

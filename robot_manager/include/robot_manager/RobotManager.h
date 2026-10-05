@@ -78,7 +78,7 @@ private:
   void launchZenohRouter();
   std::unique_ptr<zenoh::Session> zenoh_router_;
 
-  std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
+  std::unordered_map<std::string, std::unique_ptr<RobotInterfaceBase>> interfaces_{};
 
   /* Co-located robot_interface processes (robot_interface.autostart: true) */
   static bool autostartEnabled(const mc_rtc::Configuration & robot_config);
