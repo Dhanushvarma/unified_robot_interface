@@ -5,7 +5,7 @@
 
 #include <fmt/core.h>
 
-namespace mc_interface_template
+namespace robot_manager
 {
 
 namespace
@@ -105,4 +105,4 @@ void FMInterfaceTemplate::updateControl(robot_controller::Controller & gc)
     fmt::print("[FMInterfaceTemplate][warning] '{}' failed to send command\n", name());
 }
 
-} // namespace mc_interface_template
+} // namespace robot_manager
