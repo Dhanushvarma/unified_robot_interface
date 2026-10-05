@@ -1,4 +1,4 @@
-set(robot_interface_INSTALL_PREFIX
+set(ROBOT_INTERFACE_INSTALL_PREFIX
     "${CMAKE_INSTALL_PREFIX}/lib/robot_interface"
 )
 
