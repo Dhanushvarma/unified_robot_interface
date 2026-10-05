@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 
 /// A gripper declared in the robot's RobotModule, passed to the driver's
@@ -16,4 +16,4 @@ struct GripperInfo
   std::vector<std::string> joints;
 };
 
-} // namespace mc_robot_interface
+} // namespace robot_interface

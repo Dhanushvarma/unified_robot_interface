@@ -1,8 +1,8 @@
 #pragma once
 
-#include <mc_robot_interface/RobotInterfaceFactory.h>
 #include <robot_comm/CommunicationFactory.h>
 #include <robot_controller/ControllerLoader.h>
+#include <robot_interface/RobotInterfaceFactory.h>
 
 #include <mc_control/mc_global_controller.h>
 #include <mc_rtc/SignalSlot.h>
@@ -78,7 +78,7 @@ private:
   void launchZenohRouter();
   std::unique_ptr<zenoh::Session> zenoh_router_;
 
-  std::unordered_map<std::string, std::unique_ptr<mc_robot::RobotInterfaceBase>> interfaces_{};
+  std::unordered_map<std::string, std::unique_ptr<RobotInterfaceBase>> interfaces_{};
 
   /* Co-located robot_interface processes (robot_interface.autostart: true) */
   static bool autostartEnabled(const mc_rtc::Configuration & robot_config);

@@ -1,13 +1,13 @@
 #pragma once
 
 #include <mc_rtc/Configuration.h>
-#include <mc_robot_interface/RobotInterfaceBase.h>
 #include <robot_comm/CommunicationFactory.h>
+#include <robot_interface/RobotInterfaceBase.h>
 
 #include <memory>
 #include <string>
 
-namespace mc_robot
+namespace robot_manager
 {
 
 /// Creates the manager-side proxy of a robot.
@@ -22,4 +22,4 @@ public:
                                                            const uint8_t & buffer_size = 0);
 };
 
-} // namespace mc_robot
+} // namespace robot_manager

@@ -19,10 +19,10 @@ uri manager -c /path/to/mc_rtc.yaml
 
 | Class | File | Role |
 |---|---|---|
-| `robot_manager::RobotManager` | `robot_manager/src/mc_robot_manager/RobotManager.cpp` | Config processing, autostart, init handshake, main loop |
-| `mc_robot::RobotInterfaceBase` | `robot_manager/include/mc_robot_interface/RobotInterfaceBase.h` | Abstract manager-side proxy of one robot (`updateSensors`, `updateControl`) |
-| `mc_interface_template::FMInterfaceTemplate` | `robot_manager/src/mc_robot_interface/FMInterfaceTemplate.cpp` | Default proxy: forwards `State` to mc_rtc and mc_rtc's output as `Command` |
-| `mc_robot::RobotInterfaceFactory` | `robot_manager/src/mc_robot_interface/RobotInterfaceFactory.cpp` | Picks the proxy implementation from the robot's `interface:` key |
+| `robot_manager::RobotManager` | `robot_manager/src/robot_manager/RobotManager.cpp` | Config processing, autostart, init handshake, main loop |
+| `robot_manager::RobotInterfaceBase` | `robot_manager/include/robot_interface/RobotInterfaceBase.h` | Abstract manager-side proxy of one robot (`updateSensors`, `updateControl`) |
+| `robot_manager::FMInterfaceTemplate` | `robot_manager/src/robot_interface/FMInterfaceTemplate.cpp` | Default proxy: forwards `State` to mc_rtc and mc_rtc's output as `Command` |
+| `robot_manager::RobotInterfaceFactory` | `robot_manager/src/robot_interface/RobotInterfaceFactory.cpp` | Picks the proxy implementation from the robot's `interface:` key |
 | `robot_controller::Controller` | `robot_controller/include/robot_controller/Controller.h` | Abstract controller backend; `ControllerMcRtc` wraps `MCGlobalController` |
 
 ## Configuration reference
@@ -149,10 +149,10 @@ implementation.
 `FMInterfaceTemplate` covers the standard case: joint state and sensors in,
 one command type out. If a robot needs different manager-side behavior, such
 as a different data mapping or extra logic before commands are sent,
-subclass `mc_robot::RobotInterfaceBase`:
+subclass `robot_manager::RobotInterfaceBase`:
 
 ```cpp
-class MyInterface : public mc_robot::RobotInterfaceBase
+class MyInterface : public robot_manager::RobotInterfaceBase
 {
 public:
   MyInterface(const std::string & name, const mc_rtc::Configuration & config, uint8_t buffer_size)

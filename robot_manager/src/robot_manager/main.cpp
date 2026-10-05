@@ -1,7 +1,7 @@
 #include "CreateNewDriverScript.h"
-#include <mc_robot_manager/RobotManager.h>
 #include <robot_interface/RobotInterface.h>
 #include <robot_interface/RobotStateViewer.h>
+#include <robot_manager/RobotManager.h>
 
 #include <CLI/CLI.hpp>
 
@@ -113,11 +113,11 @@ int main(int argc, char * argv[])
   {
     if(*interface_cmd)
     {
-      return mc_robot_interface::runRobotInterface(interface_config_path, interface_name, interrupt);
+      return robot_interface::runRobotInterface(interface_config_path, interface_name, interrupt);
     }
     if(*viewer_cmd)
     {
-      return mc_robot_interface::runRobotStateViewer(viewer_config_path, viewer_name, viewer_rate_hz, interrupt);
+      return robot_interface::runRobotStateViewer(viewer_config_path, viewer_name, viewer_rate_hz, interrupt);
     }
   }
   catch(const std::exception & e)

@@ -12,21 +12,21 @@
 /// a virtual function changes the vtable layout, so a driver built against an
 /// older header would otherwise crash (calling through a missing vtable slot)
 /// instead of failing to load.
-#define MC_ROBOT_DRIVER_ABI_VERSION 3
+#define ROBOT_DRIVER_ABI_VERSION 3
 
-/// Symbol exported by MC_ROBOT_DRIVER_EXPORT_ABI_VERSION(), checked by
+/// Symbol exported by ROBOT_DRIVER_EXPORT_ABI_VERSION(), checked by
 /// PluginLoader before a driver is created.
-#define MC_ROBOT_DRIVER_ABI_SYMBOL "mc_robot_driver_abi_version"
+#define ROBOT_DRIVER_ABI_SYMBOL "robot_driver_abi_version"
 
 /// Put once in each driver plugin's .cpp, next to create()/destroy(). A plugin
 /// without it is refused as having been built before ABI versioning.
-#define MC_ROBOT_DRIVER_EXPORT_ABI_VERSION()                                      \
-  extern "C" MC_ROBOT_DRIVER_DLLEXPORT unsigned int mc_robot_driver_abi_version() \
-  {                                                                               \
-    return MC_ROBOT_DRIVER_ABI_VERSION;                                           \
+#define ROBOT_DRIVER_EXPORT_ABI_VERSION()                                   \
+  extern "C" ROBOT_DRIVER_DLLEXPORT unsigned int robot_driver_abi_version() \
+  {                                                                         \
+    return ROBOT_DRIVER_ABI_VERSION;                                        \
   }
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 /// Interface a robot driver plugin implements to connect a robot to URI.
 ///
@@ -34,7 +34,7 @@ namespace mc_robot_interface
 /// getters and sends the latest command with servoJ(), speedJ() or tauJ(),
 /// depending on the robot's `controller.mode`. Joint vectors follow the
 /// RobotModule's reference joint order. See docs/NewRobotDriver.md.
-struct MC_ROBOT_DRIVER_DLLAPI RobotDriver
+struct ROBOT_DRIVER_DLLAPI RobotDriver
 {
   virtual ~RobotDriver() = default;
 
@@ -83,4 +83,4 @@ struct MC_ROBOT_DRIVER_DLLAPI RobotDriver
 
 typedef std::shared_ptr<RobotDriver> RobotDriverPtr;
 
-} // namespace mc_robot_interface
+} // namespace robot_interface

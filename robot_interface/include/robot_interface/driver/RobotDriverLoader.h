@@ -3,7 +3,7 @@
 #include <mc_rtc/loader.h>
 #include <robot_interface/RobotDriverTemplate.h>
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 namespace details
 {
@@ -43,12 +43,12 @@ typename std::conditional<std::is_same<std::string, T>::value, const std::string
 
 /// Static loader for RobotDriver plugins. RobotInterface uses
 /// PluginLoader<RobotDriver> instead.
-struct MC_ROBOT_DRIVER_DLLAPI RobotDriverLoader
+struct ROBOT_DRIVER_DLLAPI RobotDriverLoader
 {
 public:
   /// Create the driver registered as `name`, forwarding `args` to its create().
   template<typename... Args>
-  static mc_robot_interface::RobotDriverPtr get_robot_driver(const std::string & name, const Args &... args)
+  static robot_interface::RobotDriverPtr get_robot_driver(const std::string & name, const Args &... args)
   {
     if(!details::are_strings<Args...>::value)
     {
@@ -56,7 +56,7 @@ public:
     }
     std::unique_lock<std::recursive_mutex> guard(mtx);
     init();
-    mc_robot_interface::RobotDriverPtr rd = nullptr;
+    robot_interface::RobotDriverPtr rd = nullptr;
     rd = get_robot_module_from_lib(name, args...);
     return rd;
   }
@@ -68,7 +68,7 @@ private:
   static void init(bool skip_default_path = false);
 
   template<typename... Args>
-  static mc_robot_interface::RobotDriverPtr get_robot_module_from_lib(const std::string & name, const Args &... args)
+  static robot_interface::RobotDriverPtr get_robot_module_from_lib(const std::string & name, const Args &... args)
   {
     if(!robot_driver_loader_->has_object(name))
     {
@@ -82,7 +82,7 @@ private:
       }
       mc_rtc::log::error_and_throw<mc_rtc::LoaderException>("Cannot load the requested interface: {}", name);
     }
-    mc_robot_interface::RobotDriverPtr ri = robot_driver_loader_->create_object(name, args...);
+    robot_interface::RobotDriverPtr ri = robot_driver_loader_->create_object(name, args...);
     if(!ri)
     {
       mc_rtc::log::error_and_throw("Failed to load {}", name);
@@ -91,10 +91,10 @@ private:
     return ri;
   }
 
-  static std::unique_ptr<mc_rtc::ObjectLoader<mc_robot_interface::RobotDriver>> robot_driver_loader_;
+  static std::unique_ptr<mc_rtc::ObjectLoader<robot_interface::RobotDriver>> robot_driver_loader_;
   static bool verbose_;
 
   static std::recursive_mutex mtx;
 };
 
-} // namespace mc_robot_interface
+} // namespace robot_interface

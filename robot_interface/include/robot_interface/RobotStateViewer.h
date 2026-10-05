@@ -3,7 +3,7 @@
 #include <atomic>
 #include <string>
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 
 /// Entry point of `uri viewer`: loads the driver plugin named in the config's
@@ -17,4 +17,4 @@ int runRobotStateViewer(const std::string & config_path,
                         double display_rate_hz,
                         const std::atomic<bool> & interrupt);
 
-} // namespace mc_robot_interface
+} // namespace robot_interface

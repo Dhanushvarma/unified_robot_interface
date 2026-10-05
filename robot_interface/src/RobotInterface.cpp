@@ -10,15 +10,14 @@
 #include <chrono>
 #include <sys/prctl.h>
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 
 RobotInterface::RobotInterface(const std::string & name, const mc_rtc::Configuration & comm_config)
-: name_(name), comm_config_(comm_config),
-  driver_loader_("MC_RTC_ROBOT_DRIVER",
-                 {mc_robot_interface::MC_ROBOT_INTERFACE_INSTALL_PREFIX},
-                 true,
-                 PluginAbi{MC_ROBOT_DRIVER_ABI_SYMBOL, MC_ROBOT_DRIVER_ABI_VERSION})
+: name_(name), comm_config_(comm_config), driver_loader_("ROBOT_DRIVER_PLUGIN",
+                                                         {robot_interface::ROBOT_INTERFACE_INSTALL_PREFIX},
+                                                         true,
+                                                         PluginAbi{ROBOT_DRIVER_ABI_SYMBOL, ROBOT_DRIVER_ABI_VERSION})
 {
   comm_ = robot_comm::CommunicationFactory::makeCommunication(name_, comm_config_);
   comm_->setupClient();
@@ -331,4 +330,4 @@ int runRobotInterface(const std::string & config_path, std::string name, const s
   return 0;
 }
 
-} // namespace mc_robot_interface
+} // namespace robot_interface

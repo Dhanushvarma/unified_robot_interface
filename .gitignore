@@ -3,6 +3,9 @@
 build
 install
 
+robot_driver/*
+!robot_driver/README.md
+
 graphify-out
 
 compile_commands.json

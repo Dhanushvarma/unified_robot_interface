@@ -3,7 +3,7 @@
 #include <mc_rtc/Configuration.h>
 #include <mc_rtc/logging.h>
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 
 enum class ControlMode
@@ -12,26 +12,26 @@ enum class ControlMode
   Velocity,
   Torque
 };
-} // namespace mc_robot_interface
+} // namespace robot_interface
 
 namespace mc_rtc
 {
 
 template<>
-struct ConfigurationLoader<mc_robot_interface::ControlMode>
+struct ConfigurationLoader<robot_interface::ControlMode>
 {
-  static Configuration save(const mc_robot_interface::ControlMode & cm)
+  static Configuration save(const robot_interface::ControlMode & cm)
   {
     Configuration c;
     switch(cm)
     {
-      case mc_robot_interface::ControlMode::Position:
+      case robot_interface::ControlMode::Position:
         c.add("cm", "Position");
         break;
-      case mc_robot_interface::ControlMode::Velocity:
+      case robot_interface::ControlMode::Velocity:
         c.add("cm", "Velocity");
         break;
-      case mc_robot_interface::ControlMode::Torque:
+      case robot_interface::ControlMode::Torque:
         c.add("cm", "Torque");
         break;
       default:
@@ -40,20 +40,20 @@ struct ConfigurationLoader<mc_robot_interface::ControlMode>
     return c("cm");
   }
 
-  static mc_robot_interface::ControlMode load(const Configuration & conf)
+  static robot_interface::ControlMode load(const Configuration & conf)
   {
     std::string cm = conf;
     if(cm == "Position")
     {
-      return mc_robot_interface::ControlMode::Position;
+      return robot_interface::ControlMode::Position;
     }
     if(cm == "Velocity")
     {
-      return mc_robot_interface::ControlMode::Velocity;
+      return robot_interface::ControlMode::Velocity;
     }
     if(cm == "Torque")
     {
-      return mc_robot_interface::ControlMode::Torque;
+      return robot_interface::ControlMode::Torque;
     }
     log::error_and_throw<std::runtime_error>("ControlMode has unexpected value {}", cm);
   }

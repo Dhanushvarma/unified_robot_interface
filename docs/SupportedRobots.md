@@ -129,9 +129,9 @@ state before starting `uri manager`.
 ## Compatibility
 
 `uri interface` only loads plugins built against the current driver ABI
-(`MC_ROBOT_DRIVER_ABI_VERSION` in `RobotDriverTemplate.h`, currently 3). A
+(`ROBOT_DRIVER_ABI_VERSION` in `RobotDriverTemplate.h`, currently 3). A
 driver must use the current `create()` signature and call
-`MC_ROBOT_DRIVER_EXPORT_ABI_VERSION()`. Otherwise it is refused with
+`ROBOT_DRIVER_EXPORT_ABI_VERSION()`. Otherwise it is refused with
 "built against an incompatible interface".
 
 As of this writing, only `rtde_driver` and `ros2_control_driver` do this.

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <mc_robot_interface/RobotInterfaceBase.h>
+#include <robot_interface/RobotInterfaceBase.h>
 
 #include <atomic>
 #include <chrono>
@@ -8,12 +8,12 @@
 #include <optional>
 #include <string>
 
-namespace mc_interface_template
+namespace robot_manager
 {
 
 /// Default manager-side proxy: joint state and sensors in, one command type
 /// (`controller.mode`) out.
-class FMInterfaceTemplate : public mc_robot::RobotInterfaceBase
+class FMInterfaceTemplate : public RobotInterfaceBase
 {
 public:
   FMInterfaceTemplate(const std::string & name, const mc_rtc::Configuration & config, uint8_t buffer_size = 6);
@@ -37,4 +37,4 @@ private:
   std::chrono::steady_clock::time_point last_state_arrival_;
 };
 
-} // namespace mc_interface_template
+} // namespace robot_manager

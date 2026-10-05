@@ -9,7 +9,7 @@ namespace
 const char * MANAGER_BIN = "uri";
 const char * LOCAL_BIN = "mc_local";
 const char * MANAGER_CONFIG =
-    "/home/vscode/workspace/sandbox/unified_robot_interface/mc_robot_manager/tests/etc/mc_rtc.yaml";
+    "/home/vscode/workspace/sandbox/unified_robot_interface/robot_manager/tests/etc/mc_rtc.yaml";
 const char * LOCAL_CONFIG_1 =
     "/home/vscode/workspace/sandbox/unified_robot_interface/local_robot/etc/communication_1.yaml";
 const char * LOCAL_CONFIG_2 =

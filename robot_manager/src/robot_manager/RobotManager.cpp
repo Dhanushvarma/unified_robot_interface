@@ -1,4 +1,4 @@
-#include <mc_robot_manager/RobotManager.h>
+#include <robot_manager/RobotManager.h>
 
 #include <mc_rbdyn/RobotLoader.h>
 
@@ -302,8 +302,7 @@ void RobotManager::init(const std::atomic<bool> & interrupt)
       spawnRobotInterface(robot_name, robot_config);
     }
 
-    std::unique_ptr<mc_robot::RobotInterfaceBase> interface =
-        mc_robot::RobotInterfaceFactory::makeInterface(robot_name, robot_config);
+    std::unique_ptr<RobotInterfaceBase> interface = RobotInterfaceFactory::makeInterface(robot_name, robot_config);
     if(!interface)
     {
       continue;
@@ -428,7 +427,7 @@ void RobotManager::launchZenohRouter()
   if(zenoh_router_) return;
 
   // TODO: remove hardcoded path
-  std::string zenoh_config_path{"/home/tduvinage/devel/sandbox/mc_rtc_interface/robot_comm/tests/zenoh/router.json5"};
+  std::string zenoh_config_path{"/home/vscode/unified_robot_interface/robot_comm/tests/zenoh/router.json5"};
   zenoh::Config config = zenoh::Config::from_file(zenoh_config_path);
   fmt::print("[robot_manager] Lauching Zenoh Rounter from path {}\n", zenoh_config_path);
 

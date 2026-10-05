@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
+# Setting PROJECT_NAME of robot_interface as unified_robot_interface for easy identification when using find_package() in downstream projects
 set(PROJECT_NAME unified_robot_interface)
 set(PROJECT_VERSION 1.0.0)
 project(

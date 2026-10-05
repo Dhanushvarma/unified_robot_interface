@@ -46,7 +46,7 @@ As a result:
 | Directory | Library / binary | Role | Page |
 |---|---|---|---|
 | `robot_comm/` | `robot_comm` | Transport and serializer abstraction, message types, pub/sub and query/reply | [Communication](docCommunication.html) |
-| `robot_manager/` | `uri`, `mc_robot_manager`, `mc_robot_interface` | Fleet orchestrator: config parsing, init handshake, main loop, manager-side robot proxies | [Robot manager](docRobotManager.html) |
+| `robot_manager/` | `uri`, `robot_manager`, `robot_interface` | Fleet orchestrator: config parsing, init handshake, main loop, manager-side robot proxies | [Robot manager](docRobotManager.html) |
 | `robot_interface/` | `RobotInterface` (`uri interface`), `robot_driver_api`, `robot_driver_loader`, state viewer (`uri viewer`) | Robot-side process, the `RobotDriver` plugin API and its loader | [Robot interface](docRobotInterface.html) |
 | `robot_controller/` | `robot_controller_mc_rtc` | Controller backend abstraction; mc_rtc is the only current backend | [Robot manager](docRobotManager.html) |
 

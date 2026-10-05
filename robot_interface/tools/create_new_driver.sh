@@ -21,7 +21,7 @@ usage()
 Usage: $(basename "$0") [--no-git] <DriverName> [output-dir]
 
 Generates a standalone robot_interface driver project implementing
-mc_robot_interface::RobotDriver (see robot_interface/include/robot_interface/RobotDriverTemplate.h),
+robot_interface::RobotDriver (see robot_interface/include/robot_interface/RobotDriverTemplate.h),
 modeled after rtde_driver/.
 
   <DriverName>   PascalCase identifier for the robot/driver, e.g. "Franka", "Kinova".
@@ -160,7 +160,7 @@ render > "$TARGET_DIR/include/$PROJECT/RobotDriver${DRIVER_NAME}.h" <<'TEMPLATE'
 namespace __PROJECT__
 {
 
-class __CLASS__ : public mc_robot_interface::RobotDriver
+class __CLASS__ : public robot_interface::RobotDriver
 {
 public:
   // config_path: optional path to a driver-specific config file, forwarded
@@ -208,16 +208,16 @@ private:
 
 extern "C"
 {
-  MC_ROBOT_DRIVER_DLLAPI void MC_RTC_ROBOT_DRIVER(std::vector<std::string> & classes);
+  ROBOT_DRIVER_DLLAPI void ROBOT_DRIVER_PLUGIN(std::vector<std::string> & classes);
 
   // grippers: gripper name -> joint names, resolved from the RobotModule by
   // RobotManager and forwarded via the init query. Ignore it (as below) if
   // this robot has no grippers.
-  MC_ROBOT_DRIVER_DLLAPI mc_robot_interface::RobotDriver * create(
+  ROBOT_DRIVER_DLLAPI robot_interface::RobotDriver * create(
       const std::string & name, const std::string & ip, const uint16_t & port, const std::string & config_path,
-      const std::vector<mc_robot_interface::GripperInfo> & grippers);
+      const std::vector<robot_interface::GripperInfo> & grippers);
 
-  MC_ROBOT_DRIVER_DLLAPI void destroy(mc_robot_interface::RobotDriver * ptr);
+  ROBOT_DRIVER_DLLAPI void destroy(robot_interface::RobotDriver * ptr);
 }
 TEMPLATE
 
@@ -287,23 +287,23 @@ void __CLASS__::tauJ(const std::vector<double> & tau)
 
 // Lets robot_interface refuse this plugin (instead of crashing) once the
 // RobotDriver interface changes and the plugin needs a rebuild.
-MC_ROBOT_DRIVER_EXPORT_ABI_VERSION()
+ROBOT_DRIVER_EXPORT_ABI_VERSION()
 
 extern "C"
 {
-  void MC_RTC_ROBOT_DRIVER(std::vector<std::string> & classes)
+  void ROBOT_DRIVER_PLUGIN(std::vector<std::string> & classes)
   {
     classes.push_back("__CLASS__");
   }
 
-  mc_robot_interface::RobotDriver * create(const std::string & /*name*/, const std::string & ip,
+  robot_interface::RobotDriver * create(const std::string & /*name*/, const std::string & ip,
                                            const uint16_t & port, const std::string & config_path,
-                                           const std::vector<mc_robot_interface::GripperInfo> & /*grippers*/)
+                                           const std::vector<robot_interface::GripperInfo> & /*grippers*/)
   {
     return new __PROJECT__::__CLASS__(ip, port, config_path);
   }
 
-  void destroy(mc_robot_interface::RobotDriver * ptr)
+  void destroy(robot_interface::RobotDriver * ptr)
   {
     delete ptr;
   }
@@ -342,7 +342,7 @@ render > "$TARGET_DIR/README.md" <<'TEMPLATE'
 
 A `robot_interface` driver plugin for TODO: name your robot/controller.
 
-It implements the `mc_robot_interface::RobotDriver` interface
+It implements the `robot_interface::RobotDriver` interface
 (see `robot_interface/include/robot_interface/RobotDriverTemplate.h`) so it can be
 loaded by `robot_interface` at runtime as a shared library -- no mc_rtc dependency
 required.
@@ -351,7 +351,7 @@ required.
 
 | Dependency | Where to get it |
 |---|---|
-| `unified_robot_interface` | Built from the `mc_rtc_interface` repository |
+| `unified_robot_interface` | Built from the `unified_robot_interface` repository |
 | TODO | TODO: add your robot's SDK/client library here |
 
 ## Build
@@ -360,8 +360,8 @@ required.
 cd __PROJECT__
 mkdir build && cd build
 cmake .. \
-  -DCMAKE_PREFIX_PATH="/path/to/mc_rtc_interface/install" \
-  -DCMAKE_INSTALL_PREFIX=/path/to/mc_rtc_interface/install
+  -DCMAKE_PREFIX_PATH="/path/to/unified_robot_interface/install" \
+  -DCMAKE_INSTALL_PREFIX=/path/to/unified_robot_interface/install
 cmake --build .
 cmake --install .
 ```
@@ -387,14 +387,14 @@ its joint state.
 The shared library exports four C symbols consumed by `robot_interface`'s plugin loader:
 
 ```cpp
-void MC_RTC_ROBOT_DRIVER(std::vector<std::string> & classes);  // registers "__CLASS__"
-mc_robot_interface::RobotDriver * create(const std::string & name,
+void ROBOT_DRIVER_PLUGIN(std::vector<std::string> & classes);  // registers "__CLASS__"
+robot_interface::RobotDriver * create(const std::string & name,
                                          const std::string & ip,
                                          const uint16_t & port,
                                          const std::string & config_path,
-                                         const std::vector<mc_robot_interface::GripperInfo> & grippers);
-void destroy(mc_robot_interface::RobotDriver * ptr);
-unsigned int mc_robot_driver_abi_version();  // from MC_ROBOT_DRIVER_EXPORT_ABI_VERSION()
+                                         const std::vector<robot_interface::GripperInfo> & grippers);
+void destroy(robot_interface::RobotDriver * ptr);
+unsigned int robot_driver_abi_version();  // from ROBOT_DRIVER_EXPORT_ABI_VERSION()
 ```
 
 `robot_interface` refuses to load a plugin whose ABI version differs from the
@@ -453,5 +453,5 @@ echo ""
 echo "Next steps:"
 echo "  1. Fill in the TODOs in src/RobotDriver${DRIVER_NAME}.cpp (and add any SDK"
 echo "     find_package()/target_link_libraries() calls in CMakeLists.txt)."
-echo "  2. Build & install against your mc_rtc_interface install prefix (see README.md)."
+echo "  2. Build & install against your unified_robot_interface install prefix (see README.md)."
 echo "  3. Point a robot's robot_interface.driver at \"$CLASS\" in mc_rtc.yaml."

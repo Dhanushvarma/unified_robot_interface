@@ -9,7 +9,7 @@ namespace
 const char * MANAGER_BIN = "uri";
 const char * LOCAL_BIN = "mc_local";
 const char * MANAGER_LAUNCH_CONFIG =
-    "/home/vscode/workspace/sandbox/unified_robot_interface/mc_robot_manager/tests/etc/mc_rtc_launch.yaml";
+    "/home/vscode/workspace/sandbox/unified_robot_interface/robot_manager/tests/etc/mc_rtc_launch.yaml";
 
 class LocalLaunchTest : public ::testing::Test
 {

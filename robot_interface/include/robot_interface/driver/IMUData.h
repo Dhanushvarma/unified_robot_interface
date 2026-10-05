@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 
 /// One IMU reading, as reported by RobotDriver::getIMUs().
@@ -21,4 +21,4 @@ struct IMUData
 /// Body sensor name (as in the RobotModule, e.g. "Accelerometer") -> latest reading.
 using IMUMap = std::map<std::string, IMUData>;
 
-} // namespace mc_robot_interface
+} // namespace robot_interface

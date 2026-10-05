@@ -5,7 +5,7 @@
 
 #include <robot_interface/ControlMode.h>
 
-namespace mc_robot_interface
+namespace robot_interface
 {
 
 template<ControlMode cm>
@@ -79,4 +79,4 @@ public:
 class RobotControllerTemplate
 {
 };
-} // namespace mc_robot_interface
+} // namespace robot_interface
