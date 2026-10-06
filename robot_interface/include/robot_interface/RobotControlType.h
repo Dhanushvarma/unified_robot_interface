@@ -53,7 +53,7 @@ public:
     const auto & rjo = robot.refJointOrder();
     for(size_t i = 0; i < dq.size(); ++i)
     {
-      dq[i] = mbc.alphaD[robot.jointIndexByName(rjo[i])][0];
+      dq[i] = mbc.alpha[robot.jointIndexByName(rjo[i])][0];
     }
 
     driverBridge.speedJ(dq);

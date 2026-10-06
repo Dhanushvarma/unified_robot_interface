@@ -153,7 +153,8 @@ std::vector<double> ControllerMcRtc::command(const std::string & robot_name, Con
 
     case ControlMode::VELOCITY:
     {
-      for(size_t i = 0; i < dof; ++i) values[i] = robot.mbc().alphaD[robot.jointIndexInMBC(i)][0];
+      // alpha is the joint velocity the QP integrated, alphaD its acceleration
+      for(size_t i = 0; i < dof; ++i) values[i] = robot.mbc().alpha[robot.jointIndexInMBC(i)][0];
       break;
     }
 
