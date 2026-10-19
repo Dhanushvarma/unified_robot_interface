@@ -67,6 +67,19 @@ private:
   // continuous stream even when the manager sends at a slower rate than RTDE.
   std::optional<robot_comm::Command> last_cmd_;
 
+  // receive() keeps returning the latest message, so a new command is a new
+  // arrival time. last_rx_arrival_ is the last message read, last_cmd_arrival_
+  // the one last_cmd_ came from.
+  std::chrono::steady_clock::time_point last_rx_arrival_{};
+  std::chrono::steady_clock::time_point last_cmd_arrival_{};
+
+  // robot_interface.command_timeout [s], 0 disables. Once the manager has sent
+  // a command, a longer gap means it stopped (crash, hang, network): a velocity
+  // command is then replaced by zero velocity until commands resume.
+  double command_timeout_ = 0.1;
+  bool command_received_ = false;
+  bool command_stale_ = false;
+
   // Signalled when the init query has been handled and driver is ready.
   std::mutex init_mutex_;
   std::condition_variable init_cv_;
