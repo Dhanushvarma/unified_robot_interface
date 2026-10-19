@@ -54,6 +54,7 @@ Robots:
       port: 0
       config_path: /path/to/driver.yaml  # [optional] driver-specific file
       autostart: false                   # [optional] spawn uri interface locally
+      command_timeout: 0.1               # [optional] [s] stop a velocity-controlled robot if commands stop, 0 disables
 ```
 
 ### `Robots.<name>` keys
@@ -71,6 +72,7 @@ Robots:
 | `robot_interface.port` | **yes** | none | Same as `ip` |
 | `robot_interface.config_path` | no | `""` | Passed to the driver's `create()` for driver-specific settings |
 | `robot_interface.autostart` | no | `false` | `uri manager` spawns and stops the robot's `uri interface` itself |
+| `robot_interface.command_timeout` | no | `0.1` | Seconds without a new command after which `uri interface` sends zero velocity in `velocity` mode. Position and torque commands keep repeating. `0` disables. See [Robot interface](docRobotInterface.html) |
 
 ### Timing rules
 

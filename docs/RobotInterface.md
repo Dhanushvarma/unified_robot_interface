@@ -51,8 +51,9 @@ network_interface:
    - It parses the YAML and reads `controller.mode`, which defaults to
      `position`.
    - It reads `robot_interface.driver`, `ip` (default `127.0.0.1`), `port`
-     (default `0`), `config_path` (default `""`) and the `grippers` map that
-     the manager added from the RobotModule.
+     (default `0`), `config_path` (default `""`), `command_timeout` (default
+     `0.1` s) and the `grippers` map that the manager added from the
+     RobotModule.
    - It loads the driver through `PluginLoader<RobotDriver>` and replies `OK`.
      Any failure is replied as `ERROR: <reason>` and the process exits.
    - The handler is idempotent. A repeated query, from the manager's retries,
@@ -77,6 +78,16 @@ network_interface:
    driver's `sync()` returns, which should be the robot's native control rate.
    If no new command arrived this cycle, the previous one is sent again, so the
    robot always receives a continuous stream even though mc_rtc runs slower.
+
+   **Command timeout**: once the manager has sent a first command, a gap
+   longer than `robot_interface.command_timeout` (default `0.1` s) means it
+   stopped: it crashed, hangs, or the network between the two PCs dropped. The
+   interface then logs a warning and, in `velocity` mode, sends zero velocity
+   until commands resume. In `position` mode the repeated command already holds
+   the last position; in `torque` mode the last torque keeps repeating, because
+   a safe torque depends on the robot. `0` disables the timeout. A clean stop
+   (Ctrl+C, or a QP failure that ends mc_rtc) does not need it: the manager
+   then stops the interfaces it spawned.
 
    A `Command` carries one of `position`, `velocity` or `torque`. The first
    non-empty one is applied, in that order.

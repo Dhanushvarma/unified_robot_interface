@@ -94,6 +94,17 @@ void RobotInterface::run(const std::atomic<bool> & interrupt)
     throw std::runtime_error("[RobotInterface] Unsupported controller mode: " + control_mode_);
   }
 
+  if(command_timeout_ > 0)
+  {
+    mc_rtc::log::info("[RobotInterface] '{}' command timeout: {} s", name_, command_timeout_);
+  }
+  else
+  {
+    mc_rtc::log::warning("[RobotInterface] '{}' command timeout disabled: the last command repeats until a new one "
+                         "arrives",
+                         name_);
+  }
+
   // Control loop: run at driver's natural rate (spin freely, driver sync() paces us).
   while(!interrupt.load())
   {
@@ -163,6 +174,8 @@ robot_comm::ByteBuffer RobotInterface::handleInitQuery(const robot_comm::ByteBuf
     init_cv_.notify_one();
     return robot_comm::ByteBuffer(err.begin(), err.end());
   }
+
+  command_timeout_ = robot_config("robot_interface")("command_timeout", 0.1);
 
   try
   {
@@ -252,18 +265,44 @@ void RobotInterface::updateControl()
 {
   std::chrono::steady_clock::time_point arrival;
   auto rx = comm_->receive(&arrival);
-  if(rx && !rx->empty())
+  if(rx && !rx->empty() && arrival != last_rx_arrival_)
   {
+    last_rx_arrival_ = arrival;
     auto cmd_opt =
         comm_->serializer()->deserialize<robot_comm::Command>(robot_comm::MessageType::COMMAND, rx->data(), rx->size());
     if(cmd_opt)
     {
       if(latency_stats_) recordLatency(*cmd_opt, arrival);
       last_cmd_ = std::move(cmd_opt);
+      last_cmd_arrival_ = arrival;
+      command_received_ = true;
+      if(command_stale_)
+      {
+        mc_rtc::log::info("[RobotInterface] '{}' commands resumed", name_);
+        command_stale_ = false;
+      }
     }
   }
 
   if(!last_cmd_) return;
+
+  // The manager stopped sending: do not keep a velocity-controlled robot moving.
+  // A position command keeps holding its position, a torque command is kept.
+  if(command_timeout_ > 0 && command_received_ && !command_stale_
+     && std::chrono::steady_clock::now() - last_cmd_arrival_ > std::chrono::duration<double>(command_timeout_))
+  {
+    command_stale_ = true;
+    if(!last_cmd_->velocity.empty())
+    {
+      last_cmd_->velocity.assign(last_cmd_->velocity.size(), 0.0);
+      mc_rtc::log::warning("[RobotInterface] '{}' no command for {} s, sending zero velocity", name_, command_timeout_);
+    }
+    else
+    {
+      mc_rtc::log::warning("[RobotInterface] '{}' no command for {} s, repeating the last one", name_,
+                           command_timeout_);
+    }
+  }
 
   if(!last_cmd_->position.empty())
     driver_->servoJ(last_cmd_->position);
