@@ -60,6 +60,13 @@ struct ForceSensorData
   std::array<double, 3> torque = {0.0, 0.0, 0.0};
 };
 
+/// One named number of a driver's status (see robot_interface::RobotDriver::getStatus).
+struct StatusValue
+{
+  std::string name;
+  double value = 0.0;
+};
+
 /// Robot state, sent by `uri interface` on {name}/state every robot cycle.
 /// Joint vectors follow the RobotModule's reference joint order.
 struct State
@@ -77,6 +84,8 @@ struct State
   /// Sender's steady clock [ns] when this state was sent, echoed back in
   /// Command::stateStamp to measure the round trip. 0 = not set.
   uint64_t stamp = 0;
+  /// Driver status, e.g. the robot's safety mode. May be empty.
+  std::vector<StatusValue> status;
 };
 
 /// Robot command, sent by `uri manager` on {name}/command. Only the vector

@@ -254,6 +254,8 @@ void RobotInterface::updateSensors()
     state.forceSensors.push_back(std::move(fs));
   }
 
+  for(const auto & [statusName, value] : driver_->getStatus()) state.status.push_back({statusName, value});
+
   if(state.position.empty()) return;
 
   state.stamp = static_cast<uint64_t>(

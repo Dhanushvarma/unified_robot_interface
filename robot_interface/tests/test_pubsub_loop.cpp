@@ -92,6 +92,26 @@ TEST_F(PubSubFixture, StateFlowsFromClientToServer)
   for(size_t i = 0; i < state.velocity.size(); ++i) EXPECT_NEAR(decoded->velocity[i], state.velocity[i], 1e-9);
 }
 
+TEST_F(PubSubFixture, StatusFlowsWithTheState)
+{
+  State state;
+  state.position = {0.1, 0.2, 0.3};
+  state.status = {{"safety_mode", 3.0}, {"pose_age", 0.012}};
+
+  ASSERT_TRUE(client->send(client->encode(state)));
+
+  const ByteBuffer buf = poll_receive(*server);
+  ASSERT_FALSE(buf.empty()) << "Server did not receive state within timeout";
+
+  auto decoded = server->serializer()->deserialize<State>(MessageType::STATE, buf.data(), buf.size());
+  ASSERT_TRUE(decoded.has_value());
+  ASSERT_EQ(decoded->status.size(), 2u);
+  EXPECT_EQ(decoded->status[0].name, "safety_mode");
+  EXPECT_DOUBLE_EQ(decoded->status[0].value, 3.0);
+  EXPECT_EQ(decoded->status[1].name, "pose_age");
+  EXPECT_DOUBLE_EQ(decoded->status[1].value, 0.012);
+}
+
 TEST_F(PubSubFixture, CommandFlowsFromServerToClient)
 {
   Command cmd;

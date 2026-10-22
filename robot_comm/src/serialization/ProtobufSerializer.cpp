@@ -39,6 +39,13 @@ void writeState(const State & state, robot_comm_msgs_proto::MessageState & pb)
     fs->mutable_force()->Assign(s.force.begin(), s.force.end());
     fs->mutable_torque()->Assign(s.torque.begin(), s.torque.end());
   }
+
+  for(const auto & v : state.status)
+  {
+    auto * sv = pb.add_status();
+    sv->set_name(v.name);
+    sv->set_value(v.value);
+  }
 }
 
 void readState(const robot_comm_msgs_proto::MessageState & pb, State & state)
@@ -68,6 +75,9 @@ void readState(const robot_comm_msgs_proto::MessageState & pb, State & state)
     copyInto(s.torque(), fs.torque);
     state.forceSensors.push_back(std::move(fs));
   }
+
+  state.status.reserve(pb.status_size());
+  for(const auto & v : pb.status()) state.status.push_back({v.name(), v.value()});
 }
 } // namespace
 

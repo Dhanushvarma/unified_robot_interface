@@ -37,6 +37,7 @@ according to `controller.mode`. The full definitions are in
 | `torque` [Nm] | `getJointTorques()` | all (`rtde_driver` reports the *target* torque) |
 | `bodySensors` (IMU: orientation, angular velocity, linear acceleration) | `getIMUs()` | `miroki_driver` |
 | `forceSensors` (F/T: force, torque, in sensor frame) | `getForceSensors()` | none yet |
+| `status` (named numbers, e.g. a safety mode) | `getStatus()` | `rtde_driver`, `triorb_driver` (forks used by CallM) |
 
 | `Command` field | Sent to | Used when `controller.mode` is |
 |---|---|---|
@@ -45,8 +46,13 @@ according to `controller.mode`. The full definitions are in
 | `torque` [Nm] | `tauJ()` | `torque` |
 
 Sensor data is matched by name to the RobotModule's body sensors and force
-sensors. A driver that doesn't override `getIMUs()` or `getForceSensors()`
-sends empty lists.
+sensors. A driver that doesn't override `getIMUs()`, `getForceSensors()` or
+`getStatus()` sends empty lists.
+
+`uri manager` puts each robot's status in the mc_rtc controller's datastore as
+`URI::<robot>::status`, a `std::map<std::string, double>`, with one more
+value: `state_age`, the time [s] since the newest state arrived. It grows when
+the interface stops sending, so the controller can tell a stalled driver.
 
 ## Using a driver
 

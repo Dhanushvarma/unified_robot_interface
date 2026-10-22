@@ -17,6 +17,11 @@ table MessageForceSensor {
     torque:[double]; // (x, y, z), sensor frame
 }
 
+table MessageStatusValue {
+    name:string;
+    value:double;
+}
+
 table MessageState {
     position:[double];
     velocity:[double];
@@ -24,6 +29,7 @@ table MessageState {
     body_sensors:[MessageBodySensor];
     force_sensors:[MessageForceSensor];
     stamp:uint64;       // sender steady clock [ns], echoed in MessageCommand.state_stamp
+    status:[MessageStatusValue]; // driver status, e.g. the robot's safety mode
 }
 
 table MessageCommand {

@@ -4,7 +4,9 @@
 #include <robot_interface/driver/WrenchData.h>
 #include <robot_interface/driver/api.h>
 
+#include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 /// ABI version of the RobotDriver interface below (and of the plugin's create()
@@ -12,7 +14,7 @@
 /// a virtual function changes the vtable layout, so a driver built against an
 /// older header would otherwise crash (calling through a missing vtable slot)
 /// instead of failing to load.
-#define ROBOT_DRIVER_ABI_VERSION 3
+#define ROBOT_DRIVER_ABI_VERSION 4
 
 /// Symbol exported by ROBOT_DRIVER_EXPORT_ABI_VERSION(), checked by
 /// PluginLoader before a driver is created.
@@ -76,6 +78,15 @@ struct ROBOT_DRIVER_DLLAPI RobotDriver
   /// Force/torque readings keyed by the RobotModule's force sensor name
   /// (e.g. "EEForceSensor"), in the sensor frame. Empty by default.
   virtual WrenchMap getForceSensors()
+  {
+    return {};
+  }
+
+  /// Named status values for the controller, e.g. the robot's safety mode or
+  /// the age of a pose from an external tracker. uri manager puts them in the
+  /// mc_rtc datastore as URI::<robot>::status, with the age of the state as
+  /// state_age. Empty by default.
+  virtual std::map<std::string, double> getStatus()
   {
     return {};
   }

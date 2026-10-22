@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -68,6 +69,10 @@ public:
                               const std::string & sensorName,
                               const std::array<double, 3> & force,
                               const std::array<double, 3> & torque) = 0;
+
+  /// Status values of `robot`'s driver, and the age of its newest state as
+  /// state_age [s]. Ignored by default.
+  virtual void setStatus(const std::string & /* robot */, const std::map<std::string, double> & /* values */) {}
 
   /// Latest command for `robot` in the given mode.
   virtual std::vector<double> command(const std::string & robot, ControlMode mode) const = 0;
