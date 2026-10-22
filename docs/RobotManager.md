@@ -57,6 +57,9 @@ Robots:
       config_path: /path/to/driver.yaml  # [optional] driver-specific file
       autostart: false                   # [optional] spawn uri interface locally
       command_timeout: 0.1               # [optional] [s] stop a velocity-controlled robot if commands stop, 0 disables
+      thread: {cpu: 3, priority: 80}     # [optional] CPU and SCHED_FIFO priority of the interface's control loop
+
+ControlThread: {cpu: 2, priority: 80}    # [optional] CPU and SCHED_FIFO priority of mc_rtc's control loop
 ```
 
 ### `Robots.<name>` keys
@@ -75,6 +78,7 @@ Robots:
 | `robot_interface.config_path` | no | `""` | Passed to the driver's `create()` for driver-specific settings |
 | `robot_interface.autostart` | no | `false` | `uri manager` spawns and stops the robot's `uri interface` itself |
 | `robot_interface.command_timeout` | no | `0.1` | Seconds without a new command after which `uri interface` sends zero velocity in `velocity` mode. Position and torque commands keep repeating. `0` disables. See [Robot interface](docRobotInterface.html) |
+| `robot_interface.thread.cpu`, `robot_interface.thread.priority` | no | `-1`, `0` | CPU of the interface's control loop (`-1`: any) and its `SCHED_FIFO` priority (`0`: normal scheduling) |
 
 ### Top-level keys
 
@@ -82,6 +86,7 @@ Robots:
 |---|---|---|---|
 | `Controller` | no | `mc_rtc` | Controller backend |
 | `ZenohRouter.configuration` | no | `<prefix>/share/unified_robot_interface/zenoh_router.json5` | Zenoh config file of the router that `uri manager` starts when a robot uses Zenoh. The default file, from `robot_manager/etc/`, listens on `tcp/127.0.0.1:9562` |
+| `ControlThread.cpu`, `ControlThread.priority` | no | `-1`, `0` | CPU of the main loop, which runs mc_rtc (`-1`: any), and its `SCHED_FIFO` priority (`0`: normal scheduling). The priority needs `CAP_SYS_NICE` or an `rtprio` limit. A CPU kept free with the kernel's `isolcpus` gets only the threads pinned to it |
 
 ### Timing rules
 

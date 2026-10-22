@@ -8,10 +8,45 @@
 #include <robot_interface/driver/GripperInfo.h>
 
 #include <chrono>
+#include <cstring>
+#include <pthread.h>
+#include <sched.h>
 #include <sys/prctl.h>
 
 namespace robot_interface
 {
+
+namespace
+{
+
+/// Pin the calling thread to `cpu` (-1: leave it) and give it SCHED_FIFO `priority` (0: leave it)
+void setThreadSettings(const std::string & who, int cpu, int priority)
+{
+  if(cpu >= 0)
+  {
+    cpu_set_t cpus;
+    CPU_ZERO(&cpus);
+    CPU_SET(cpu, &cpus);
+    const int err = pthread_setaffinity_np(pthread_self(), sizeof(cpus), &cpus);
+    if(err != 0)
+      mc_rtc::log::warning("[{}] Cannot pin the control loop to CPU {}: {}", who, cpu, std::strerror(err));
+    else
+      mc_rtc::log::info("[{}] Control loop on CPU {}", who, cpu);
+  }
+  if(priority > 0)
+  {
+    sched_param param{};
+    param.sched_priority = priority;
+    const int err = pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
+    if(err != 0)
+      mc_rtc::log::warning("[{}] Cannot give the control loop SCHED_FIFO priority {}: {}", who, priority,
+                           std::strerror(err));
+    else
+      mc_rtc::log::info("[{}] Control loop at SCHED_FIFO priority {}", who, priority);
+  }
+}
+
+} // namespace
 
 RobotInterface::RobotInterface(const std::string & name, const mc_rtc::Configuration & comm_config)
 : name_(name), comm_config_(comm_config), driver_loader_("ROBOT_DRIVER_PLUGIN",
@@ -105,6 +140,8 @@ void RobotInterface::run(const std::atomic<bool> & interrupt)
                          name_);
   }
 
+  setThreadSettings(fmt::format("RobotInterface '{}'", name_), thread_cpu_, thread_priority_);
+
   // Control loop: run at driver's natural rate (spin freely, driver sync() paces us).
   while(!interrupt.load())
   {
@@ -176,6 +213,9 @@ robot_comm::ByteBuffer RobotInterface::handleInitQuery(const robot_comm::ByteBuf
   }
 
   command_timeout_ = robot_config("robot_interface")("command_timeout", 0.1);
+  const auto thread_config = robot_config("robot_interface")("thread", mc_rtc::Configuration{});
+  thread_cpu_ = thread_config("cpu", -1);
+  thread_priority_ = thread_config("priority", 0);
 
   try
   {

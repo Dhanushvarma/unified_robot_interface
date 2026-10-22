@@ -77,6 +77,9 @@ private:
   // a command, a longer gap means it stopped (crash, hang, network): a velocity
   // command is then replaced by zero velocity until commands resume.
   double command_timeout_ = 0.1;
+  /// robot_interface.thread: CPU of the control loop (-1: any) and its SCHED_FIFO priority (0: normal scheduling)
+  int thread_cpu_ = -1;
+  int thread_priority_ = 0;
   bool command_received_ = false;
   bool command_stale_ = false;
 
