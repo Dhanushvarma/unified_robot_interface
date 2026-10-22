@@ -11,6 +11,8 @@
 #include <csignal>
 #include <cstring>
 #include <filesystem>
+#include <pthread.h>
+#include <sched.h>
 #include <spawn.h>
 #include <stdexcept>
 #include <sys/wait.h>
@@ -530,6 +532,33 @@ void RobotManager::processGConfig(mc_control::MCGlobalController::GlobalConfigur
 void RobotManager::mainThread(size_t step_size, const std::atomic<bool> & interrupt)
 {
   size_t step = 0;
+
+  // ControlThread: the CPU of this loop (-1: any) and its SCHED_FIFO priority (0: normal scheduling)
+  const auto thread_config = gconfig_.config("ControlThread", mc_rtc::Configuration{});
+  const int cpu = thread_config("cpu", -1);
+  const int priority = thread_config("priority", 0);
+  if(cpu >= 0)
+  {
+    cpu_set_t cpus;
+    CPU_ZERO(&cpus);
+    CPU_SET(cpu, &cpus);
+    const int err = pthread_setaffinity_np(pthread_self(), sizeof(cpus), &cpus);
+    if(err != 0)
+      fmt::print("[RobotManager][warning] Cannot pin the control loop to CPU {}: {}\n", cpu, std::strerror(err));
+    else
+      fmt::print("[RobotManager] Control loop on CPU {}\n", cpu);
+  }
+  if(priority > 0)
+  {
+    sched_param param{};
+    param.sched_priority = priority;
+    const int err = pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
+    if(err != 0)
+      fmt::print("[RobotManager][warning] Cannot give the control loop SCHED_FIFO priority {}: {}\n", priority,
+                 std::strerror(err));
+    else
+      fmt::print("[RobotManager] Control loop at SCHED_FIFO priority {}\n", priority);
+  }
 
   double cycle_s = 0.005; // fallback: 200Hz
   if(!interfaces_.empty()) cycle_s = interfaces_.begin()->second->dt();
