@@ -85,6 +85,34 @@ std::vector<ForceSensorData> parseForceSensors(
   }
   return sensors;
 }
+flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<robot_comm_msgs::MessageStatusValue>>> createStatus(
+    flatbuffers::FlatBufferBuilder & builder,
+    const std::vector<StatusValue> & status)
+{
+  std::vector<flatbuffers::Offset<robot_comm_msgs::MessageStatusValue>> offsets;
+  offsets.reserve(status.size());
+  for(const auto & v : status)
+  {
+    offsets.push_back(robot_comm_msgs::CreateMessageStatusValue(builder, builder.CreateString(v.name), v.value));
+  }
+  return builder.CreateVector(offsets);
+}
+
+std::vector<StatusValue> parseStatus(
+    const flatbuffers::Vector<flatbuffers::Offset<robot_comm_msgs::MessageStatusValue>> * fb_status)
+{
+  std::vector<StatusValue> status;
+  if(!fb_status) return status;
+  status.reserve(fb_status->size());
+  for(const auto * v : *fb_status)
+  {
+    StatusValue sv;
+    if(v->name()) sv.name = v->name()->str();
+    sv.value = v->value();
+    status.push_back(std::move(sv));
+  }
+  return status;
+}
 } // namespace
 
 ByteBuffer FlatbufferSerializer::serializeImpl(MessageType type, const void * msg)
@@ -116,9 +144,10 @@ ByteBuffer FlatbufferSerializer::serializeImpl(MessageType type, const void * ms
       auto torque = builder.CreateVector(message_state->torque);
       auto bodySensors = createBodySensors(builder, message_state->bodySensors);
       auto forceSensors = createForceSensors(builder, message_state->forceSensors);
+      auto status = createStatus(builder, message_state->status);
 
       auto message = robot_comm_msgs::CreateMessageState(builder, position, velocity, torque, bodySensors, forceSensors,
-                                                         message_state->stamp);
+                                                         message_state->stamp, status);
       builder.Finish(message);
 
       return ByteBuffer(builder.GetBufferPointer(), builder.GetBufferPointer() + builder.GetSize());
@@ -174,8 +203,9 @@ ByteBuffer FlatbufferSerializer::serializeImpl(MessageType type, const void * ms
               auto torque = builder.CreateVector(data.torque);
               auto bodySensors = createBodySensors(builder, data.bodySensors);
               auto forceSensors = createForceSensors(builder, data.forceSensors);
+              auto status = createStatus(builder, data.status);
               auto msg = robot_comm_msgs::CreateMessageState(builder, position, velocity, torque, bodySensors,
-                                                             forceSensors, data.stamp);
+                                                             forceSensors, data.stamp, status);
 
               payload_type = robot_comm_msgs::Payload_MessageState;
               payload = msg.Union();
@@ -221,6 +251,7 @@ std::optional<void *> FlatbufferSerializer::deserializeImpl(MessageType type, co
       state->bodySensors = parseBodySensors(fb->body_sensors());
       state->forceSensors = parseForceSensors(fb->force_sensors());
       state->stamp = fb->stamp();
+      state->status = parseStatus(fb->status());
 
       return static_cast<void *>(state);
     }
@@ -278,6 +309,7 @@ std::optional<void *> FlatbufferSerializer::deserializeImpl(MessageType type, co
           state.bodySensors = parseBodySensors(state_fb->body_sensors());
           state.forceSensors = parseForceSensors(state_fb->force_sensors());
           state.stamp = state_fb->stamp();
+          state.status = parseStatus(state_fb->status());
           envelope->payload = std::move(state);
 
           break;

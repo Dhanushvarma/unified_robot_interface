@@ -33,6 +33,9 @@ public:
                       const std::array<double, 3> & force,
                       const std::array<double, 3> & torque) override;
 
+  /// In the controller's datastore, as URI::<robot>::status (std::map<std::string, double>)
+  void setStatus(const std::string & robot, const std::map<std::string, double> & values) override;
+
   void initializeRobots() override;
 
   void initializeRobot(const std::string & robotName, const std::vector<double> & encoderValues) override;
@@ -46,6 +49,8 @@ public:
 
 private:
   std::unique_ptr<mc_control::MCGlobalController> impl_;
+  /** Datastore key of each robot's status */
+  std::map<std::string, std::string> statusKeys_;
 };
 
 } // namespace robot_controller

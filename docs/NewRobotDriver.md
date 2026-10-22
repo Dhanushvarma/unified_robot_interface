@@ -117,6 +117,9 @@ Rules to keep in mind:
 - **Sensors**: override `getIMUs()` / `getForceSensors()` when the robot has
   them. The keys must match the RobotModule's body sensor and force sensor
   names, e.g. `"EEForceSensor"`.
+- **Status**: override `getStatus()` for anything else the controller should
+  know, as named numbers, e.g. `{"safety_mode", 1}`. The controller reads them
+  from its datastore as `URI::<robot>::status`.
 
 ### Constructor arguments and `config_path`
 

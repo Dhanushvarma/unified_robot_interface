@@ -88,6 +88,18 @@ void ControllerMcRtc::setForceSensor(const std::string & robot,
   impl_->setWrenches(robot, {{sensorName, sva::ForceVecd(t, f)}});
 }
 
+void ControllerMcRtc::setStatus(const std::string & robot, const std::map<std::string, double> & values)
+{
+  auto key = statusKeys_.find(robot);
+  if(key == statusKeys_.end()) key = statusKeys_.emplace(robot, "URI::" + robot + "::status").first;
+  // The controller can change, and each has its own datastore
+  auto & datastore = impl_->controller().datastore();
+  if(datastore.has(key->second))
+    datastore.assign(key->second, values);
+  else
+    datastore.make<std::map<std::string, double>>(key->second, values);
+}
+
 void ControllerMcRtc::initializeRobot(const std::string & robotName, const std::vector<double> & encoderValues)
 {
   auto & controller = impl_->controller();

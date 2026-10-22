@@ -19,6 +19,11 @@ message MessageForceSensor {
   repeated double torque = 3; // (x, y, z), sensor frame
 }
 
+message MessageStatusValue {
+  string name = 1;
+  double value = 2;
+}
+
 message MessageState {
   repeated double position = 1;
   repeated double velocity = 2;
@@ -26,6 +31,7 @@ message MessageState {
   repeated MessageBodySensor body_sensors = 4;
   repeated MessageForceSensor force_sensors = 5;
   uint64 stamp = 6; // sender steady clock [ns], echoed in MessageCommand.state_stamp
+  repeated MessageStatusValue status = 7; // driver status, e.g. the robot's safety mode
 }
 
 message MessageCommand {

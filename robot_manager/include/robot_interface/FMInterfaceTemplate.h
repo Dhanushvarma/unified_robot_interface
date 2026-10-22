@@ -5,6 +5,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <map>
 #include <optional>
 #include <string>
 
@@ -35,6 +36,8 @@ private:
   // Echoed in each Command for latency measurement.
   uint64_t last_state_stamp_ = 0;
   std::chrono::steady_clock::time_point last_state_arrival_;
+  /// The driver's status values, and state_age, for the controller
+  std::map<std::string, double> status_;
 };
 
 } // namespace robot_manager

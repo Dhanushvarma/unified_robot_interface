@@ -62,6 +62,14 @@ void FMInterfaceTemplate::updateSensors(robot_controller::Controller & gc)
 
   for(const auto & fs : s->forceSensors) gc.setForceSensor(name(), fs.name, fs.force, fs.torque);
 
+  // receive() keeps returning the newest state, so state_age grows when the interface stops sending
+  for(const auto & v : s->status) status_[v.name] = v.value;
+  status_["state_age"] =
+      last_state_stamp_ == 0
+          ? 0.0
+          : std::chrono::duration<double>(std::chrono::steady_clock::now() - last_state_arrival_).count();
+  gc.setStatus(name(), status_);
+
   if(!gc_initialized_ && !s->position.empty())
   {
     gc.initializeRobot(name(), s->position);
