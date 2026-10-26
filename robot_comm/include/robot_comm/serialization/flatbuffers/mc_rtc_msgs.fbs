@@ -40,6 +40,7 @@ table MessageCommand {
     torque:[double];
     state_stamp:uint64; // MessageState.stamp of the latest state received
     state_hold:uint64;  // [ns] that state was held before this command was sent
+    values:[MessageStatusValue]; // named values for the driver, e.g. a gripper target
 }
 
 union Payload {

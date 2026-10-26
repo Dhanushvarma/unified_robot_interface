@@ -76,6 +76,12 @@ public:
 
   /// Latest command for `robot` in the given mode.
   virtual std::vector<double> command(const std::string & robot, ControlMode mode) const = 0;
+
+  /// Named values for `robot`'s driver, sent with each command (see RobotDriver::setCommandValues). None by default.
+  virtual std::map<std::string, double> commandValues(const std::string & /* robot */) const
+  {
+    return {};
+  }
 };
 
 } // namespace robot_controller

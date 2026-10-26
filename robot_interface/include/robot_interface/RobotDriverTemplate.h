@@ -14,7 +14,7 @@
 /// a virtual function changes the vtable layout, so a driver built against an
 /// older header would otherwise crash (calling through a missing vtable slot)
 /// instead of failing to load.
-#define ROBOT_DRIVER_ABI_VERSION 4
+#define ROBOT_DRIVER_ABI_VERSION 5
 
 /// Symbol exported by ROBOT_DRIVER_EXPORT_ABI_VERSION(), checked by
 /// PluginLoader before a driver is created.
@@ -90,6 +90,13 @@ struct ROBOT_DRIVER_DLLAPI RobotDriver
   {
     return {};
   }
+
+  /// Named values from the controller, e.g. a gripper target: uri manager sends
+  /// the mc_rtc datastore entry URI::<robot>::command
+  /// (std::map<std::string, double>) with each command. Called with the values
+  /// of each new command that has some, before servoJ(), speedJ() or tauJ().
+  /// Ignored by default.
+  virtual void setCommandValues(const std::map<std::string, double> & /* values */) {}
 };
 
 typedef std::shared_ptr<RobotDriver> RobotDriverPtr;

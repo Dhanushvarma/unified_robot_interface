@@ -43,6 +43,7 @@ message MessageCommand {
   repeated double torque = 5;
   uint64 state_stamp = 6; // MessageState.stamp of the latest state received
   uint64 state_hold = 7;  // [ns] that state was held before this command was sent
+  repeated MessageStatusValue values = 8; // named values for the driver, e.g. a gripper target
 }
 
 message MessageEnvelope {

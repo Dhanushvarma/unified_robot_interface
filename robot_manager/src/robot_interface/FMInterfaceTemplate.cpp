@@ -101,6 +101,8 @@ void FMInterfaceTemplate::updateControl(robot_controller::Controller & gc)
       break;
   }
 
+  for(const auto & [valueName, value] : gc.commandValues(name())) command.values.push_back({valueName, value});
+
   if(last_state_stamp_ != 0)
   {
     command.stateStamp = last_state_stamp_;

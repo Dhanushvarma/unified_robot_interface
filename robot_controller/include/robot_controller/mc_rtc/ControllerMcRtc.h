@@ -36,6 +36,10 @@ public:
   /// In the controller's datastore, as URI::<robot>::status (std::map<std::string, double>)
   void setStatus(const std::string & robot, const std::map<std::string, double> & values) override;
 
+  /// From the controller's datastore entry URI::<robot>::command (std::map<std::string, double>), written by the
+  /// controller or a plugin; none while there is no such entry
+  std::map<std::string, double> commandValues(const std::string & robot) const override;
+
   void initializeRobots() override;
 
   void initializeRobot(const std::string & robotName, const std::vector<double> & encoderValues) override;

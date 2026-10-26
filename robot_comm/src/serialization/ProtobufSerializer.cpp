@@ -119,6 +119,12 @@ ByteBuffer ProtobufSerializer::serializeImpl(MessageType type, const void * msg)
       pb.mutable_torque()->Assign(cmd->torque.begin(), cmd->torque.end());
       pb.set_state_stamp(cmd->stateStamp);
       pb.set_state_hold(cmd->stateHold);
+      for(const auto & v : cmd->values)
+      {
+        auto * cv = pb.add_values();
+        cv->set_name(v.name);
+        cv->set_value(v.value);
+      }
 
       return serializeMessage(pb);
     }
@@ -157,6 +163,12 @@ ByteBuffer ProtobufSerializer::serializeImpl(MessageType type, const void * msg)
               cmd_pb->mutable_torque()->Assign(data.torque.begin(), data.torque.end());
               cmd_pb->set_state_stamp(data.stateStamp);
               cmd_pb->set_state_hold(data.stateHold);
+              for(const auto & v : data.values)
+              {
+                auto * cv = cmd_pb->add_values();
+                cv->set_name(v.name);
+                cv->set_value(v.value);
+              }
             }
           },
           envelope->payload);
@@ -207,6 +219,8 @@ std::optional<void *> ProtobufSerializer::deserializeImpl(MessageType type, cons
       cmd->torque.assign(pb->torque().begin(), pb->torque().end());
       cmd->stateStamp = pb->state_stamp();
       cmd->stateHold = pb->state_hold();
+      cmd->values.reserve(pb->values_size());
+      for(const auto & v : pb->values()) cmd->values.push_back({v.name(), v.value()});
 
       return static_cast<void *>(cmd);
     }
@@ -251,6 +265,7 @@ std::optional<void *> ProtobufSerializer::deserializeImpl(MessageType type, cons
           cmd.torque.assign(pb->command().torque().begin(), pb->command().torque().end());
           cmd.stateStamp = pb->command().state_stamp();
           cmd.stateHold = pb->command().state_hold();
+          for(const auto & v : pb->command().values()) cmd.values.push_back({v.name(), v.value()});
 
           envelope->payload = std::move(cmd);
           break;

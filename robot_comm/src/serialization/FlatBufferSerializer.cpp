@@ -161,10 +161,11 @@ ByteBuffer FlatbufferSerializer::serializeImpl(MessageType type, const void * ms
       auto position = builder.CreateVector(message_cmd->position);
       auto velocity = builder.CreateVector(message_cmd->velocity);
       auto torque = builder.CreateVector(message_cmd->torque);
+      auto values = createStatus(builder, message_cmd->values);
 
       auto message =
           robot_comm_msgs::CreateMessageCommand(builder, message_cmd->kp, message_cmd->kd, position, velocity, torque,
-                                                message_cmd->stateStamp, message_cmd->stateHold);
+                                                message_cmd->stateStamp, message_cmd->stateHold, values);
       builder.Finish(message);
 
       return ByteBuffer(builder.GetBufferPointer(), builder.GetBufferPointer() + builder.GetSize());
@@ -215,8 +216,9 @@ ByteBuffer FlatbufferSerializer::serializeImpl(MessageType type, const void * ms
               auto position = builder.CreateVector(data.position);
               auto velocity = builder.CreateVector(data.velocity);
               auto torque = builder.CreateVector(data.torque);
+              auto values = createStatus(builder, data.values);
               auto msg = robot_comm_msgs::CreateMessageCommand(builder, data.kp, data.kd, position, velocity, torque,
-                                                               data.stateStamp, data.stateHold);
+                                                               data.stateStamp, data.stateHold, values);
 
               payload_type = robot_comm_msgs::Payload_MessageCommand;
               payload = msg.Union();
@@ -268,6 +270,7 @@ std::optional<void *> FlatbufferSerializer::deserializeImpl(MessageType type, co
       cmd->torque.assign(fb->torque()->begin(), fb->torque()->end());
       cmd->stateStamp = fb->state_stamp();
       cmd->stateHold = fb->state_hold();
+      cmd->values = parseStatus(fb->values());
 
       return static_cast<void *>(cmd);
     }
@@ -327,6 +330,7 @@ std::optional<void *> FlatbufferSerializer::deserializeImpl(MessageType type, co
           cmd.torque.assign(cmd_fb->torque()->begin(), cmd_fb->torque()->end());
           cmd.stateStamp = cmd_fb->state_stamp();
           cmd.stateHold = cmd_fb->state_hold();
+          cmd.values = parseStatus(cmd_fb->values());
           envelope->payload = std::move(cmd);
 
           break;

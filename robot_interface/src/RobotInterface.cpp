@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <cstring>
+#include <map>
 #include <pthread.h>
 #include <sched.h>
 #include <sys/prctl.h>
@@ -318,6 +319,12 @@ void RobotInterface::updateControl()
       last_cmd_ = std::move(cmd_opt);
       last_cmd_arrival_ = arrival;
       command_received_ = true;
+      if(!last_cmd_->values.empty())
+      {
+        std::map<std::string, double> values;
+        for(const auto & v : last_cmd_->values) values[v.name] = v.value;
+        driver_->setCommandValues(values);
+      }
       if(command_stale_)
       {
         mc_rtc::log::info("[RobotInterface] '{}' commands resumed", name_);
