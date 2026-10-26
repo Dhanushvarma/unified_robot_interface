@@ -88,6 +88,11 @@ ControlThread: {cpu: 2, priority: 80}    # [optional] CPU and SCHED_FIFO priorit
 | `ZenohRouter.configuration` | no | `<prefix>/share/unified_robot_interface/zenoh_router.json5` | Zenoh config file of the router that `uri manager` starts when a robot uses Zenoh. The default file, from `robot_manager/etc/`, listens on `tcp/127.0.0.1:9562` |
 | `ControlThread.cpu`, `ControlThread.priority` | no | `-1`, `0` | CPU of the main loop, which runs mc_rtc (`-1`: any), and its `SCHED_FIFO` priority (`0`: normal scheduling). The priority needs `CAP_SYS_NICE` or an `rtprio` limit. A CPU kept free with the kernel's `isolcpus` gets only the threads pinned to it |
 
+**Known issue (2026-10-26):** the main loop takes its `ControlThread` settings when it starts, and mc_rtc's `init()`
+(the controller's and every plugin's) runs later, from that loop. A thread started there inherits the loop's CPU and
+`SCHED_FIFO` priority, e.g. a plugin's server thread or ZMQ's I/O thread, and can delay the control step. Apply the
+settings after `init()` before relying on them.
+
 ### Timing rules
 
 For every robot, `uri` checks the timing at startup and refuses to start if a
