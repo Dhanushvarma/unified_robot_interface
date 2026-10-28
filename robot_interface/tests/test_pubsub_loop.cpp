@@ -112,6 +112,26 @@ TEST_F(PubSubFixture, StatusFlowsWithTheState)
   EXPECT_DOUBLE_EQ(decoded->status[1].value, 0.012);
 }
 
+TEST_F(PubSubFixture, CommandValuesFlowWithTheCommand)
+{
+  Command cmd;
+  cmd.position = {0.5, 0.4, 0.3, 0.2, 0.1, 0.0};
+  cmd.values = {{"gripper_seq", 7.0}, {"gripper_pos", 227.0}};
+
+  ASSERT_TRUE(server->send(server->encode(cmd)));
+
+  const ByteBuffer buf = poll_receive(*client);
+  ASSERT_FALSE(buf.empty()) << "Client did not receive command within timeout";
+
+  auto decoded = client->serializer()->deserialize<Command>(MessageType::COMMAND, buf.data(), buf.size());
+  ASSERT_TRUE(decoded.has_value());
+  ASSERT_EQ(decoded->values.size(), 2u);
+  EXPECT_EQ(decoded->values[0].name, "gripper_seq");
+  EXPECT_DOUBLE_EQ(decoded->values[0].value, 7.0);
+  EXPECT_EQ(decoded->values[1].name, "gripper_pos");
+  EXPECT_DOUBLE_EQ(decoded->values[1].value, 227.0);
+}
+
 TEST_F(PubSubFixture, CommandFlowsFromServerToClient)
 {
   Command cmd;

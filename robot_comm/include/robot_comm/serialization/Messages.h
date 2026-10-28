@@ -60,7 +60,8 @@ struct ForceSensorData
   std::array<double, 3> torque = {0.0, 0.0, 0.0};
 };
 
-/// One named number of a driver's status (see robot_interface::RobotDriver::getStatus).
+/// One named number: a driver's status value (State::status, see robot_interface::RobotDriver::getStatus), or a
+/// value for the driver (Command::values, see robot_interface::RobotDriver::setCommandValues).
 struct StatusValue
 {
   std::string name;
@@ -107,6 +108,8 @@ struct Command
   /// How long [ns] the manager held that state before sending this command.
   /// The interface measures the round trip as now - stateStamp - stateHold.
   uint64_t stateHold = 0;
+  /// Named values for the driver, e.g. a gripper target. May be empty.
+  std::vector<StatusValue> values;
 };
 
 struct Envelope

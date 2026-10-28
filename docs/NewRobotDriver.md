@@ -120,6 +120,11 @@ Rules to keep in mind:
 - **Status**: override `getStatus()` for anything else the controller should
   know, as named numbers, e.g. `{"safety_mode", 1}`. The controller reads them
   from its datastore as `URI::<robot>::status`.
+- **Command values**: override `setCommandValues()` for commands beyond the
+  joints, e.g. a gripper target, as named numbers. The controller (or a
+  plugin) writes them in its datastore as `URI::<robot>::command`; the driver
+  gets them with each new command that has some. Act on changes: the same
+  values come with every command until the controller writes new ones.
 
 ### Constructor arguments and `config_path`
 

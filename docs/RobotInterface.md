@@ -109,6 +109,8 @@ contract between URI and a robot:
 | `servoJ(q)` | yes | in `position` mode | Send joint positions [rad] |
 | `speedJ(qd)` | yes | in `velocity` mode | Send joint velocities [rad/s] |
 | `tauJ(tau)` | yes | in `torque` mode | Send joint torques [Nm] |
+| `getStatus()` | no | every cycle | Named numbers for the controller, e.g. `{"safety_mode", 1}`; in its datastore as `URI::<robot>::status`; default none |
+| `setCommandValues(values)` | no | with each new command that has values, before `servoJ`/`speedJ`/`tauJ` | Named numbers from the controller's datastore entry `URI::<robot>::command`, e.g. a gripper target; default ignored |
 | `setDataRead()` | no | not called by `RobotInterface` | Optional hook |
 
 The data types (`IMUData`, `WrenchData`, `GripperInfo`) are plain structs.

@@ -54,6 +54,11 @@ sensors. A driver that doesn't override `getIMUs()`, `getForceSensors()` or
 value: `state_age`, the time [s] since the newest state arrived. It grows when
 the interface stops sending, so the controller can tell a stalled driver.
 
+The other way, the controller can write `URI::<robot>::command`, also a
+`std::map<std::string, double>`, in its datastore. `uri manager` sends it with
+each command, and `uri interface` passes it to the driver's
+`setCommandValues()`.
+
 ## Using a driver
 
 Every driver is built and installed the same way. Use the **same install

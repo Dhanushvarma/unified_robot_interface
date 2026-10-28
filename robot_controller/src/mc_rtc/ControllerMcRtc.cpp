@@ -100,6 +100,14 @@ void ControllerMcRtc::setStatus(const std::string & robot, const std::map<std::s
     datastore.make<std::map<std::string, double>>(key->second, values);
 }
 
+std::map<std::string, double> ControllerMcRtc::commandValues(const std::string & robot) const
+{
+  const auto & datastore = impl_->controller().datastore();
+  const auto key = "URI::" + robot + "::command";
+  if(!datastore.has(key)) return {};
+  return datastore.get<std::map<std::string, double>>(key);
+}
+
 void ControllerMcRtc::initializeRobot(const std::string & robotName, const std::vector<double> & encoderValues)
 {
   auto & controller = impl_->controller();
